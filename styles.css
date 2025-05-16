@@ -201,7 +201,7 @@ body {
     justify-content: center;
     gap: 20px;
     margin: 0;
-    width: auto;
+    width: 100%;
 }
 
 .vowel-btn {
@@ -532,17 +532,12 @@ input:checked + .slider:before {
 }
 
 .vowel-letter {
-    font-size: 12px;
+    font-size: 1.8em;
     font-weight: bold;
-    color: #2c3e50;
-    padding: 5px 10px;
-    background: #f8f9fa;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    min-width: 30px;
+    color: #333;
+    margin-bottom: 30px;
+    width: 100%;
     text-align: center;
-    display: inline-block;
-    border: 1px solid #2c3e50;
 }
 
 .skip-button {
