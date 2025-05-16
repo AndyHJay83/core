@@ -577,7 +577,7 @@ button {
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: bold;
-    background-color: #007bff !important;
+    background-color: #ff0000 !important;
     color: white !important;
     min-width: 120px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -630,6 +630,7 @@ button:active {
     min-width: 160px;
     font-size: 1.4em;
     padding: 15px 30px;
+    background-color: #ff0000 !important;
 }
 
 /* Filter buttons */
@@ -653,7 +654,7 @@ button:active {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: #007bff !important;
+    background-color: #ff0000 !important;
     color: white !important;
     padding: 15px;
     border-radius: 50%;
