@@ -603,10 +603,20 @@ function showNextFeature() {
                         // If NO was selected in TOGETHER?, find words with any 2+ consonants in middle positions
                         filteredWords = currentFilteredWords.filter(w => {
                             const wordLower = w.toLowerCase();
+                            
+                            // First check if the word has any adjacent consonants (shouldn't happen, but double-check)
+                            for (let i = 0; i < wordLower.length - 1; i++) {
+                                if (isConsonant(wordLower[i]) && isConsonant(wordLower[i + 1])) {
+                                    console.log('Skipping word with adjacent consonants:', wordLower);
+                                    return false;
+                                }
+                            }
+                            
                             // Get middle positions (5 or 6 characters)
                             const middleStart = Math.floor((wordLower.length - 5) / 2);
                             const middleEnd = middleStart + 5;
                             const middleChars = wordLower.slice(middleStart, middleEnd);
+                            console.log('Checking middle positions for word:', wordLower, 'middle:', middleChars);
                             
                             // Count how many of our consonants appear in the middle
                             const consonantCount = consonants.filter(c => middleChars.includes(c)).length;
