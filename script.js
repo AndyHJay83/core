@@ -482,8 +482,15 @@ function resetApp() {
     const features = document.querySelectorAll('.feature-section');
     features.forEach(feature => {
         feature.style.display = 'none';
-        feature.classList.remove('completed');
+        // Don't remove completed class from O? and CURVED features
+        if (feature.id !== 'oFeature' && feature.id !== 'curvedFeature') {
+            feature.classList.remove('completed');
+        }
     });
+    
+    // Ensure O? and CURVED features are marked as completed
+    document.getElementById('oFeature').classList.add('completed');
+    document.getElementById('curvedFeature').classList.add('completed');
     
     updateWordCount(totalWords);
     currentFilteredWords = [];
@@ -491,6 +498,8 @@ function resetApp() {
     currentPosition2 = -1;
     uniqueVowels = [];
     hasAdjacentConsonants = null;
+    hasO = null;
+    selectedCurvedLetter = null;
     
     displayResults(wordList);
     showNextFeature();
