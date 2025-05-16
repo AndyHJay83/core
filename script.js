@@ -378,9 +378,9 @@ function showNextFeature() {
         'position1Feature',
         'vowelFeature',
         'shapeFeature',
+        'lexiconFeature',
         'oFeature',
-        'curvedFeature',
-        'lexiconFeature'
+        'curvedFeature'
     ];
     
     allFeatures.forEach(featureId => {
@@ -431,6 +431,10 @@ function showNextFeature() {
         console.log('Showing SHAPE feature');
         document.getElementById('shapeFeature').style.display = 'block';
         updateShapeDisplay(currentFilteredWords);
+    }
+    else if (isLexiconMode && !document.getElementById('lexiconFeature').classList.contains('completed')) {
+        console.log('Showing LEXICON feature');
+        document.getElementById('lexiconFeature').style.display = 'block';
     }
     else if (!document.getElementById('oFeature').classList.contains('completed')) {
         console.log('Showing O? feature');
