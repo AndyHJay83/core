@@ -606,7 +606,7 @@ function showNextFeature() {
                             });
                         });
                     } else {
-                        // If NO was selected in TOGETHER?, find words with exact same consonant counts
+                        // If NO was selected in TOGETHER?, find words with at least the same consonant counts
                         filteredWords = currentFilteredWords.filter(w => {
                             const wordLower = w.toLowerCase();
                             
@@ -626,18 +626,10 @@ function showNextFeature() {
                                 }
                             });
                             
-                            // Check if the word has exactly the same consonant counts as the input
+                            // Check if the word has at least the same count of each consonant from the input
                             for (const [consonant, count] of Object.entries(inputConsonantCounts)) {
-                                if (wordConsonantCounts[consonant] !== count) {
-                                    console.log('Word has wrong count of', consonant + ':', wordLower, 'has', wordConsonantCounts[consonant], 'expected', count);
-                                    return false;
-                                }
-                            }
-                            
-                            // Check if the word has any extra consonants not in the input
-                            for (const consonant of Object.keys(wordConsonantCounts)) {
-                                if (!(consonant in inputConsonantCounts)) {
-                                    console.log('Word has extra consonant', consonant + ':', wordLower);
+                                if (!(consonant in wordConsonantCounts) || wordConsonantCounts[consonant] < count) {
+                                    console.log('Word has too few', consonant + 's:', wordLower, 'has', wordConsonantCounts[consonant] || 0, 'expected at least', count);
                                     return false;
                                 }
                             }
