@@ -572,29 +572,56 @@ function showNextFeature() {
                     const wordsToFilter = [...wordList];
                     console.log('Using full word list size:', wordsToFilter.length);
                     
-                    const consonantPairs = getConsonantPairs(word);
-                    console.log('Filtering words with pairs:', consonantPairs);
+                    const consonants = word.toLowerCase().split('').filter(char => isConsonant(char));
+                    console.log('Consonants found:', consonants);
                     
-                    const filteredWords = wordsToFilter.filter(w => {
-                        const wordLower = w.toLowerCase();
-                        // Check if the word contains any of the consonant pairs in adjacent positions
-                        return consonantPairs.some(pair => {
-                            // Check if both consonants from the pair appear adjacent in the word
-                            for (let i = 0; i < wordLower.length - 1; i++) {
-                                if (wordLower[i] === pair[0] && wordLower[i + 1] === pair[1]) {
-                                    console.log('Found match:', wordLower, 'contains pair', pair);
-                                    return true;
+                    let filteredWords;
+                    if (hasAdjacentConsonants) {
+                        // If YES was selected in TOGETHER?, find words with adjacent consonant pairs
+                        const pairs = [];
+                        for (let i = 0; i < consonants.length; i++) {
+                            for (let j = i + 1; j < consonants.length; j++) {
+                                pairs.push(consonants[i] + consonants[j]);
+                            }
+                        }
+                        console.log('Looking for adjacent pairs:', pairs);
+                        
+                        filteredWords = wordsToFilter.filter(w => {
+                            const wordLower = w.toLowerCase();
+                            return pairs.some(pair => {
+                                for (let i = 0; i < wordLower.length - 1; i++) {
+                                    if (wordLower[i] === pair[0] && wordLower[i + 1] === pair[1]) {
+                                        console.log('Found adjacent pair match:', wordLower, 'contains', pair);
+                                        return true;
+                                    }
                                 }
+                                return false;
+                            });
+                        });
+                    } else {
+                        // If NO was selected in TOGETHER?, find words with any 2+ consonants in middle positions
+                        filteredWords = wordsToFilter.filter(w => {
+                            const wordLower = w.toLowerCase();
+                            // Get middle positions (5 or 6 characters)
+                            const middleStart = Math.floor((wordLower.length - 5) / 2);
+                            const middleEnd = middleStart + 5;
+                            const middleChars = wordLower.slice(middleStart, middleEnd);
+                            
+                            // Count how many of our consonants appear in the middle
+                            const consonantCount = consonants.filter(c => middleChars.includes(c)).length;
+                            if (consonantCount >= 2) {
+                                console.log('Found word with consonants in middle:', wordLower, 'has', consonantCount, 'consonants');
+                                return true;
                             }
                             return false;
                         });
-                    });
+                    }
                     
                     console.log('Filtered words count:', filteredWords.length);
                     if (filteredWords.length > 0) {
                         console.log('First few filtered words:', filteredWords.slice(0, 5));
                     } else {
-                        console.log('No words found with these consonant pairs');
+                        console.log('No words found matching the criteria');
                     }
                     
                     currentFilteredWords = filteredWords;
