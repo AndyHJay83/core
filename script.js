@@ -574,58 +574,79 @@ function showNextFeature() {
                     console.log('Current word list size:', currentFilteredWords.length);
                     
                     // Get consonants from input word
-                    const inputConsonants = word.toLowerCase().split('').filter(char => isConsonant(char));
-                    console.log('Input consonants:', inputConsonants);
+                    const consonants = getConsonantsInOrder(word);
+                    console.log('Found consonants:', consonants);
                     
-                    let filteredWords;
-                    if (hasAdjacentConsonants) {
-                        // If YES was selected in TOGETHER?, find words with these specific consonants together
-                        filteredWords = currentFilteredWords.filter(w => {
-                            const wordLower = w.toLowerCase();
-                            
-                            // Check if any two of our input consonants appear together
-                            for (let i = 0; i < wordLower.length - 1; i++) {
-                                const currentChar = wordLower[i];
-                                const nextChar = wordLower[i + 1];
-                                if (inputConsonants.includes(currentChar) && inputConsonants.includes(nextChar)) {
-                                    console.log('Found adjacent consonants in word:', wordLower, 'at position', i);
+                    if (consonants.length >= 2) {
+                        let filteredWords;
+                        
+                        if (hasAdjacentConsonants) {
+                            // YES to Consonants Together: look for the specific consonant pairs together
+                            filteredWords = currentFilteredWords.filter(word => {
+                                const wordLower = word.toLowerCase();
+                                
+                                // Create all possible pairs of consonants from the input word
+                                const consonantPairs = [];
+                                for (let i = 0; i < consonants.length; i++) {
+                                    for (let j = i + 1; j < consonants.length; j++) {
+                                        consonantPairs.push([consonants[i], consonants[j]]);
+                                    }
+                                }
+                                
+                                console.log(`Checking word "${wordLower}" for consonant pairs:`, consonantPairs);
+                                
+                                // Check if any of the consonant pairs appear together in the word
+                                for (const [con1, con2] of consonantPairs) {
+                                    const pair1 = con1 + con2;
+                                    const pair2 = con2 + con1;
+                                    if (wordLower.includes(pair1) || wordLower.includes(pair2)) {
+                                        console.log(`Word "${wordLower}" accepted: found consonant pair "${pair1}" or "${pair2}"`);
+                                        return true;
+                                    }
+                                }
+                                
+                                console.log(`Word "${wordLower}" rejected: no matching consonant pairs found`);
+                                return false;
+                            });
+                        } else {
+                            // NO to Consonants Together: look for consonants in middle 5/6 characters
+                            filteredWords = currentFilteredWords.filter(word => {
+                                const wordLower = word.toLowerCase();
+                                const wordLength = wordLower.length;
+                                
+                                // Determine middle section length (5 for odd, 6 for even)
+                                const middleLength = wordLength % 2 === 0 ? 6 : 5;
+                                const startPos = Math.floor((wordLength - middleLength) / 2);
+                                const middleSection = wordLower.slice(startPos, startPos + middleLength);
+                                
+                                console.log(`Word "${wordLower}": middle section "${middleSection}"`);
+                                
+                                // Count how many of our consonants appear in the middle section
+                                const consonantCount = consonants.filter(c => middleSection.includes(c)).length;
+                                if (consonantCount >= 2) {
+                                    console.log(`Word "${wordLower}" accepted: found ${consonantCount} consonants in middle section`);
                                     return true;
                                 }
-                            }
-                            return false;
-                        });
+                                
+                                console.log(`Word "${wordLower}" rejected: not enough consonants in middle section`);
+                                return false;
+                            });
+                        }
+                        
+                        console.log('Filtered words count:', filteredWords.length);
+                        if (filteredWords.length > 0) {
+                            console.log('First few filtered words:', filteredWords.slice(0, 5));
+                        } else {
+                            console.log('No words found matching the criteria');
+                        }
+                        
+                        currentFilteredWords = filteredWords;
+                        displayResults(currentFilteredWords);
+                        position1Feature.classList.add('completed');
+                        showNextFeature();
                     } else {
-                        // If NO was selected in TOGETHER?, find words with these consonants in middle positions
-                        filteredWords = currentFilteredWords.filter(w => {
-                            const wordLower = w.toLowerCase();
-                            
-                            // Get middle positions (5 or 6 characters)
-                            const middleStart = Math.floor((wordLower.length - 5) / 2);
-                            const middleEnd = middleStart + 5;
-                            const middleChars = wordLower.slice(middleStart, middleEnd);
-                            console.log('Checking middle positions for word:', wordLower, 'middle:', middleChars);
-                            
-                            // Count how many of our consonants appear in the middle
-                            const consonantCount = inputConsonants.filter(c => middleChars.includes(c)).length;
-                            if (consonantCount >= 2) {
-                                console.log('Found word with consonants in middle:', wordLower, 'has', consonantCount, 'consonants');
-                                return true;
-                            }
-                            return false;
-                        });
+                        console.log('Not enough consonants found in input');
                     }
-                    
-                    console.log('Filtered words count:', filteredWords.length);
-                    if (filteredWords.length > 0) {
-                        console.log('First few filtered words:', filteredWords.slice(0, 5));
-                    } else {
-                        console.log('No words found matching the criteria');
-                    }
-                    
-                    currentFilteredWords = filteredWords;
-                    displayResults(currentFilteredWords);
-                    position1Feature.classList.add('completed');
-                    showNextFeature();
                 }
             });
         }
