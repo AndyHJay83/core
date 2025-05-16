@@ -558,13 +558,37 @@ function toggleFeature(featureId) {
     showNextFeature();
 }
 
+// Add this new function to initialize the app
+function initializeApp() {
+    // Set initial mode flags
+    isOMode = false;
+    isCurvedMode = false;
+    isLexiconMode = true;
+    isVowelMode = true;
+    isShapeMode = true;
+    
+    // Mark OFF features as completed
+    if (!isOMode) {
+        document.getElementById('oFeature').classList.add('completed');
+    }
+    if (!isCurvedMode) {
+        document.getElementById('curvedFeature').classList.add('completed');
+    }
+    
+    // Reset other states
+    hasAdjacentConsonants = null;
+    currentFilteredWords = [...wordList];
+    
+    // Show the first active feature
+    showNextFeature();
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
     await loadWordList();
     
-    // Initialize O? and CURVED features as completed since they're off by default
-    document.getElementById('oFeature').classList.add('completed');
-    document.getElementById('curvedFeature').classList.add('completed');
+    // Initialize the app
+    initializeApp();
     
     // Mode toggle listener
     document.getElementById('modeToggle').addEventListener('change', toggleMode);
