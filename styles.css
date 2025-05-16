@@ -532,12 +532,17 @@ input:checked + .slider:before {
 }
 
 .vowel-letter {
-    font-size: 1.8em;
+    font-size: 1.2em;
     font-weight: bold;
     color: #333;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     width: 100%;
     text-align: center;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    min-width: auto;
 }
 
 .skip-button {
