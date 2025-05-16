@@ -573,16 +573,22 @@ function showNextFeature() {
                     console.log('WORD submitted:', word);
                     console.log('Current word list size:', currentFilteredWords.length);
                     
-                    const consonants = word.toLowerCase().split('').filter(char => isConsonant(char));
-                    console.log('Consonants found:', consonants);
+                    // Get consonant counts from input word
+                    const inputConsonantCounts = {};
+                    word.toLowerCase().split('').forEach(char => {
+                        if (isConsonant(char)) {
+                            inputConsonantCounts[char] = (inputConsonantCounts[char] || 0) + 1;
+                        }
+                    });
+                    console.log('Input consonant counts:', inputConsonantCounts);
                     
                     let filteredWords;
                     if (hasAdjacentConsonants) {
                         // If YES was selected in TOGETHER?, find words with adjacent consonant pairs
                         const pairs = [];
-                        for (let i = 0; i < consonants.length; i++) {
-                            for (let j = i + 1; j < consonants.length; j++) {
-                                pairs.push(consonants[i] + consonants[j]);
+                        for (let i = 0; i < word.length - 1; i++) {
+                            if (isConsonant(word[i]) && isConsonant(word[i + 1])) {
+                                pairs.push(word[i].toLowerCase() + word[i + 1].toLowerCase());
                             }
                         }
                         console.log('Looking for adjacent pairs:', pairs);
@@ -600,7 +606,7 @@ function showNextFeature() {
                             });
                         });
                     } else {
-                        // If NO was selected in TOGETHER?, find words with multiple occurrences of the same consonant
+                        // If NO was selected in TOGETHER?, find words with exact same consonant counts
                         filteredWords = currentFilteredWords.filter(w => {
                             const wordLower = w.toLowerCase();
                             
@@ -612,15 +618,30 @@ function showNextFeature() {
                                 }
                             }
                             
-                            // Count occurrences of each consonant from our input word
-                            for (const consonant of consonants) {
-                                const count = (wordLower.match(new RegExp(consonant, 'g')) || []).length;
-                                if (count >= 2) {
-                                    console.log('Found word with multiple consonants:', wordLower, 'has', count, consonant + 's');
-                                    return true;
+                            // Count consonants in the word
+                            const wordConsonantCounts = {};
+                            wordLower.split('').forEach(char => {
+                                if (isConsonant(char)) {
+                                    wordConsonantCounts[char] = (wordConsonantCounts[char] || 0) + 1;
+                                }
+                            });
+                            
+                            // Check if the word has exactly the same consonant counts as the input
+                            for (const [consonant, count] of Object.entries(inputConsonantCounts)) {
+                                if (wordConsonantCounts[consonant] !== count) {
+                                    return false;
                                 }
                             }
-                            return false;
+                            
+                            // Check if the word has any extra consonants not in the input
+                            for (const consonant of Object.keys(wordConsonantCounts)) {
+                                if (!(consonant in inputConsonantCounts)) {
+                                    return false;
+                                }
+                            }
+                            
+                            console.log('Found word with matching consonant counts:', wordLower, wordConsonantCounts);
+                            return true;
                         });
                     }
                     
