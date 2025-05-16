@@ -1,8 +1,11 @@
 // Global helper function to check if a character is a consonant
-window.isConsonant = function(char) {
+const isConsonant = (function() {
     const vowels = new Set(['a', 'e', 'i', 'o', 'u']);
-    return !vowels.has(char.toLowerCase());
-};
+    return function(char) {
+        if (!char) return false;
+        return !vowels.has(char.toLowerCase());
+    };
+})();
 
 let wordList = [];
 let totalWords = 0;
