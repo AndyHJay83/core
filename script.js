@@ -596,7 +596,10 @@ function initializeApp() {
     hasAdjacentConsonants = null;
     currentFilteredWords = [...wordList];
     
-    // Show the first active feature (should be con
+    // Show the consonant question first
+    console.log('Showing consonant question...');
+    document.getElementById('consonantQuestion').style.display = 'block';
+}
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
