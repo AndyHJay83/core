@@ -558,8 +558,10 @@ function toggleFeature(featureId) {
     showNextFeature();
 }
 
-// Add this new function to initialize the app
+// Function to initialize the app
 function initializeApp() {
+    console.log('Initializing app...');
+    
     // Set initial mode flags
     isOMode = false;
     isCurvedMode = false;
@@ -567,21 +569,34 @@ function initializeApp() {
     isVowelMode = true;
     isShapeMode = true;
     
-    // Mark OFF features as completed
-    if (!isOMode) {
-        document.getElementById('oFeature').classList.add('completed');
-    }
-    if (!isCurvedMode) {
-        document.getElementById('curvedFeature').classList.add('completed');
-    }
+    // Reset all features
+    const allFeatures = [
+        'oFeature',
+        'curvedFeature',
+        'position1Feature',
+        'vowelFeature',
+        'lexiconFeature',
+        'consonantQuestion',
+        'shapeFeature'
+    ];
+    
+    allFeatures.forEach(featureId => {
+        const feature = document.getElementById(featureId);
+        feature.style.display = 'none';
+        feature.classList.remove('completed');
+    });
+    
+    // Mark OFF features as completed and hidden
+    document.getElementById('oFeature').classList.add('completed');
+    document.getElementById('oFeature').style.display = 'none';
+    document.getElementById('curvedFeature').classList.add('completed');
+    document.getElementById('curvedFeature').style.display = 'none';
     
     // Reset other states
     hasAdjacentConsonants = null;
     currentFilteredWords = [...wordList];
     
-    // Show the first active feature
-    showNextFeature();
-}
+    // Show the first active feature (should be con
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
