@@ -427,14 +427,18 @@ function showNextFeature() {
             vowelLetter.style.display = 'none';
         }
     }
-    else if (isLexiconMode && !document.getElementById('lexiconFeature').classList.contains('completed')) {
-        console.log('Showing LEXICON feature');
-        document.getElementById('lexiconFeature').style.display = 'block';
-    }
     else if (isShapeMode && !document.getElementById('shapeFeature').classList.contains('completed')) {
         console.log('Showing SHAPE feature');
         document.getElementById('shapeFeature').style.display = 'block';
         updateShapeDisplay(currentFilteredWords);
+    }
+    else if (!document.getElementById('oFeature').classList.contains('completed')) {
+        console.log('Showing O? feature');
+        document.getElementById('oFeature').style.display = 'block';
+    }
+    else if (!document.getElementById('curvedFeature').classList.contains('completed')) {
+        console.log('Showing CURVED feature');
+        document.getElementById('curvedFeature').style.display = 'block';
     }
     else {
         console.log('Expanding word list');
