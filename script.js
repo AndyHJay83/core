@@ -14,8 +14,8 @@ let originalFilteredWords = [];
 let hasAdjacentConsonants = null;
 let hasO = null;
 let selectedCurvedLetter = null;
-let isOMode = true;
-let isCurvedMode = true;
+let isOMode = false;
+let isCurvedMode = false;
 
 // Function to check if a word has any adjacent consonants
 function hasWordAdjacentConsonants(word) {
@@ -562,6 +562,10 @@ function toggleFeature(featureId) {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadWordList();
     
+    // Initialize O? and CURVED features as completed since they're off by default
+    document.getElementById('oFeature').classList.add('completed');
+    document.getElementById('curvedFeature').classList.add('completed');
+    
     // Mode toggle listener
     document.getElementById('modeToggle').addEventListener('change', toggleMode);
     
@@ -940,6 +944,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Show consonant question
         document.getElementById('consonantQuestion').style.display = 'block';
     });
+
+    // Show the first feature (which will skip O? and CURVED since they're off)
+    showNextFeature();
 });
 
 // Function to check if a letter is curved
