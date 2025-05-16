@@ -390,11 +390,11 @@ function showNextFeature() {
     });
     
     // Then show the appropriate feature based on the current state
-    if (!document.getElementById('oFeature').classList.contains('completed')) {
+    if (isOMode && !document.getElementById('oFeature').classList.contains('completed')) {
         console.log('Showing O? feature');
         document.getElementById('oFeature').style.display = 'block';
     }
-    else if (!document.getElementById('curvedFeature').classList.contains('completed')) {
+    else if (isCurvedMode && !document.getElementById('curvedFeature').classList.contains('completed')) {
         console.log('Showing CURVED feature');
         document.getElementById('curvedFeature').style.display = 'block';
     }
@@ -504,7 +504,7 @@ function toggleMode() {
     resetApp();
 }
 
-// Function to toggle feature
+// Function to toggle feature mode
 function toggleFeature(featureId) {
     const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
     const isEnabled = toggle.checked;
@@ -512,9 +512,19 @@ function toggleFeature(featureId) {
     switch(featureId) {
         case 'oFeature':
             isOMode = isEnabled;
+            if (!isEnabled) {
+                // If O? is disabled, mark it as completed and update the word list
+                document.getElementById('oFeature').classList.add('completed');
+                // Keep all words since we're skipping the O? filter
+                currentFilteredWords = [...wordList];
+            }
             break;
         case 'curvedFeature':
             isCurvedMode = isEnabled;
+            if (!isEnabled) {
+                // If CURVED is disabled, mark it as completed
+                document.getElementById('curvedFeature').classList.add('completed');
+            }
             break;
         case 'lexiconFeature':
             isLexiconMode = isEnabled;
@@ -544,6 +554,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('modeToggle').addEventListener('change', toggleMode);
     
     // Feature toggle listeners
+    document.getElementById('oToggle').addEventListener('change', () => {
+        toggleFeature('oFeature');
+        // If O? is disabled, update the display immediately
+        if (!isOMode) {
+            displayResults(currentFilteredWords);
+        }
+    });
+    
+    document.getElementById('curvedToggle').addEventListener('change', () => {
+        toggleFeature('curvedFeature');
+        // If CURVED is disabled, update the display immediately
+        if (!isCurvedMode) {
+            displayResults(currentFilteredWords);
+        }
+    });
+    
     document.getElementById('lexiconToggle').addEventListener('change', () => toggleFeature('lexiconFeature'));
     document.getElementById('vowelToggle').addEventListener('change', () => toggleFeature('vowelFeature'));
     document.getElementById('shapeToggle').addEventListener('change', () => toggleFeature('shapeFeature'));
