@@ -629,6 +629,7 @@ function showNextFeature() {
                             // Check if the word has exactly the same consonant counts as the input
                             for (const [consonant, count] of Object.entries(inputConsonantCounts)) {
                                 if (wordConsonantCounts[consonant] !== count) {
+                                    console.log('Word has wrong count of', consonant + ':', wordLower, 'has', wordConsonantCounts[consonant], 'expected', count);
                                     return false;
                                 }
                             }
@@ -636,6 +637,7 @@ function showNextFeature() {
                             // Check if the word has any extra consonants not in the input
                             for (const consonant of Object.keys(wordConsonantCounts)) {
                                 if (!(consonant in inputConsonantCounts)) {
+                                    console.log('Word has extra consonant', consonant + ':', wordLower);
                                     return false;
                                 }
                             }
