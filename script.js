@@ -570,10 +570,15 @@ function showNextFeature() {
                     const consonantPairs = getConsonantPairs(word);
                     const filteredWords = currentFilteredWords.filter(w => {
                         const wordLower = w.toLowerCase();
-                        // Check if the word contains any of the consonant pairs
+                        // Check if the word contains any of the consonant pairs in adjacent positions
                         return consonantPairs.some(pair => {
-                            // Check if both consonants from the pair appear in the word
-                            return pair.split('').every(consonant => wordLower.includes(consonant));
+                            // Check if both consonants from the pair appear adjacent in the word
+                            for (let i = 0; i < wordLower.length - 1; i++) {
+                                if (wordLower[i] === pair[0] && wordLower[i + 1] === pair[1]) {
+                                    return true;
+                                }
+                            }
+                            return false;
                         });
                     });
                     currentFilteredWords = filteredWords;
