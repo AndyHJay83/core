@@ -14,8 +14,6 @@ let originalFilteredWords = [];
 let hasAdjacentConsonants = null;
 let hasO = null;
 let selectedCurvedLetter = null;
-let isOMode = false;
-let isCurvedMode = false;
 
 // Function to check if a word has any adjacent consonants
 function hasWordAdjacentConsonants(word) {
@@ -374,14 +372,6 @@ function handleVowelSelection(includeVowel) {
 // Function to show next feature
 function showNextFeature() {
     console.log('Showing next feature...');
-    console.log('Current mode states:', {
-        isOMode,
-        isCurvedMode,
-        isVowelMode,
-        isLexiconMode,
-        isShapeMode
-    });
-    
     // First hide all features
     const allFeatures = [
         'oFeature',
@@ -398,11 +388,11 @@ function showNextFeature() {
     });
     
     // Then show the appropriate feature based on the current state
-    if (isOMode && !document.getElementById('oFeature').classList.contains('completed')) {
+    if (!document.getElementById('oFeature').classList.contains('completed')) {
         console.log('Showing O? feature');
         document.getElementById('oFeature').style.display = 'block';
     }
-    else if (isCurvedMode && !document.getElementById('curvedFeature').classList.contains('completed')) {
+    else if (!document.getElementById('curvedFeature').classList.contains('completed')) {
         console.log('Showing CURVED feature');
         document.getElementById('curvedFeature').style.display = 'block';
     }
@@ -514,57 +504,10 @@ function toggleMode() {
 
 // Function to toggle feature mode
 function toggleFeature(featureId) {
-    const toggleId = featureId.replace('Feature', 'Toggle');
-    const toggle = document.getElementById(toggleId);
-    
-    // Skip if toggle element doesn't exist
-    if (!toggle) {
-        console.log(`Toggle element not found: ${toggleId}`);
-        return;
-    }
-    
+    const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
     const isEnabled = toggle.checked;
-    console.log(`Toggling ${featureId}: ${isEnabled ? 'ON' : 'OFF'}`);
     
     switch(featureId) {
-        case 'oFeature':
-            isOMode = isEnabled;
-            if (!isEnabled) {
-                // If O? is disabled, mark it as completed and update the word list
-                document.getElementById('oFeature').classList.add('completed');
-                // Keep all words since we're skipping the O? filter
-                currentFilteredWords = [...wordList];
-                console.log('O? feature disabled, resetting word list to', currentFilteredWords.length, 'words');
-            } else {
-                // If O? is enabled, reset the workflow
-                console.log('O? enabled, resetting workflow');
-                // Reset all feature states
-                resetFeatureStates();
-                // Remove completed class from O?
-                document.getElementById('oFeature').classList.remove('completed');
-                // Reset the word list
-                currentFilteredWords = [...wordList];
-                displayResults(currentFilteredWords);
-            }
-            break;
-        case 'curvedFeature':
-            isCurvedMode = isEnabled;
-            if (!isEnabled) {
-                // If CURVED is disabled, mark it as completed
-                document.getElementById('curvedFeature').classList.add('completed');
-                console.log('CURVED feature disabled and marked as completed');
-            } else {
-                // If CURVED is enabled, reset the workflow
-                console.log('CURVED enabled, resetting workflow');
-                // Reset all feature states
-                resetFeatureStates();
-                // Remove completed class from CURVED
-                document.getElementById('curvedFeature').classList.remove('completed');
-                // Reset the word list
-                currentFilteredWords = [...wordList];
-                displayResults(currentFilteredWords);
-            }
-            break;
         case 'lexiconFeature':
             isLexiconMode = isEnabled;
             break;
@@ -579,117 +522,20 @@ function toggleFeature(featureId) {
     // If the feature is disabled, mark it as completed
     if (!isEnabled) {
         document.getElementById(featureId).classList.add('completed');
-        console.log(`${featureId} marked as completed`);
     }
     
     // Update the display
     showNextFeature();
 }
 
-// Add a new function to reset feature states
-function resetFeatureStates() {
-    console.log('Resetting feature states');
-    // Reset the consonant question state
-    hasAdjacentConsonants = null;
-    
-    // Reset all feature completion states
-    const allFeatures = [
-        'oFeature',
-        'curvedFeature',
-        'position1Feature',
-        'vowelFeature',
-        'lexiconFeature',
-        'consonantQuestion',
-        'shapeFeature'
-    ];
-    
-    allFeatures.forEach(featureId => {
-        const feature = document.getElementById(featureId);
-        feature.classList.remove('completed');
-        feature.style.display = 'none';
-    });
-    
-    // Reset other states
-    uniqueVowels = [];
-    currentFilteredWordsForVowels = [];
-    originalFilteredWords = [];
-    currentVowelIndex = 0;
-}
-
-// Function to initialize the app
-function initializeApp() {
-    console.log('Initializing app...');
-    
-    // Set initial mode flags
-    isOMode = false;
-    isCurvedMode = false;
-    isLexiconMode = true;
-    isVowelMode = true;
-    isShapeMode = true;
-    
-    // Reset all features
-    const allFeatures = [
-        'oFeature',
-        'curvedFeature',
-        'position1Feature',
-        'vowelFeature',
-        'lexiconFeature',
-        'consonantQuestion',
-        'shapeFeature'
-    ];
-    
-    allFeatures.forEach(featureId => {
-        const feature = document.getElementById(featureId);
-        feature.style.display = 'none';
-        feature.classList.remove('completed');
-    });
-    
-    // Mark OFF features as completed and hidden
-    document.getElementById('oFeature').classList.add('completed');
-    document.getElementById('oFeature').style.display = 'none';
-    document.getElementById('curvedFeature').classList.add('completed');
-    document.getElementById('curvedFeature').style.display = 'none';
-    
-    // Reset other states
-    hasAdjacentConsonants = null;
-    currentFilteredWords = [...wordList];
-    
-    // Show the consonant question first
-    console.log('Showing consonant question...');
-    document.getElementById('consonantQuestion').style.display = 'block';
-}
-
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
     await loadWordList();
-    
-    // Initialize the app
-    initializeApp();
     
     // Mode toggle listener
     document.getElementById('modeToggle').addEventListener('change', toggleMode);
     
     // Feature toggle listeners
-    document.getElementById('oToggle').addEventListener('change', () => {
-        console.log('O? toggle changed');
-        toggleFeature('oFeature');
-        // If O? is disabled, update the display immediately
-        if (!isOMode) {
-            console.log('O? disabled, updating display');
-            displayResults(currentFilteredWords);
-        }
-    });
-    
-    document.getElementById('curvedToggle').addEventListener('change', () => {
-        console.log('CURVED toggle changed');
-        toggleFeature('curvedFeature');
-        // If CURVED is disabled, update the display immediately
-        if (!isCurvedMode) {
-            console.log('CURVED disabled, updating display');
-            displayResults(currentFilteredWords);
-        }
-    });
-    
     document.getElementById('lexiconToggle').addEventListener('change', () => toggleFeature('lexiconFeature'));
     document.getElementById('vowelToggle').addEventListener('change', () => toggleFeature('vowelFeature'));
     document.getElementById('shapeToggle').addEventListener('change', () => toggleFeature('shapeFeature'));
@@ -1044,9 +890,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Show consonant question
         document.getElementById('consonantQuestion').style.display = 'block';
     });
-
-    // Show the first feature (which will skip O? and CURVED since they're off)
-    showNextFeature();
 });
 
 // Function to check if a letter is curved
