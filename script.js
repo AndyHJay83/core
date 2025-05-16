@@ -475,6 +475,9 @@ function resetApp() {
         feature.classList.remove('completed');
     });
     
+    // Mark O? feature as completed by default
+    document.getElementById('oFeature').classList.add('completed');
+    
     updateWordCount(totalWords);
     currentFilteredWords = [];
     currentPosition = -1;
