@@ -523,9 +523,10 @@ input:checked + .slider:before {
 /* Vowel Feature */
 .vowel-content {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 15px;
+    justify-content: center;
+    gap: 20px;
     width: 100%;
     padding: 15px;
 }
