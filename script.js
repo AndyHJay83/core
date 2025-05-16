@@ -11,16 +11,25 @@ const isConsonant = (() => {
 const getConsonantPairs = (() => {
     return function(word) {
         if (!word) return [];
-        const pairs = [];
         const wordLower = word.toLowerCase();
+        const consonants = [];
         
-        for (let i = 0; i < wordLower.length - 1; i++) {
-            if (isConsonant(wordLower[i]) && isConsonant(wordLower[i + 1])) {
-                pairs.push(wordLower.slice(i, i + 2));
+        // First, extract all consonants from the word
+        for (let i = 0; i < wordLower.length; i++) {
+            if (isConsonant(wordLower[i])) {
+                consonants.push(wordLower[i]);
             }
         }
         
-        console.log('Found consonant pairs:', pairs);
+        // Then create pairs of consonants
+        const pairs = [];
+        for (let i = 0; i < consonants.length - 1; i++) {
+            pairs.push(consonants[i] + consonants[i + 1]);
+        }
+        
+        console.log('Word:', wordLower);
+        console.log('Consonants found:', consonants);
+        console.log('Consonant pairs:', pairs);
         return pairs;
     };
 })();
