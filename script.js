@@ -528,20 +528,15 @@ function toggleFeature(featureId) {
                 currentFilteredWords = [...wordList];
                 console.log('O? feature disabled, resetting word list to', currentFilteredWords.length, 'words');
             } else {
-                // If O? is enabled and we haven't answered consonant question yet
-                if (hasAdjacentConsonants === null) {
-                    console.log('O? enabled, showing O? feature');
-                    document.getElementById('oFeature').classList.remove('completed');
-                    // Reset any features that come after O?
-                    document.getElementById('curvedFeature').classList.remove('completed');
-                    document.getElementById('position1Feature').classList.remove('completed');
-                    document.getElementById('vowelFeature').classList.remove('completed');
-                    document.getElementById('lexiconFeature').classList.remove('completed');
-                    document.getElementById('shapeFeature').classList.remove('completed');
-                    // Reset the word list
-                    currentFilteredWords = [...wordList];
-                    displayResults(currentFilteredWords);
-                }
+                // If O? is enabled, reset the workflow
+                console.log('O? enabled, resetting workflow');
+                // Reset all feature states
+                resetFeatureStates();
+                // Remove completed class from O?
+                document.getElementById('oFeature').classList.remove('completed');
+                // Reset the word list
+                currentFilteredWords = [...wordList];
+                displayResults(currentFilteredWords);
             }
             break;
         case 'curvedFeature':
@@ -551,19 +546,15 @@ function toggleFeature(featureId) {
                 document.getElementById('curvedFeature').classList.add('completed');
                 console.log('CURVED feature disabled and marked as completed');
             } else {
-                // If CURVED is enabled and we haven't answered consonant question yet
-                if (hasAdjacentConsonants === null) {
-                    console.log('CURVED enabled, showing CURVED feature');
-                    document.getElementById('curvedFeature').classList.remove('completed');
-                    // Reset any features that come after CURVED
-                    document.getElementById('position1Feature').classList.remove('completed');
-                    document.getElementById('vowelFeature').classList.remove('completed');
-                    document.getElementById('lexiconFeature').classList.remove('completed');
-                    document.getElementById('shapeFeature').classList.remove('completed');
-                    // Reset the word list
-                    currentFilteredWords = [...wordList];
-                    displayResults(currentFilteredWords);
-                }
+                // If CURVED is enabled, reset the workflow
+                console.log('CURVED enabled, resetting workflow');
+                // Reset all feature states
+                resetFeatureStates();
+                // Remove completed class from CURVED
+                document.getElementById('curvedFeature').classList.remove('completed');
+                // Reset the word list
+                currentFilteredWords = [...wordList];
+                displayResults(currentFilteredWords);
             }
             break;
         case 'lexiconFeature':
@@ -585,6 +576,36 @@ function toggleFeature(featureId) {
     
     // Update the display
     showNextFeature();
+}
+
+// Add a new function to reset feature states
+function resetFeatureStates() {
+    console.log('Resetting feature states');
+    // Reset the consonant question state
+    hasAdjacentConsonants = null;
+    
+    // Reset all feature completion states
+    const allFeatures = [
+        'oFeature',
+        'curvedFeature',
+        'position1Feature',
+        'vowelFeature',
+        'lexiconFeature',
+        'consonantQuestion',
+        'shapeFeature'
+    ];
+    
+    allFeatures.forEach(featureId => {
+        const feature = document.getElementById(featureId);
+        feature.classList.remove('completed');
+        feature.style.display = 'none';
+    });
+    
+    // Reset other states
+    uniqueVowels = [];
+    currentFilteredWordsForVowels = [];
+    originalFilteredWords = [];
+    currentVowelIndex = 0;
 }
 
 // Function to initialize the app
