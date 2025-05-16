@@ -514,7 +514,15 @@ function toggleMode() {
 
 // Function to toggle feature mode
 function toggleFeature(featureId) {
-    const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
+    const toggleId = featureId.replace('Feature', 'Toggle');
+    const toggle = document.getElementById(toggleId);
+    
+    // Skip if toggle element doesn't exist
+    if (!toggle) {
+        console.log(`Toggle element not found: ${toggleId}`);
+        return;
+    }
+    
     const isEnabled = toggle.checked;
     console.log(`Toggling ${featureId}: ${isEnabled ? 'ON' : 'OFF'}`);
     
