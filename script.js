@@ -517,7 +517,7 @@ function toggleMode() {
 
 // Function to toggle feature mode
 function toggleFeature(featureId) {
-    // Convert featureId to toggleId (e.g., 'oFeature' -> 'oToggle')
+    // Convert featureId to toggleId
     const toggleId = featureId === 'consonantQuestion' ? 'togetherToggle' : 
                     featureId === 'position1Feature' ? 'wordToggle' :
                     featureId.replace('Feature', 'Toggle');
@@ -617,12 +617,55 @@ function initializeApp() {
     isVowelMode = true;
     isShapeMode = true;
     
-    // Reset the workflow
-    resetWorkflow();
+    // Reset all features
+    const allFeatures = [
+        'oFeature',
+        'curvedFeature',
+        'position1Feature',
+        'vowelFeature',
+        'lexiconFeature',
+        'consonantQuestion',
+        'shapeFeature'
+    ];
+    
+    // Reset all features and mark disabled ones as completed
+    allFeatures.forEach(featureId => {
+        const feature = document.getElementById(featureId);
+        feature.classList.remove('completed');
+        feature.style.display = 'none';
+        
+        // Get the corresponding toggle
+        const toggleId = featureId === 'consonantQuestion' ? 'togetherToggle' : 
+                        featureId === 'position1Feature' ? 'wordToggle' :
+                        featureId.replace('Feature', 'Toggle');
+        const toggle = document.getElementById(toggleId);
+        
+        // If the feature is disabled, mark it as completed
+        if (!toggle.checked) {
+            feature.classList.add('completed');
+            console.log(`${featureId} marked as completed (disabled)`);
+        }
+    });
+    
+    // Reset all state variables
+    hasAdjacentConsonants = null;
+    uniqueVowels = [];
+    currentFilteredWordsForVowels = [];
+    originalFilteredWords = [];
+    currentVowelIndex = 0;
+    
+    // Reset the word list
+    currentFilteredWords = [...wordList];
+    displayResults(currentFilteredWords);
+    
+    // Show the first active feature
+    console.log('Showing first active feature...');
+    showNextFeature();
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded');
     await loadWordList();
     
     // Initialize the app
