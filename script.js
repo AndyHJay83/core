@@ -374,6 +374,8 @@ function showNextFeature() {
     console.log('Showing next feature...');
     // First hide all features
     const allFeatures = [
+        'oFeature',
+        'curvedFeature',
         'position1Feature',
         'vowelFeature',
         'lexiconFeature',
@@ -386,7 +388,15 @@ function showNextFeature() {
     });
     
     // Then show the appropriate feature based on the current state
-    if (hasAdjacentConsonants === null) {
+    if (!document.getElementById('oFeature').classList.contains('completed')) {
+        console.log('Showing O? feature');
+        document.getElementById('oFeature').style.display = 'block';
+    }
+    else if (!document.getElementById('curvedFeature').classList.contains('completed')) {
+        console.log('Showing CURVED feature');
+        document.getElementById('curvedFeature').style.display = 'block';
+    }
+    else if (hasAdjacentConsonants === null) {
         console.log('Showing consonant question');
         document.getElementById('consonantQuestion').style.display = 'block';
     }
@@ -474,9 +484,6 @@ function resetApp() {
         feature.style.display = 'none';
         feature.classList.remove('completed');
     });
-    
-    // Mark O? feature as completed by default
-    document.getElementById('oFeature').classList.add('completed');
     
     updateWordCount(totalWords);
     currentFilteredWords = [];
@@ -809,7 +816,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update the display immediately
         displayResults(currentFilteredWords);
         document.getElementById('oFeature').classList.add('completed');
-        document.getElementById('oFeature').style.display = 'none';  // Explicitly hide the feature
         showNextFeature();
     });
 
@@ -835,14 +841,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update the display immediately
         displayResults(currentFilteredWords);
         document.getElementById('oFeature').classList.add('completed');
-        document.getElementById('oFeature').style.display = 'none';  // Explicitly hide the feature
         showNextFeature();
     });
 
     document.getElementById('oSkipBtn').addEventListener('click', () => {
         console.log('O? SKIP selected');
         document.getElementById('oFeature').classList.add('completed');
-        document.getElementById('oFeature').style.display = 'none';  // Explicitly hide the feature
         showNextFeature();
     });
 
