@@ -627,15 +627,21 @@ function showNextFeature() {
                             });
                             
                             // Check if the word has at least the same count of each consonant from the input
+                            let hasRequiredConsonants = true;
                             for (const [consonant, count] of Object.entries(inputConsonantCounts)) {
-                                if (!(consonant in wordConsonantCounts) || wordConsonantCounts[consonant] < count) {
-                                    console.log('Word has too few', consonant + 's:', wordLower, 'has', wordConsonantCounts[consonant] || 0, 'expected at least', count);
-                                    return false;
+                                const wordCount = wordConsonantCounts[consonant] || 0;
+                                if (wordCount < count) {
+                                    console.log('Word has too few', consonant + 's:', wordLower, 'has', wordCount, 'expected at least', count);
+                                    hasRequiredConsonants = false;
+                                    break;
                                 }
                             }
                             
-                            console.log('Found word with matching consonant counts:', wordLower, wordConsonantCounts);
-                            return true;
+                            if (hasRequiredConsonants) {
+                                console.log('Found word with required consonants:', wordLower, wordConsonantCounts);
+                                return true;
+                            }
+                            return false;
                         });
                     }
                     
