@@ -379,6 +379,8 @@ function showNextFeature() {
     console.log('Current mode states:', {
         isOMode,
         isCurvedMode,
+        isTogetherMode,
+        isWordMode,
         isVowelMode,
         isLexiconMode,
         isShapeMode
@@ -408,11 +410,11 @@ function showNextFeature() {
         console.log('Showing CURVED feature');
         document.getElementById('curvedFeature').style.display = 'block';
     }
-    else if (hasAdjacentConsonants === null) {
-        console.log('Showing consonant question');
+    else if (isTogetherMode && hasAdjacentConsonants === null) {
+        console.log('Showing TOGETHER? feature');
         document.getElementById('consonantQuestion').style.display = 'block';
     }
-    else if (!document.getElementById('position1Feature').classList.contains('completed')) {
+    else if (isWordMode && !document.getElementById('position1Feature').classList.contains('completed')) {
         console.log('Showing WORD feature');
         document.getElementById('position1Feature').style.display = 'block';
     }
@@ -424,7 +426,6 @@ function showNextFeature() {
         // Initialize vowel processing
         if (uniqueVowels.length === 0) {
             console.log('Initializing vowels from current word list');
-            // Get unique vowels from current word list
             const vowels = new Set(['a', 'e', 'i', 'o', 'u']);
             uniqueVowels = Array.from(new Set(
                 currentFilteredWords.join('').toLowerCase().split('')
@@ -514,58 +515,25 @@ function toggleMode() {
     resetApp();
 }
 
-// Function to toggle feature
+// Function to toggle feature mode
 function toggleFeature(featureId) {
     const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
     const isEnabled = toggle.checked;
     console.log(`Toggling ${featureId}: ${isEnabled ? 'ON' : 'OFF'}`);
     
+    // Update the mode flag for the feature
     switch(featureId) {
         case 'oFeature':
             isOMode = isEnabled;
-            if (!isEnabled) {
-                document.getElementById('oFeature').classList.add('completed');
-                currentFilteredWords = [...wordList];
-            } else {
-                resetFeatureStates();
-                document.getElementById('oFeature').classList.remove('completed');
-                currentFilteredWords = [...wordList];
-                displayResults(currentFilteredWords);
-            }
             break;
         case 'curvedFeature':
             isCurvedMode = isEnabled;
-            if (!isEnabled) {
-                document.getElementById('curvedFeature').classList.add('completed');
-            } else {
-                resetFeatureStates();
-                document.getElementById('curvedFeature').classList.remove('completed');
-                currentFilteredWords = [...wordList];
-                displayResults(currentFilteredWords);
-            }
             break;
         case 'consonantQuestion':
             isTogetherMode = isEnabled;
-            if (!isEnabled) {
-                document.getElementById('consonantQuestion').classList.add('completed');
-                hasAdjacentConsonants = null;
-            } else {
-                resetFeatureStates();
-                document.getElementById('consonantQuestion').classList.remove('completed');
-                currentFilteredWords = [...wordList];
-                displayResults(currentFilteredWords);
-            }
             break;
         case 'position1Feature':
             isWordMode = isEnabled;
-            if (!isEnabled) {
-                document.getElementById('position1Feature').classList.add('completed');
-            } else {
-                resetFeatureStates();
-                document.getElementById('position1Feature').classList.remove('completed');
-                currentFilteredWords = [...wordList];
-                displayResults(currentFilteredWords);
-            }
             break;
         case 'lexiconFeature':
             isLexiconMode = isEnabled;
@@ -578,23 +546,15 @@ function toggleFeature(featureId) {
             break;
     }
     
-    // If the feature is disabled, mark it as completed
-    if (!isEnabled) {
-        document.getElementById(featureId).classList.add('completed');
-        console.log(`${featureId} marked as completed`);
-    }
-    
-    // Update the display
-    showNextFeature();
+    // Reset the workflow
+    resetWorkflow();
 }
 
-// Add a new function to reset feature states
-function resetFeatureStates() {
-    console.log('Resetting feature states');
-    // Reset the consonant question state
-    hasAdjacentConsonants = null;
+// New function to reset the workflow
+function resetWorkflow() {
+    console.log('Resetting workflow...');
     
-    // Reset all feature completion states
+    // Reset all feature states
     const allFeatures = [
         'oFeature',
         'curvedFeature',
@@ -605,17 +565,36 @@ function resetFeatureStates() {
         'shapeFeature'
     ];
     
+    // Reset all features and mark disabled ones as completed
     allFeatures.forEach(featureId => {
         const feature = document.getElementById(featureId);
         feature.classList.remove('completed');
         feature.style.display = 'none';
+        
+        // Get the corresponding toggle
+        const toggleId = featureId.replace('Feature', 'Toggle');
+        const toggle = document.getElementById(toggleId);
+        
+        // If the feature is disabled, mark it as completed
+        if (!toggle.checked) {
+            feature.classList.add('completed');
+            console.log(`${featureId} marked as completed (disabled)`);
+        }
     });
     
-    // Reset other states
+    // Reset all state variables
+    hasAdjacentConsonants = null;
     uniqueVowels = [];
     currentFilteredWordsForVowels = [];
     originalFilteredWords = [];
     currentVowelIndex = 0;
+    
+    // Reset the word list
+    currentFilteredWords = [...wordList];
+    displayResults(currentFilteredWords);
+    
+    // Show the first active feature
+    showNextFeature();
 }
 
 // Function to initialize the app
@@ -625,40 +604,14 @@ function initializeApp() {
     // Set initial mode flags
     isOMode = false;
     isCurvedMode = false;
+    isTogetherMode = true;
+    isWordMode = true;
     isLexiconMode = true;
     isVowelMode = true;
     isShapeMode = true;
     
-    // Reset all features
-    const allFeatures = [
-        'oFeature',
-        'curvedFeature',
-        'position1Feature',
-        'vowelFeature',
-        'lexiconFeature',
-        'consonantQuestion',
-        'shapeFeature'
-    ];
-    
-    allFeatures.forEach(featureId => {
-        const feature = document.getElementById(featureId);
-        feature.style.display = 'none';
-        feature.classList.remove('completed');
-    });
-    
-    // Mark OFF features as completed and hidden
-    document.getElementById('oFeature').classList.add('completed');
-    document.getElementById('oFeature').style.display = 'none';
-    document.getElementById('curvedFeature').classList.add('completed');
-    document.getElementById('curvedFeature').style.display = 'none';
-    
-    // Reset other states
-    hasAdjacentConsonants = null;
-    currentFilteredWords = [...wordList];
-    
-    // Show the consonant question first
-    console.log('Showing consonant question...');
-    document.getElementById('consonantQuestion').style.display = 'block';
+    // Reset the workflow
+    resetWorkflow();
 }
 
 // Event Listeners
