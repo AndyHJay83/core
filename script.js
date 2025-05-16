@@ -404,24 +404,157 @@ function showNextFeature() {
     // Then show the appropriate feature based on the current state
     if (isOMode && !document.getElementById('oFeature').classList.contains('completed')) {
         console.log('Showing O? feature');
-        document.getElementById('oFeature').style.display = 'block';
+        const oFeature = document.getElementById('oFeature');
+        oFeature.style.display = 'block';
+        
+        // Set up O? feature buttons
+        const oYesBtn = document.getElementById('oYesBtn');
+        const oNoBtn = document.getElementById('oNoBtn');
+        const oSkipBtn = document.getElementById('oSkipBtn');
+        
+        if (oYesBtn) {
+            oYesBtn.onclick = () => {
+                console.log('O? YES selected');
+                hasO = true;
+                const filteredWords = currentFilteredWords.filter(word => word.toLowerCase().includes('o'));
+                currentFilteredWords = filteredWords;
+                displayResults(currentFilteredWords);
+                oFeature.classList.add('completed');
+                showNextFeature();
+            };
+        }
+        
+        if (oNoBtn) {
+            oNoBtn.onclick = () => {
+                console.log('O? NO selected');
+                hasO = false;
+                const filteredWords = currentFilteredWords.filter(word => !word.toLowerCase().includes('o'));
+                currentFilteredWords = filteredWords;
+                displayResults(currentFilteredWords);
+                oFeature.classList.add('completed');
+                showNextFeature();
+            };
+        }
+        
+        if (oSkipBtn) {
+            oSkipBtn.onclick = () => {
+                console.log('O? SKIP selected');
+                oFeature.classList.add('completed');
+                showNextFeature();
+            };
+        }
     }
     else if (isCurvedMode && !document.getElementById('curvedFeature').classList.contains('completed')) {
         console.log('Showing CURVED feature');
-        document.getElementById('curvedFeature').style.display = 'block';
+        const curvedFeature = document.getElementById('curvedFeature');
+        curvedFeature.style.display = 'block';
+        
+        // Set up CURVED feature buttons
+        const curvedButtons = document.querySelectorAll('.curved-btn');
+        curvedButtons.forEach(button => {
+            button.onclick = () => {
+                const letter = button.textContent;
+                console.log('CURVED letter selected:', letter);
+                const filteredWords = currentFilteredWords.filter(word => word.toLowerCase().includes(letter.toLowerCase()));
+                currentFilteredWords = filteredWords;
+                displayResults(currentFilteredWords);
+                curvedFeature.classList.add('completed');
+                showNextFeature();
+            };
+        });
+        
+        const curvedSkipBtn = document.getElementById('curvedSkipBtn');
+        if (curvedSkipBtn) {
+            curvedSkipBtn.onclick = () => {
+                console.log('CURVED SKIP selected');
+                curvedFeature.classList.add('completed');
+                showNextFeature();
+            };
+        }
     }
     else if (isTogetherMode && hasAdjacentConsonants === null) {
         console.log('Showing TOGETHER? feature');
-        document.getElementById('consonantQuestion').style.display = 'block';
+        const consonantQuestion = document.getElementById('consonantQuestion');
+        consonantQuestion.style.display = 'block';
+        
+        // Set up Consonant question buttons
+        const consonantYesBtn = document.getElementById('consonantYesBtn');
+        const consonantNoBtn = document.getElementById('consonantNoBtn');
+        
+        if (consonantYesBtn) {
+            consonantYesBtn.onclick = () => {
+                console.log('Consonants YES selected');
+                hasAdjacentConsonants = true;
+                const filteredWords = currentFilteredWords.filter(word => {
+                    for (let i = 0; i < word.length - 1; i++) {
+                        if (isConsonant(word[i]) && isConsonant(word[i + 1])) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+                currentFilteredWords = filteredWords;
+                displayResults(currentFilteredWords);
+                showNextFeature();
+            };
+        }
+        
+        if (consonantNoBtn) {
+            consonantNoBtn.onclick = () => {
+                console.log('Consonants NO selected');
+                hasAdjacentConsonants = false;
+                const filteredWords = currentFilteredWords.filter(word => {
+                    for (let i = 0; i < word.length - 1; i++) {
+                        if (isConsonant(word[i]) && isConsonant(word[i + 1])) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+                currentFilteredWords = filteredWords;
+                displayResults(currentFilteredWords);
+                showNextFeature();
+            };
+        }
     }
     else if (isWordMode && !document.getElementById('position1Feature').classList.contains('completed')) {
         console.log('Showing WORD feature');
-        document.getElementById('position1Feature').style.display = 'block';
+        const position1Feature = document.getElementById('position1Feature');
+        position1Feature.style.display = 'block';
+        
+        // Set up WORD feature button
+        const position1Button = document.getElementById('position1Button');
+        if (position1Button) {
+            position1Button.onclick = () => {
+                const input = document.getElementById('position1Input');
+                const word = input.value.trim().toUpperCase();
+                if (word) {
+                    console.log('WORD submitted:', word);
+                    const consonantPairs = getConsonantPairs(word);
+                    const filteredWords = currentFilteredWords.filter(w => {
+                        return consonantPairs.some(pair => w.includes(pair));
+                    });
+                    currentFilteredWords = filteredWords;
+                    displayResults(currentFilteredWords);
+                    position1Feature.classList.add('completed');
+                    showNextFeature();
+                }
+            };
+        }
     }
     else if (isVowelMode && !document.getElementById('vowelFeature').classList.contains('completed')) {
         console.log('Showing VOWEL feature');
         const vowelFeature = document.getElementById('vowelFeature');
         vowelFeature.style.display = 'block';
+        
+        // Set up VOWEL feature buttons
+        const vowelButtons = document.querySelectorAll('.vowel-btn');
+        vowelButtons.forEach(button => {
+            button.onclick = () => {
+                const isYes = button.classList.contains('yes-btn');
+                handleVowelSelection(isYes);
+            };
+        });
         
         // Initialize vowel processing
         if (uniqueVowels.length === 0) {
@@ -450,7 +583,44 @@ function showNextFeature() {
     }
     else if (isLexiconMode && !document.getElementById('lexiconFeature').classList.contains('completed')) {
         console.log('Showing LEXICON feature');
-        document.getElementById('lexiconFeature').style.display = 'block';
+        const lexiconFeature = document.getElementById('lexiconFeature');
+        lexiconFeature.style.display = 'block';
+        
+        // Set up LEXICON feature buttons
+        const lexiconFilterButton = document.getElementById('lexiconFilterButton');
+        const lexiconSkipButton = document.getElementById('lexiconSkipButton');
+        
+        if (lexiconFilterButton) {
+            lexiconFilterButton.onclick = () => {
+                const input = document.getElementById('lexiconPositions');
+                const positions = input.value.trim();
+                if (positions) {
+                    console.log('LEXICON positions submitted:', positions);
+                    const positionArray = positions.split('').map(p => parseInt(p) - 1);
+                    const filteredWords = currentFilteredWords.filter(word => {
+                        return positionArray.every(pos => {
+                            if (pos >= 0 && pos < word.length) {
+                                const letter = word[pos].toLowerCase();
+                                return ['b', 'c', 'd', 'g', 'j', 'o', 'p', 'q', 'r', 's', 'u'].includes(letter);
+                            }
+                            return false;
+                        });
+                    });
+                    currentFilteredWords = filteredWords;
+                    displayResults(currentFilteredWords);
+                    lexiconFeature.classList.add('completed');
+                    showNextFeature();
+                }
+            };
+        }
+        
+        if (lexiconSkipButton) {
+            lexiconSkipButton.onclick = () => {
+                console.log('LEXICON SKIP selected');
+                lexiconFeature.classList.add('completed');
+                showNextFeature();
+            };
+        }
     }
     else if (isShapeMode && !document.getElementById('shapeFeature').classList.contains('completed')) {
         console.log('Showing SHAPE feature');
