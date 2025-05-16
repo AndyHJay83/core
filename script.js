@@ -388,15 +388,7 @@ function showNextFeature() {
     });
     
     // Then show the appropriate feature based on the current state
-    if (!document.getElementById('oFeature').classList.contains('completed')) {
-        console.log('Showing O? feature');
-        document.getElementById('oFeature').style.display = 'block';
-    }
-    else if (!document.getElementById('curvedFeature').classList.contains('completed')) {
-        console.log('Showing CURVED feature');
-        document.getElementById('curvedFeature').style.display = 'block';
-    }
-    else if (hasAdjacentConsonants === null) {
+    if (hasAdjacentConsonants === null) {
         console.log('Showing consonant question');
         document.getElementById('consonantQuestion').style.display = 'block';
     }
