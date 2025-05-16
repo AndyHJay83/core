@@ -21,15 +21,17 @@ const getConsonantPairs = (() => {
             }
         }
         
-        // Then create pairs of consonants
+        // Create all possible pairs of consonants
         const pairs = [];
-        for (let i = 0; i < consonants.length - 1; i++) {
-            pairs.push(consonants[i] + consonants[i + 1]);
+        for (let i = 0; i < consonants.length; i++) {
+            for (let j = i + 1; j < consonants.length; j++) {
+                pairs.push(consonants[i] + consonants[j]);
+            }
         }
         
         console.log('Word:', wordLower);
         console.log('Consonants found:', consonants);
-        console.log('Consonant pairs:', pairs);
+        console.log('All possible consonant pairs:', pairs);
         return pairs;
     };
 })();
@@ -576,7 +578,12 @@ function showNextFeature() {
                     console.log('WORD submitted:', word);
                     const consonantPairs = getConsonantPairs(word);
                     const filteredWords = currentFilteredWords.filter(w => {
-                        return consonantPairs.some(pair => w.includes(pair));
+                        const wordLower = w.toLowerCase();
+                        // Check if the word contains any of the consonant pairs
+                        return consonantPairs.some(pair => {
+                            // Check if both consonants from the pair appear in the word
+                            return pair.split('').every(consonant => wordLower.includes(consonant));
+                        });
                     });
                     currentFilteredWords = filteredWords;
                     displayResults(currentFilteredWords);
