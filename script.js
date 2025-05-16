@@ -568,19 +568,27 @@ function showNextFeature() {
                 if (word) {
                     console.log('WORD submitted:', word);
                     const consonantPairs = getConsonantPairs(word);
+                    console.log('Filtering words with pairs:', consonantPairs);
                     const filteredWords = currentFilteredWords.filter(w => {
                         const wordLower = w.toLowerCase();
+                        console.log('Checking word:', wordLower);
                         // Check if the word contains any of the consonant pairs in adjacent positions
-                        return consonantPairs.some(pair => {
+                        const hasPair = consonantPairs.some(pair => {
                             // Check if both consonants from the pair appear adjacent in the word
                             for (let i = 0; i < wordLower.length - 1; i++) {
                                 if (wordLower[i] === pair[0] && wordLower[i + 1] === pair[1]) {
+                                    console.log('Found pair', pair, 'in word', wordLower);
                                     return true;
                                 }
                             }
                             return false;
                         });
+                        if (hasPair) {
+                            console.log('Word', wordLower, 'matches a pair');
+                        }
+                        return hasPair;
                     });
+                    console.log('Filtered words count:', filteredWords.length);
                     currentFilteredWords = filteredWords;
                     displayResults(currentFilteredWords);
                     position1Feature.classList.add('completed');
