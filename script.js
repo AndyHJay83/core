@@ -765,9 +765,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // Get vowels from the input word in left-to-right order
                 const vowels = new Set(['a', 'e', 'i', 'o', 'u']);
-                uniqueVowels = input.toLowerCase().split('')
-                    .filter(char => vowels.has(char));
-                console.log('Vowels from input word in order:', uniqueVowels);
+                const inputLower = input.toLowerCase();
+                uniqueVowels = [];
+                
+                // Collect vowels in order of appearance
+                for (let i = 0; i < inputLower.length; i++) {
+                    const char = inputLower[i];
+                    if (vowels.has(char)) {
+                        uniqueVowels.push(char);
+                    }
+                }
+                
+                console.log('Input word:', input);
+                console.log('Vowels collected in order:', uniqueVowels);
                 
                 // Initialize vowel processing with the filtered words
                 currentFilteredWordsForVowels = [...filteredWords];
@@ -783,7 +793,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Set up the vowel display
                     const vowelLetter = vowelFeature.querySelector('.vowel-letter');
                     if (uniqueVowels.length > 0) {
-                        console.log('Setting vowel letter to:', uniqueVowels[0].toUpperCase());
+                        console.log('Setting first vowel letter to:', uniqueVowels[0].toUpperCase());
                         vowelLetter.textContent = uniqueVowels[0].toUpperCase();
                         vowelLetter.style.display = 'inline-block';
                     }
