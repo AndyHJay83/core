@@ -351,7 +351,6 @@ function handleVowelSelection(includeVowel) {
     
     // Remove only the current vowel from uniqueVowels array
     uniqueVowels = uniqueVowels.filter((v, index) => index !== currentVowelIndex);
-    currentVowelIndex = 0; // Reset index since we're removing the current vowel
     
     // Update the display with the filtered words
     displayResults(currentFilteredWordsForVowels);
@@ -434,9 +433,8 @@ function showNextFeature() {
         // Set up the vowel display
         const vowelLetter = vowelFeature.querySelector('.vowel-letter');
         if (uniqueVowels.length > 0) {
-            const leastCommonVowel = findLeastCommonVowel(originalFilteredWords, uniqueVowels);
-            console.log('Setting vowel letter to:', leastCommonVowel.toUpperCase());
-            vowelLetter.textContent = leastCommonVowel.toUpperCase();
+            console.log('Setting vowel letter to:', uniqueVowels[0].toUpperCase());
+            vowelLetter.textContent = uniqueVowels[0].toUpperCase();
             vowelLetter.style.display = 'inline-block';
         } else {
             console.log('No vowels found in current word list');
