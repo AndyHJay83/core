@@ -626,48 +626,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Found consonants:', consonants);
             
             if (consonants.length >= 2) {
-                let filteredWords;
-                
-                if (hasAdjacentConsonants) {
-                    // Original logic: look for adjacent consonant pairs
-                    const consonantPairs = [];
-                    for (let i = 0; i < consonants.length; i++) {
-                        for (let j = i + 1; j < consonants.length; j++) {
-                            consonantPairs.push([consonants[i], consonants[j]]);
+                let filteredWords = currentFilteredWords.filter(word => {
+                    const wordLower = word.toLowerCase();
+                    const wordLength = wordLower.length;
+                    
+                    // Determine middle section length (5 for odd, 6 for even)
+                    const middleLength = wordLength % 2 === 0 ? 6 : 5;
+                    const startPos = Math.floor((wordLength - middleLength) / 2);
+                    const middleSection = wordLower.slice(startPos, startPos + middleLength);
+                    
+                    console.log(`Word "${wordLower}": middle section "${middleSection}"`);
+                    
+                    // Check if all consonants from input are in the middle section
+                    for (const consonant of consonants) {
+                        if (!middleSection.includes(consonant)) {
+                            console.log(`Word "${wordLower}" rejected: missing consonant "${consonant}" in middle section`);
+                            return false;
                         }
                     }
-                    console.log('Looking for these consonant pairs:', consonantPairs);
                     
-                    filteredWords = currentFilteredWords.filter(word => {
-                        const wordLower = word.toLowerCase();
-                        for (const [con1, con2] of consonantPairs) {
-                            const pair1 = con1 + con2;
-                            const pair2 = con2 + con1;
-                            if (wordLower.includes(pair1) || wordLower.includes(pair2)) {
-                                console.log(`Word "${wordLower}" matches with pair "${pair1}" or "${pair2}"`);
-                                return true;
-                            }
-                        }
-                        return false;
-                    });
-                } else {
-                    // New logic: look for any two consonants anywhere in the word
-                    filteredWords = currentFilteredWords.filter(word => {
-                        const wordLower = word.toLowerCase();
-                        let foundCount = 0;
-                        for (const consonant of consonants) {
-                            if (wordLower.includes(consonant)) {
-                                foundCount++;
-                                if (foundCount >= 2) {
-                                    console.log(`Word "${wordLower}" contains at least two consonants from input`);
-                                    return true;
-                                }
-                            }
-                        }
-                        console.log(`Word "${wordLower}" does not contain enough consonants from input`);
-                        return false;
-                    });
-                }
+                    console.log(`Word "${wordLower}" accepted: all consonants found in middle section`);
+                    return true;
+                });
                 
                 console.log('Filtered words count:', filteredWords.length);
                 
