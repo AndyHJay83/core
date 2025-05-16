@@ -377,8 +377,8 @@ function showNextFeature() {
         'consonantQuestion',
         'position1Feature',
         'vowelFeature',
-        'shapeFeature',
         'lexiconFeature',
+        'shapeFeature',
         'oFeature',
         'curvedFeature'
     ];
@@ -427,17 +427,17 @@ function showNextFeature() {
             vowelLetter.style.display = 'none';
         }
     }
-    else if (isShapeMode && !document.getElementById('shapeFeature').classList.contains('completed')) {
-        console.log('Showing SHAPE feature');
-        document.getElementById('shapeFeature').style.display = 'block';
-        updateShapeDisplay(currentFilteredWords);
-    }
     else if (isLexiconMode && !document.getElementById('lexiconFeature').classList.contains('completed')) {
         console.log('Showing LEXICON feature');
         const lexiconFeature = document.getElementById('lexiconFeature');
         lexiconFeature.style.display = 'block';
         // Clear any previous input
         document.getElementById('lexiconPositions').value = '';
+    }
+    else if (isShapeMode && !document.getElementById('shapeFeature').classList.contains('completed')) {
+        console.log('Showing SHAPE feature');
+        document.getElementById('shapeFeature').style.display = 'block';
+        updateShapeDisplay(currentFilteredWords);
     }
     else if (!document.getElementById('oFeature').classList.contains('completed')) {
         console.log('Showing O? feature');
@@ -492,6 +492,11 @@ function resetApp() {
     // Mark O? and CURVED features as completed by default
     document.getElementById('oFeature').classList.add('completed');
     document.getElementById('curvedFeature').classList.add('completed');
+    
+    // Ensure LEXICON feature is not completed if enabled
+    if (isLexiconMode) {
+        document.getElementById('lexiconFeature').classList.remove('completed');
+    }
     
     updateWordCount(totalWords);
     currentFilteredWords = [];
