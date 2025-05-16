@@ -567,18 +567,15 @@ function showNextFeature() {
                 const word = input.value.trim().toUpperCase();
                 if (word) {
                     console.log('WORD submitted:', word);
-                    console.log('Current wordlist size:', currentFilteredWords.length);
                     
-                    // Ensure we're working with the full word list
-                    if (currentFilteredWords.length === 0) {
-                        console.log('Resetting to full word list');
-                        currentFilteredWords = [...wordList];
-                    }
+                    // Always use the full word list for WORD feature
+                    const wordsToFilter = [...wordList];
+                    console.log('Using full word list size:', wordsToFilter.length);
                     
                     const consonantPairs = getConsonantPairs(word);
                     console.log('Filtering words with pairs:', consonantPairs);
                     
-                    const filteredWords = currentFilteredWords.filter(w => {
+                    const filteredWords = wordsToFilter.filter(w => {
                         const wordLower = w.toLowerCase();
                         // Check if the word contains any of the consonant pairs in adjacent positions
                         return consonantPairs.some(pair => {
