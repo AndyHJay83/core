@@ -386,6 +386,7 @@ function showNextFeature() {
     });
     
     // Then show the appropriate feature based on the current state
+    // Start directly with consonant question
     if (hasAdjacentConsonants === null) {
         console.log('Showing consonant question');
         document.getElementById('consonantQuestion').style.display = 'block';
