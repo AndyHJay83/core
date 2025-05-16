@@ -761,13 +761,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('position1Feature').style.display = 'none';
                 displayResults(filteredWords);
                 
-                // Get vowels from the input word for vowel filtering
+                // Get vowels from the input word in left-to-right order
                 const vowels = new Set(['a', 'e', 'i', 'o', 'u']);
-                uniqueVowels = Array.from(new Set(
-                    input.toLowerCase().split('')
-                        .filter(char => vowels.has(char))
-                ));
-                console.log('Vowels from input word:', uniqueVowels);
+                uniqueVowels = input.toLowerCase().split('')
+                    .filter(char => vowels.has(char));
+                console.log('Vowels from input word in order:', uniqueVowels);
                 
                 // Initialize vowel processing with the filtered words
                 currentFilteredWordsForVowels = [...filteredWords];
@@ -783,9 +781,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Set up the vowel display
                     const vowelLetter = vowelFeature.querySelector('.vowel-letter');
                     if (uniqueVowels.length > 0) {
-                        const leastCommonVowel = findLeastCommonVowel(originalFilteredWords, uniqueVowels);
-                        console.log('Setting vowel letter to:', leastCommonVowel.toUpperCase());
-                        vowelLetter.textContent = leastCommonVowel.toUpperCase();
+                        console.log('Setting vowel letter to:', uniqueVowels[0].toUpperCase());
+                        vowelLetter.textContent = uniqueVowels[0].toUpperCase();
                         vowelLetter.style.display = 'inline-block';
                     }
                 } else {
