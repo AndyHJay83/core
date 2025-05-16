@@ -398,7 +398,15 @@ function showNextFeature() {
     ];
     
     allFeatures.forEach(featureId => {
-        document.getElementById(featureId).style.display = 'none';
+        const feature = document.getElementById(featureId);
+        if (feature) {
+            feature.style.display = 'none';
+            // Remove all click event listeners
+            const buttons = feature.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.replaceWith(button.cloneNode(true));
+            });
+        }
     });
     
     // Then show the appropriate feature based on the current state
@@ -413,7 +421,7 @@ function showNextFeature() {
         const oSkipBtn = document.getElementById('oSkipBtn');
         
         if (oYesBtn) {
-            oYesBtn.onclick = () => {
+            oYesBtn.addEventListener('click', function handleYes() {
                 console.log('O? YES selected');
                 hasO = true;
                 const filteredWords = currentFilteredWords.filter(word => word.toLowerCase().includes('o'));
@@ -421,11 +429,11 @@ function showNextFeature() {
                 displayResults(currentFilteredWords);
                 oFeature.classList.add('completed');
                 showNextFeature();
-            };
+            });
         }
         
         if (oNoBtn) {
-            oNoBtn.onclick = () => {
+            oNoBtn.addEventListener('click', function handleNo() {
                 console.log('O? NO selected');
                 hasO = false;
                 const filteredWords = currentFilteredWords.filter(word => !word.toLowerCase().includes('o'));
@@ -433,15 +441,15 @@ function showNextFeature() {
                 displayResults(currentFilteredWords);
                 oFeature.classList.add('completed');
                 showNextFeature();
-            };
+            });
         }
         
         if (oSkipBtn) {
-            oSkipBtn.onclick = () => {
+            oSkipBtn.addEventListener('click', function handleSkip() {
                 console.log('O? SKIP selected');
                 oFeature.classList.add('completed');
                 showNextFeature();
-            };
+            });
         }
     }
     else if (isCurvedMode && !document.getElementById('curvedFeature').classList.contains('completed')) {
@@ -452,7 +460,7 @@ function showNextFeature() {
         // Set up CURVED feature buttons
         const curvedButtons = document.querySelectorAll('.curved-btn');
         curvedButtons.forEach(button => {
-            button.onclick = () => {
+            button.addEventListener('click', function handleCurved() {
                 const letter = button.textContent;
                 console.log('CURVED letter selected:', letter);
                 const filteredWords = currentFilteredWords.filter(word => word.toLowerCase().includes(letter.toLowerCase()));
@@ -460,16 +468,16 @@ function showNextFeature() {
                 displayResults(currentFilteredWords);
                 curvedFeature.classList.add('completed');
                 showNextFeature();
-            };
+            });
         });
         
         const curvedSkipBtn = document.getElementById('curvedSkipBtn');
         if (curvedSkipBtn) {
-            curvedSkipBtn.onclick = () => {
+            curvedSkipBtn.addEventListener('click', function handleSkip() {
                 console.log('CURVED SKIP selected');
                 curvedFeature.classList.add('completed');
                 showNextFeature();
-            };
+            });
         }
     }
     else if (isTogetherMode && hasAdjacentConsonants === null) {
@@ -482,7 +490,7 @@ function showNextFeature() {
         const consonantNoBtn = document.getElementById('consonantNoBtn');
         
         if (consonantYesBtn) {
-            consonantYesBtn.onclick = () => {
+            consonantYesBtn.addEventListener('click', function handleYes() {
                 console.log('Consonants YES selected');
                 hasAdjacentConsonants = true;
                 const filteredWords = currentFilteredWords.filter(word => {
@@ -496,11 +504,11 @@ function showNextFeature() {
                 currentFilteredWords = filteredWords;
                 displayResults(currentFilteredWords);
                 showNextFeature();
-            };
+            });
         }
         
         if (consonantNoBtn) {
-            consonantNoBtn.onclick = () => {
+            consonantNoBtn.addEventListener('click', function handleNo() {
                 console.log('Consonants NO selected');
                 hasAdjacentConsonants = false;
                 const filteredWords = currentFilteredWords.filter(word => {
@@ -514,7 +522,7 @@ function showNextFeature() {
                 currentFilteredWords = filteredWords;
                 displayResults(currentFilteredWords);
                 showNextFeature();
-            };
+            });
         }
     }
     else if (isWordMode && !document.getElementById('position1Feature').classList.contains('completed')) {
@@ -525,7 +533,7 @@ function showNextFeature() {
         // Set up WORD feature button
         const position1Button = document.getElementById('position1Button');
         if (position1Button) {
-            position1Button.onclick = () => {
+            position1Button.addEventListener('click', function handleDone() {
                 const input = document.getElementById('position1Input');
                 const word = input.value.trim().toUpperCase();
                 if (word) {
@@ -539,7 +547,7 @@ function showNextFeature() {
                     position1Feature.classList.add('completed');
                     showNextFeature();
                 }
-            };
+            });
         }
     }
     else if (isVowelMode && !document.getElementById('vowelFeature').classList.contains('completed')) {
@@ -550,10 +558,10 @@ function showNextFeature() {
         // Set up VOWEL feature buttons
         const vowelButtons = document.querySelectorAll('.vowel-btn');
         vowelButtons.forEach(button => {
-            button.onclick = () => {
+            button.addEventListener('click', function handleVowel() {
                 const isYes = button.classList.contains('yes-btn');
                 handleVowelSelection(isYes);
-            };
+            });
         });
         
         // Initialize vowel processing
@@ -591,7 +599,7 @@ function showNextFeature() {
         const lexiconSkipButton = document.getElementById('lexiconSkipButton');
         
         if (lexiconFilterButton) {
-            lexiconFilterButton.onclick = () => {
+            lexiconFilterButton.addEventListener('click', function handleFilter() {
                 const input = document.getElementById('lexiconPositions');
                 const positions = input.value.trim();
                 if (positions) {
@@ -611,15 +619,15 @@ function showNextFeature() {
                     lexiconFeature.classList.add('completed');
                     showNextFeature();
                 }
-            };
+            });
         }
         
         if (lexiconSkipButton) {
-            lexiconSkipButton.onclick = () => {
+            lexiconSkipButton.addEventListener('click', function handleSkip() {
                 console.log('LEXICON SKIP selected');
                 lexiconFeature.classList.add('completed');
                 showNextFeature();
-            };
+            });
         }
     }
     else if (isShapeMode && !document.getElementById('shapeFeature').classList.contains('completed')) {
