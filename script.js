@@ -573,6 +573,11 @@ function resetWorkflow() {
     // Reset all features and mark disabled ones as completed
     allFeatures.forEach(featureId => {
         const feature = document.getElementById(featureId);
+        if (!feature) {
+            console.warn(`Feature element not found: ${featureId}`);
+            return;
+        }
+        
         feature.classList.remove('completed');
         feature.style.display = 'none';
         
@@ -582,8 +587,8 @@ function resetWorkflow() {
                         featureId.replace('Feature', 'Toggle');
         const toggle = document.getElementById(toggleId);
         
-        // If the feature is disabled, mark it as completed
-        if (!toggle.checked) {
+        // If the toggle exists and is disabled, mark the feature as completed
+        if (toggle && !toggle.checked) {
             feature.classList.add('completed');
             console.log(`${featureId} marked as completed (disabled)`);
         }
@@ -631,6 +636,11 @@ function initializeApp() {
     // Reset all features and mark disabled ones as completed
     allFeatures.forEach(featureId => {
         const feature = document.getElementById(featureId);
+        if (!feature) {
+            console.warn(`Feature element not found: ${featureId}`);
+            return;
+        }
+        
         feature.classList.remove('completed');
         feature.style.display = 'none';
         
@@ -640,8 +650,8 @@ function initializeApp() {
                         featureId.replace('Feature', 'Toggle');
         const toggle = document.getElementById(toggleId);
         
-        // If the feature is disabled, mark it as completed
-        if (!toggle.checked) {
+        // If the toggle exists and is disabled, mark the feature as completed
+        if (toggle && !toggle.checked) {
             feature.classList.add('completed');
             console.log(`${featureId} marked as completed (disabled)`);
         }
