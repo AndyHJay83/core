@@ -333,6 +333,8 @@ function findLeastCommonVowel(words, vowels) {
 function handleVowelSelection(includeVowel) {
     const currentVowel = uniqueVowels[currentVowelIndex];
     console.log('Handling vowel selection:', currentVowel, 'Include:', includeVowel);
+    console.log('Current vowel index:', currentVowelIndex);
+    console.log('Remaining vowels:', uniqueVowels);
     console.log('Before filtering:', currentFilteredWordsForVowels.length, 'words');
     
     if (includeVowel) {
@@ -347,8 +349,9 @@ function handleVowelSelection(includeVowel) {
     
     console.log('After filtering:', currentFilteredWordsForVowels.length, 'words');
     
-    // Remove the processed vowel from uniqueVowels array
-    uniqueVowels = uniqueVowels.filter(v => v !== currentVowel);
+    // Remove only the current vowel from uniqueVowels array
+    uniqueVowels = uniqueVowels.filter((v, index) => index !== currentVowelIndex);
+    currentVowelIndex = 0; // Reset index since we're removing the current vowel
     
     // Update the display with the filtered words
     displayResults(currentFilteredWordsForVowels);
@@ -357,9 +360,8 @@ function handleVowelSelection(includeVowel) {
     if (uniqueVowels.length > 0) {
         const vowelFeature = document.getElementById('vowelFeature');
         const vowelLetter = vowelFeature.querySelector('.vowel-letter');
-        const leastCommonVowel = findLeastCommonVowel(originalFilteredWords, uniqueVowels);
-        console.log('Setting next vowel letter to:', leastCommonVowel.toUpperCase());
-        vowelLetter.textContent = leastCommonVowel.toUpperCase();
+        console.log('Setting next vowel letter to:', uniqueVowels[0].toUpperCase());
+        vowelLetter.textContent = uniqueVowels[0].toUpperCase();
     } else {
         // No more vowels to process, mark as completed and move to next feature
         document.getElementById('vowelFeature').classList.add('completed');
