@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return false;
                     });
                 } else {
-                    // NO to Consonants Together: look for consonants in middle 5/6 characters
+                    // NO to Consonants Together: look for ANY pair of consonants in middle 5/6 characters
                     filteredWords = currentFilteredWords.filter(word => {
                         const wordLower = word.toLowerCase();
                         const wordLength = wordLower.length;
@@ -669,16 +669,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         console.log(`Word "${wordLower}": middle section "${middleSection}"`);
                         
-                        // Check if ALL consonants from input are in the middle section
-                        for (const consonant of consonants) {
-                            if (!middleSection.includes(consonant)) {
-                                console.log(`Word "${wordLower}" rejected: missing consonant "${consonant}" in middle section`);
-                                return false;
+                        // Create all possible pairs of consonants from the input word
+                        const consonantPairs = [];
+                        for (let i = 0; i < consonants.length; i++) {
+                            for (let j = i + 1; j < consonants.length; j++) {
+                                consonantPairs.push([consonants[i], consonants[j]]);
                             }
                         }
                         
-                        console.log(`Word "${wordLower}" accepted: all consonants found in middle section`);
-                        return true;
+                        // Check if ANY pair of consonants appears in the middle section
+                        for (const [con1, con2] of consonantPairs) {
+                            if (middleSection.includes(con1) && middleSection.includes(con2)) {
+                                console.log(`Word "${wordLower}" accepted: found consonants "${con1}" and "${con2}" in middle section`);
+                                return true;
+                            }
+                        }
+                        
+                        console.log(`Word "${wordLower}" rejected: no consonant pairs found in middle section`);
+                        return false;
                     });
                 }
                 
