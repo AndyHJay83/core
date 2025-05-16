@@ -386,7 +386,6 @@ function showNextFeature() {
     });
     
     // Then show the appropriate feature based on the current state
-    // Start directly with consonant question
     if (hasAdjacentConsonants === null) {
         console.log('Showing consonant question');
         document.getElementById('consonantQuestion').style.display = 'block';
@@ -810,6 +809,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update the display immediately
         displayResults(currentFilteredWords);
         document.getElementById('oFeature').classList.add('completed');
+        document.getElementById('oFeature').style.display = 'none';  // Explicitly hide the feature
         showNextFeature();
     });
 
@@ -835,12 +835,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update the display immediately
         displayResults(currentFilteredWords);
         document.getElementById('oFeature').classList.add('completed');
+        document.getElementById('oFeature').style.display = 'none';  // Explicitly hide the feature
         showNextFeature();
     });
 
     document.getElementById('oSkipBtn').addEventListener('click', () => {
         console.log('O? SKIP selected');
         document.getElementById('oFeature').classList.add('completed');
+        document.getElementById('oFeature').style.display = 'none';  // Explicitly hide the feature
         showNextFeature();
     });
 
