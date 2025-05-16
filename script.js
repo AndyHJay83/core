@@ -568,7 +568,12 @@ function showNextFeature() {
                 if (word) {
                     console.log('WORD submitted:', word);
                     console.log('Current wordlist size:', currentFilteredWords.length);
-                    console.log('First few words in list:', currentFilteredWords.slice(0, 5));
+                    
+                    // Ensure we're working with the full word list
+                    if (currentFilteredWords.length === 0) {
+                        console.log('Resetting to full word list');
+                        currentFilteredWords = [...wordList];
+                    }
                     
                     const consonantPairs = getConsonantPairs(word);
                     console.log('Filtering words with pairs:', consonantPairs);
@@ -591,6 +596,8 @@ function showNextFeature() {
                     console.log('Filtered words count:', filteredWords.length);
                     if (filteredWords.length > 0) {
                         console.log('First few filtered words:', filteredWords.slice(0, 5));
+                    } else {
+                        console.log('No words found with these consonant pairs');
                     }
                     
                     currentFilteredWords = filteredWords;
