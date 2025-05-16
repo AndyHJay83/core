@@ -637,15 +637,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     console.log(`Word "${wordLower}": middle section "${middleSection}"`);
                     
-                    // Check if all consonants from input are in the middle section
+                    // Check if ANY of the consonants from input are in the middle section
+                    let foundInMiddle = false;
                     for (const consonant of consonants) {
-                        if (!middleSection.includes(consonant)) {
-                            console.log(`Word "${wordLower}" rejected: missing consonant "${consonant}" in middle section`);
-                            return false;
+                        if (middleSection.includes(consonant)) {
+                            console.log(`Word "${wordLower}" accepted: found consonant "${consonant}" in middle section`);
+                            foundInMiddle = true;
+                            break;
                         }
                     }
                     
-                    console.log(`Word "${wordLower}" accepted: all consonants found in middle section`);
+                    if (!foundInMiddle) {
+                        console.log(`Word "${wordLower}" rejected: no consonants found in middle section`);
+                        return false;
+                    }
+                    
                     return true;
                 });
                 
