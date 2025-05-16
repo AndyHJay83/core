@@ -600,7 +600,7 @@ function showNextFeature() {
                             });
                         });
                     } else {
-                        // If NO was selected in TOGETHER?, find words with any 2+ consonants in middle positions
+                        // If NO was selected in TOGETHER?, find words with multiple occurrences of the same consonant
                         filteredWords = currentFilteredWords.filter(w => {
                             const wordLower = w.toLowerCase();
                             
@@ -612,17 +612,13 @@ function showNextFeature() {
                                 }
                             }
                             
-                            // Get middle positions (5 or 6 characters)
-                            const middleStart = Math.floor((wordLower.length - 5) / 2);
-                            const middleEnd = middleStart + 5;
-                            const middleChars = wordLower.slice(middleStart, middleEnd);
-                            console.log('Checking middle positions for word:', wordLower, 'middle:', middleChars);
-                            
-                            // Count how many of our consonants appear in the middle
-                            const consonantCount = consonants.filter(c => middleChars.includes(c)).length;
-                            if (consonantCount >= 2) {
-                                console.log('Found word with consonants in middle:', wordLower, 'has', consonantCount, 'consonants');
-                                return true;
+                            // Count occurrences of each consonant from our input word
+                            for (const consonant of consonants) {
+                                const count = (wordLower.match(new RegExp(consonant, 'g')) || []).length;
+                                if (count >= 2) {
+                                    console.log('Found word with multiple consonants:', wordLower, 'has', count, consonant + 's');
+                                    return true;
+                                }
                             }
                             return false;
                         });
