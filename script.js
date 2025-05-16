@@ -502,18 +502,30 @@ function toggleMode() {
     resetApp();
 }
 
-// Function to toggle features
+// Function to toggle feature mode
 function toggleFeature(featureId) {
-    const feature = document.getElementById(featureId);
-    const isEnabled = document.getElementById(featureId + 'Toggle').checked;
+    const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
+    const isEnabled = toggle.checked;
     
-    if (isEnabled) {
-        showNextFeature();
-    } else {
-        feature.style.display = 'none';
-        feature.classList.add('completed');
-        showNextFeature();
+    switch(featureId) {
+        case 'lexiconFeature':
+            isLexiconMode = isEnabled;
+            break;
+        case 'vowelFeature':
+            isVowelMode = isEnabled;
+            break;
+        case 'shapeFeature':
+            isShapeMode = isEnabled;
+            break;
     }
+    
+    // If the feature is disabled, mark it as completed
+    if (!isEnabled) {
+        document.getElementById(featureId).classList.add('completed');
+    }
+    
+    // Update the display
+    showNextFeature();
 }
 
 // Event Listeners
