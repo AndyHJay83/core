@@ -599,8 +599,21 @@ function showNextFeature() {
                             });
                         });
                     } else {
-                        // If NO was selected in TOGETHER?, find words with any 2+ consonants in middle positions
-                        filteredWords = wordsToFilter.filter(w => {
+                        // If NO was selected in TOGETHER?, first filter out any words with adjacent consonants
+                        console.log('Filtering out words with adjacent consonants first');
+                        const noAdjacentConsonants = wordsToFilter.filter(w => {
+                            const wordLower = w.toLowerCase();
+                            for (let i = 0; i < wordLower.length - 1; i++) {
+                                if (isConsonant(wordLower[i]) && isConsonant(wordLower[i + 1])) {
+                                    return false; // Skip words with adjacent consonants
+                                }
+                            }
+                            return true;
+                        });
+                        console.log('Words without adjacent consonants:', noAdjacentConsonants.length);
+                        
+                        // Then find words with any 2+ consonants in middle positions
+                        filteredWords = noAdjacentConsonants.filter(w => {
                             const wordLower = w.toLowerCase();
                             // Get middle positions (5 or 6 characters)
                             const middleStart = Math.floor((wordLower.length - 5) / 2);
