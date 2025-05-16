@@ -522,15 +522,17 @@ function showNextFeature() {
             consonantYesBtn.addEventListener('click', function handleYes() {
                 console.log('Consonants YES selected');
                 hasAdjacentConsonants = true;
-                const filteredWords = currentFilteredWords.filter(word => {
-                    for (let i = 0; i < word.length - 1; i++) {
-                        if (isConsonant(word[i]) && isConsonant(word[i + 1])) {
+                // Filter to only include words with adjacent consonants
+                currentFilteredWords = currentFilteredWords.filter(word => {
+                    const wordLower = word.toLowerCase();
+                    for (let i = 0; i < wordLower.length - 1; i++) {
+                        if (isConsonant(wordLower[i]) && isConsonant(wordLower[i + 1])) {
                             return true;
                         }
                     }
                     return false;
                 });
-                currentFilteredWords = filteredWords;
+                console.log('Filtered to words with adjacent consonants:', currentFilteredWords.length);
                 displayResults(currentFilteredWords);
                 showNextFeature();
             });
@@ -540,15 +542,17 @@ function showNextFeature() {
             consonantNoBtn.addEventListener('click', function handleNo() {
                 console.log('Consonants NO selected');
                 hasAdjacentConsonants = false;
-                const filteredWords = currentFilteredWords.filter(word => {
-                    for (let i = 0; i < word.length - 1; i++) {
-                        if (isConsonant(word[i]) && isConsonant(word[i + 1])) {
+                // Filter to only include words with NO adjacent consonants
+                currentFilteredWords = currentFilteredWords.filter(word => {
+                    const wordLower = word.toLowerCase();
+                    for (let i = 0; i < wordLower.length - 1; i++) {
+                        if (isConsonant(wordLower[i]) && isConsonant(wordLower[i + 1])) {
                             return false;
                         }
                     }
                     return true;
                 });
-                currentFilteredWords = filteredWords;
+                console.log('Filtered to words with NO adjacent consonants:', currentFilteredWords.length);
                 displayResults(currentFilteredWords);
                 showNextFeature();
             });
@@ -567,10 +571,7 @@ function showNextFeature() {
                 const word = input.value.trim().toUpperCase();
                 if (word) {
                     console.log('WORD submitted:', word);
-                    
-                    // Always use the full word list for WORD feature
-                    const wordsToFilter = [...wordList];
-                    console.log('Using full word list size:', wordsToFilter.length);
+                    console.log('Current word list size:', currentFilteredWords.length);
                     
                     const consonants = word.toLowerCase().split('').filter(char => isConsonant(char));
                     console.log('Consonants found:', consonants);
@@ -586,7 +587,7 @@ function showNextFeature() {
                         }
                         console.log('Looking for adjacent pairs:', pairs);
                         
-                        filteredWords = wordsToFilter.filter(w => {
+                        filteredWords = currentFilteredWords.filter(w => {
                             const wordLower = w.toLowerCase();
                             return pairs.some(pair => {
                                 for (let i = 0; i < wordLower.length - 1; i++) {
@@ -599,21 +600,8 @@ function showNextFeature() {
                             });
                         });
                     } else {
-                        // If NO was selected in TOGETHER?, first filter out any words with adjacent consonants
-                        console.log('Filtering out words with adjacent consonants first');
-                        const noAdjacentConsonants = wordsToFilter.filter(w => {
-                            const wordLower = w.toLowerCase();
-                            for (let i = 0; i < wordLower.length - 1; i++) {
-                                if (isConsonant(wordLower[i]) && isConsonant(wordLower[i + 1])) {
-                                    return false; // Skip words with adjacent consonants
-                                }
-                            }
-                            return true;
-                        });
-                        console.log('Words without adjacent consonants:', noAdjacentConsonants.length);
-                        
-                        // Then find words with any 2+ consonants in middle positions
-                        filteredWords = noAdjacentConsonants.filter(w => {
+                        // If NO was selected in TOGETHER?, find words with any 2+ consonants in middle positions
+                        filteredWords = currentFilteredWords.filter(w => {
                             const wordLower = w.toLowerCase();
                             // Get middle positions (5 or 6 characters)
                             const middleStart = Math.floor((wordLower.length - 5) / 2);
