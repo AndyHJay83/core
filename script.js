@@ -8,33 +8,24 @@ const isConsonant = (() => {
 })();
 
 // Helper function to get consonant pairs from a word
-const getConsonantPairs = (() => {
-    return function(word) {
-        if (!word) return [];
-        const wordLower = word.toLowerCase();
-        const consonants = [];
-        
-        // First, extract all consonants from the word
-        for (let i = 0; i < wordLower.length; i++) {
-            if (isConsonant(wordLower[i])) {
-                consonants.push(wordLower[i]);
-            }
+function getConsonantPairs(word) {
+    if (!word) return [];
+    
+    // Get all consonants from the word
+    const consonants = word.toLowerCase().split('').filter(char => isConsonant(char));
+    console.log('Consonants found:', consonants);
+    
+    // Create all possible pairs
+    const pairs = [];
+    for (let i = 0; i < consonants.length; i++) {
+        for (let j = i + 1; j < consonants.length; j++) {
+            pairs.push(consonants[i] + consonants[j]);
         }
-        
-        // Create all possible pairs of consonants
-        const pairs = [];
-        for (let i = 0; i < consonants.length; i++) {
-            for (let j = i + 1; j < consonants.length; j++) {
-                pairs.push(consonants[i] + consonants[j]);
-            }
-        }
-        
-        console.log('Word:', wordLower);
-        console.log('Consonants found:', consonants);
-        console.log('All possible consonant pairs:', pairs);
-        return pairs;
-    };
-})();
+    }
+    
+    console.log('All possible consonant pairs:', pairs);
+    return pairs;
+}
 
 let wordList = [];
 let totalWords = 0;
