@@ -517,9 +517,14 @@ function toggleMode() {
 
 // Function to toggle feature mode
 function toggleFeature(featureId) {
-    const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
+    // Convert featureId to toggleId (e.g., 'oFeature' -> 'oToggle')
+    const toggleId = featureId === 'consonantQuestion' ? 'togetherToggle' : 
+                    featureId === 'position1Feature' ? 'wordToggle' :
+                    featureId.replace('Feature', 'Toggle');
+    
+    const toggle = document.getElementById(toggleId);
     const isEnabled = toggle.checked;
-    console.log(`Toggling ${featureId}: ${isEnabled ? 'ON' : 'OFF'}`);
+    console.log(`Toggling ${featureId} (${toggleId}): ${isEnabled ? 'ON' : 'OFF'}`);
     
     // Update the mode flag for the feature
     switch(featureId) {
@@ -550,7 +555,7 @@ function toggleFeature(featureId) {
     resetWorkflow();
 }
 
-// New function to reset the workflow
+// Function to reset the workflow
 function resetWorkflow() {
     console.log('Resetting workflow...');
     
@@ -572,7 +577,9 @@ function resetWorkflow() {
         feature.style.display = 'none';
         
         // Get the corresponding toggle
-        const toggleId = featureId.replace('Feature', 'Toggle');
+        const toggleId = featureId === 'consonantQuestion' ? 'togetherToggle' : 
+                        featureId === 'position1Feature' ? 'wordToggle' :
+                        featureId.replace('Feature', 'Toggle');
         const toggle = document.getElementById(toggleId);
         
         // If the feature is disabled, mark it as completed
@@ -625,26 +632,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('modeToggle').addEventListener('change', toggleMode);
     
     // Feature toggle listeners
-    document.getElementById('oToggle').addEventListener('change', () => {
-        console.log('O? toggle changed');
-        toggleFeature('oFeature');
-        // If O? is disabled, update the display immediately
-        if (!isOMode) {
-            console.log('O? disabled, updating display');
-            displayResults(currentFilteredWords);
-        }
-    });
-    
-    document.getElementById('curvedToggle').addEventListener('change', () => {
-        console.log('CURVED toggle changed');
-        toggleFeature('curvedFeature');
-        // If CURVED is disabled, update the display immediately
-        if (!isCurvedMode) {
-            console.log('CURVED disabled, updating display');
-            displayResults(currentFilteredWords);
-        }
-    });
-    
+    document.getElementById('oToggle').addEventListener('change', () => toggleFeature('oFeature'));
+    document.getElementById('curvedToggle').addEventListener('change', () => toggleFeature('curvedFeature'));
+    document.getElementById('togetherToggle').addEventListener('change', () => toggleFeature('consonantQuestion'));
+    document.getElementById('wordToggle').addEventListener('change', () => toggleFeature('position1Feature'));
     document.getElementById('lexiconToggle').addEventListener('change', () => toggleFeature('lexiconFeature'));
     document.getElementById('vowelToggle').addEventListener('change', () => toggleFeature('vowelFeature'));
     document.getElementById('shapeToggle').addEventListener('change', () => toggleFeature('shapeFeature'));
