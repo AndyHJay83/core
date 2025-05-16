@@ -374,8 +374,6 @@ function showNextFeature() {
     console.log('Showing next feature...');
     // First hide all features
     const allFeatures = [
-        'oFeature',
-        'curvedFeature',
         'position1Feature',
         'vowelFeature',
         'lexiconFeature',
@@ -388,7 +386,6 @@ function showNextFeature() {
     });
     
     // Then show the appropriate feature based on the current state
-    // Temporarily skipping O? and CURVED features
     if (hasAdjacentConsonants === null) {
         console.log('Showing consonant question');
         document.getElementById('consonantQuestion').style.display = 'block';
