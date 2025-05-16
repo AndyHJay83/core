@@ -14,6 +14,8 @@ let originalFilteredWords = [];
 let hasAdjacentConsonants = null;
 let hasO = null;
 let selectedCurvedLetter = null;
+let isOMode = true;
+let isCurvedMode = true;
 
 // Function to check if a word has any adjacent consonants
 function hasWordAdjacentConsonants(word) {
@@ -502,12 +504,18 @@ function toggleMode() {
     resetApp();
 }
 
-// Function to toggle feature mode
+// Function to toggle feature
 function toggleFeature(featureId) {
     const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
     const isEnabled = toggle.checked;
     
     switch(featureId) {
+        case 'oFeature':
+            isOMode = isEnabled;
+            break;
+        case 'curvedFeature':
+            isCurvedMode = isEnabled;
+            break;
         case 'lexiconFeature':
             isLexiconMode = isEnabled;
             break;
