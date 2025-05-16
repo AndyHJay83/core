@@ -547,6 +547,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('oFeature').style.display = 'none';
     document.getElementById('curvedFeature').style.display = 'none';
     
+    // Show consonant question first
+    document.getElementById('consonantQuestion').style.display = 'block';
+    
     // Mode toggle listener
     document.getElementById('modeToggle').addEventListener('change', toggleMode);
     
@@ -905,9 +908,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Show consonant question
         document.getElementById('consonantQuestion').style.display = 'block';
     });
-
-    // Show consonant question first
-    document.getElementById('consonantQuestion').style.display = 'block';
 });
 
 // Function to check if a letter is curved
