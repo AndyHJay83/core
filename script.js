@@ -365,6 +365,7 @@ function handleVowelSelection(includeVowel) {
         document.getElementById('vowelFeature').classList.add('completed');
         // Update currentFilteredWords with the vowel-filtered results
         currentFilteredWords = [...currentFilteredWordsForVowels];
+        console.log('Vowel feature completed, moving to next feature');
         showNextFeature();
     }
 }
@@ -372,6 +373,19 @@ function handleVowelSelection(includeVowel) {
 // Function to show next feature
 function showNextFeature() {
     console.log('Showing next feature...');
+    console.log('Current states:', {
+        hasAdjacentConsonants,
+        isVowelMode,
+        isLexiconMode,
+        isShapeMode,
+        position1Completed: document.getElementById('position1Feature').classList.contains('completed'),
+        vowelCompleted: document.getElementById('vowelFeature').classList.contains('completed'),
+        lexiconCompleted: document.getElementById('lexiconFeature').classList.contains('completed'),
+        shapeCompleted: document.getElementById('shapeFeature').classList.contains('completed'),
+        oCompleted: document.getElementById('oFeature').classList.contains('completed'),
+        curvedCompleted: document.getElementById('curvedFeature').classList.contains('completed')
+    });
+    
     // First hide all features
     const allFeatures = [
         'consonantQuestion',
@@ -477,37 +491,46 @@ function displayResults(words) {
 
 // Function to reset the app
 function resetApp() {
-    document.getElementById('wordListContainer').classList.remove('expanded');
-    document.getElementById('resultsContainer').innerHTML = '';
-    document.getElementById('lexiconPositions').value = '';
-    document.getElementById('position1Input').value = '';
-    
-    // Reset all features
-    const features = document.querySelectorAll('.feature-section');
-    features.forEach(feature => {
-        feature.style.display = 'none';
-        feature.classList.remove('completed');
-    });
-    
-    // Mark O? and CURVED features as completed by default
-    document.getElementById('oFeature').classList.add('completed');
-    document.getElementById('curvedFeature').classList.add('completed');
-    
-    // Ensure LEXICON feature is not completed if enabled
-    if (isLexiconMode) {
-        document.getElementById('lexiconFeature').classList.remove('completed');
-    }
-    
-    updateWordCount(totalWords);
-    currentFilteredWords = [];
-    currentPosition = -1;
-    currentPosition2 = -1;
+    // Reset all variables
+    currentFilteredWords = [...originalFilteredWords];
+    currentVowelIndex = 0;
     uniqueVowels = [];
     hasAdjacentConsonants = null;
-    hasO = null;
     selectedCurvedLetter = null;
+    hasO = null;
+    currentFilteredWordsForVowels = [];
     
-    displayResults(wordList);
+    // Clear all results
+    displayResults([]);
+    
+    // Reset all features except O? and CURVED which should be completed by default
+    const features = [
+        'consonantQuestion',
+        'position1Feature',
+        'vowelFeature',
+        'lexiconFeature',
+        'shapeFeature',
+        'oFeature',
+        'curvedFeature'
+    ];
+    
+    features.forEach(featureId => {
+        const feature = document.getElementById(featureId);
+        if (feature) {
+            // Don't remove 'completed' class from O? and CURVED features
+            if (featureId !== 'oFeature' && featureId !== 'curvedFeature') {
+                feature.classList.remove('completed');
+            }
+            
+            // For LEXICON feature, ensure it's not completed if the mode is enabled
+            if (featureId === 'lexiconFeature' && isLexiconMode) {
+                feature.classList.remove('completed');
+                console.log('LEXICON feature reset - mode enabled, removing completed class');
+            }
+        }
+    });
+    
+    // Show the first feature
     showNextFeature();
 }
 
