@@ -7,17 +7,21 @@ const isConsonant = (() => {
     };
 })();
 
-// Helper function to get consonant pairs from a word
-function getConsonantPairs(word) {
+// Global function to get consonant pairs from a word
+window.getConsonantPairs = function(word) {
+    if (!word) return [];
     const pairs = [];
-    for (let i = 0; i < word.length - 1; i++) {
-        if (isConsonant(word[i]) && isConsonant(word[i + 1])) {
-            pairs.push(word.slice(i, i + 2));
+    const wordLower = word.toLowerCase();
+    
+    for (let i = 0; i < wordLower.length - 1; i++) {
+        if (isConsonant(wordLower[i]) && isConsonant(wordLower[i + 1])) {
+            pairs.push(wordLower.slice(i, i + 2));
         }
     }
+    
     console.log('Found consonant pairs:', pairs);
     return pairs;
-}
+};
 
 let wordList = [];
 let totalWords = 0;
