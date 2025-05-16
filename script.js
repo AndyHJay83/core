@@ -523,6 +523,11 @@ function toggleFeature(featureId) {
                     featureId.replace('Feature', 'Toggle');
     
     const toggle = document.getElementById(toggleId);
+    if (!toggle) {
+        console.warn(`Toggle element not found: ${toggleId}`);
+        return;
+    }
+    
     const isEnabled = toggle.checked;
     console.log(`Toggling ${featureId} (${toggleId}): ${isEnabled ? 'ON' : 'OFF'}`);
     
@@ -701,9 +706,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             'shapeToggle': 'shapeFeature'
         };
         
+        // Initialize toggle states and add event listeners
         Object.entries(toggleMappings).forEach(([toggleId, featureId]) => {
             const toggle = document.getElementById(toggleId);
             if (toggle) {
+                // Set initial state based on featureId
+                switch(featureId) {
+                    case 'oFeature':
+                        toggle.checked = isOMode;
+                        break;
+                    case 'curvedFeature':
+                        toggle.checked = isCurvedMode;
+                        break;
+                    case 'consonantQuestion':
+                        toggle.checked = isTogetherMode;
+                        break;
+                    case 'position1Feature':
+                        toggle.checked = isWordMode;
+                        break;
+                    case 'lexiconFeature':
+                        toggle.checked = isLexiconMode;
+                        break;
+                    case 'vowelFeature':
+                        toggle.checked = isVowelMode;
+                        break;
+                    case 'shapeFeature':
+                        toggle.checked = isShapeMode;
+                        break;
+                }
+                
                 toggle.addEventListener('change', () => toggleFeature(featureId));
             } else {
                 console.warn(`Toggle element not found: ${toggleId}`);
