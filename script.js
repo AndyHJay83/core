@@ -475,16 +475,14 @@ function resetApp() {
     document.getElementById('lexiconPositions').value = '';
     document.getElementById('position1Input').value = '';
     
+    // Reset all features
     const features = document.querySelectorAll('.feature-section');
     features.forEach(feature => {
         feature.style.display = 'none';
-        // Don't remove completed class from O? and CURVED features
-        if (feature.id !== 'oFeature' && feature.id !== 'curvedFeature') {
-            feature.classList.remove('completed');
-        }
+        feature.classList.remove('completed');
     });
     
-    // Ensure O? and CURVED features are marked as completed
+    // Mark O? and CURVED features as completed by default
     document.getElementById('oFeature').classList.add('completed');
     document.getElementById('curvedFeature').classList.add('completed');
     
