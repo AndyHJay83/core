@@ -16,6 +16,8 @@ let hasO = null;
 let selectedCurvedLetter = null;
 let isOMode = false;
 let isCurvedMode = false;
+let isTogetherMode = true;
+let isWordMode = true;
 
 // Function to check if a word has any adjacent consonants
 function hasWordAdjacentConsonants(word) {
@@ -411,7 +413,7 @@ function showNextFeature() {
         document.getElementById('consonantQuestion').style.display = 'block';
     }
     else if (!document.getElementById('position1Feature').classList.contains('completed')) {
-        console.log('Showing Position 1 feature');
+        console.log('Showing WORD feature');
         document.getElementById('position1Feature').style.display = 'block';
     }
     else if (isVowelMode && !document.getElementById('vowelFeature').classList.contains('completed')) {
@@ -512,7 +514,7 @@ function toggleMode() {
     resetApp();
 }
 
-// Function to toggle feature mode
+// Function to toggle feature
 function toggleFeature(featureId) {
     const toggle = document.getElementById(featureId.replace('Feature', 'Toggle'));
     const isEnabled = toggle.checked;
@@ -522,19 +524,11 @@ function toggleFeature(featureId) {
         case 'oFeature':
             isOMode = isEnabled;
             if (!isEnabled) {
-                // If O? is disabled, mark it as completed and update the word list
                 document.getElementById('oFeature').classList.add('completed');
-                // Keep all words since we're skipping the O? filter
                 currentFilteredWords = [...wordList];
-                console.log('O? feature disabled, resetting word list to', currentFilteredWords.length, 'words');
             } else {
-                // If O? is enabled, reset the workflow
-                console.log('O? enabled, resetting workflow');
-                // Reset all feature states
                 resetFeatureStates();
-                // Remove completed class from O?
                 document.getElementById('oFeature').classList.remove('completed');
-                // Reset the word list
                 currentFilteredWords = [...wordList];
                 displayResults(currentFilteredWords);
             }
@@ -542,17 +536,33 @@ function toggleFeature(featureId) {
         case 'curvedFeature':
             isCurvedMode = isEnabled;
             if (!isEnabled) {
-                // If CURVED is disabled, mark it as completed
                 document.getElementById('curvedFeature').classList.add('completed');
-                console.log('CURVED feature disabled and marked as completed');
             } else {
-                // If CURVED is enabled, reset the workflow
-                console.log('CURVED enabled, resetting workflow');
-                // Reset all feature states
                 resetFeatureStates();
-                // Remove completed class from CURVED
                 document.getElementById('curvedFeature').classList.remove('completed');
-                // Reset the word list
+                currentFilteredWords = [...wordList];
+                displayResults(currentFilteredWords);
+            }
+            break;
+        case 'consonantQuestion':
+            isTogetherMode = isEnabled;
+            if (!isEnabled) {
+                document.getElementById('consonantQuestion').classList.add('completed');
+                hasAdjacentConsonants = null;
+            } else {
+                resetFeatureStates();
+                document.getElementById('consonantQuestion').classList.remove('completed');
+                currentFilteredWords = [...wordList];
+                displayResults(currentFilteredWords);
+            }
+            break;
+        case 'position1Feature':
+            isWordMode = isEnabled;
+            if (!isEnabled) {
+                document.getElementById('position1Feature').classList.add('completed');
+            } else {
+                resetFeatureStates();
+                document.getElementById('position1Feature').classList.remove('completed');
                 currentFilteredWords = [...wordList];
                 displayResults(currentFilteredWords);
             }
@@ -738,7 +748,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update the display immediately
         displayResults(currentFilteredWords);
         
-        // Hide consonant question and show Position 1
+        // Hide consonant question and show WORD
         document.getElementById('consonantQuestion').style.display = 'none';
         document.getElementById('position1Feature').style.display = 'block';
     });
@@ -770,17 +780,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update the display immediately
         displayResults(currentFilteredWords);
         
-        // Hide consonant question and show Position 1
+        // Hide consonant question and show WORD
         document.getElementById('consonantQuestion').style.display = 'none';
         document.getElementById('position1Feature').style.display = 'block';
     });
     
-    // Position 1 feature
+    // WORD feature
     document.getElementById('position1Button').addEventListener('click', () => {
         const input = document.getElementById('position1Input').value.trim();
         if (input) {
             const consonants = getConsonantsInOrder(input);
-            console.log('Processing Position 1 input:', input);
+            console.log('Processing WORD input:', input);
             console.log('Found consonants:', consonants);
             
             if (consonants.length >= 2) {
@@ -853,7 +863,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Update the current filtered words
                 currentFilteredWords = filteredWords;
                 
-                // Mark Position 1 as completed and update the display
+                // Mark WORD as completed and update the display
                 document.getElementById('position1Feature').classList.add('completed');
                 document.getElementById('position1Feature').style.display = 'none';
                 displayResults(filteredWords);
