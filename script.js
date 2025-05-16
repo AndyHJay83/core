@@ -36,8 +36,7 @@ function hasWordAdjacentConsonants(word) {
 // Letter shape categories with exact categorization
 const letterShapes = {
     straight: new Set(['A', 'E', 'F', 'H', 'I', 'K', 'L', 'M', 'N', 'T', 'V', 'W', 'X', 'Y', 'Z']),
-    curved: new Set(['B', 'C', 'D', 'G', 'J', 'O', 'P', 'Q', 'R', 'S', 'U', 'Y')
-    )
+    curved: new Set(['B', 'C', 'D', 'G', 'J', 'O', 'P', 'Q', 'R', 'S', 'U'])
 };
 
 // Function to get letter shape
