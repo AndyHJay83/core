@@ -374,13 +374,13 @@ function showNextFeature() {
     console.log('Showing next feature...');
     // First hide all features
     const allFeatures = [
-        'oFeature',
-        'curvedFeature',
+        'consonantQuestion',
         'position1Feature',
         'vowelFeature',
-        'lexiconFeature',
-        'consonantQuestion',
-        'shapeFeature'
+        'shapeFeature',
+        'oFeature',
+        'curvedFeature',
+        'lexiconFeature'
     ];
     
     allFeatures.forEach(featureId => {
