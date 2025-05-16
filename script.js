@@ -434,7 +434,10 @@ function showNextFeature() {
     }
     else if (isLexiconMode && !document.getElementById('lexiconFeature').classList.contains('completed')) {
         console.log('Showing LEXICON feature');
-        document.getElementById('lexiconFeature').style.display = 'block';
+        const lexiconFeature = document.getElementById('lexiconFeature');
+        lexiconFeature.style.display = 'block';
+        // Clear any previous input
+        document.getElementById('lexiconPositions').value = '';
     }
     else if (!document.getElementById('oFeature').classList.contains('completed')) {
         console.log('Showing O? feature');
