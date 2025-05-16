@@ -532,6 +532,10 @@ function toggleFeature(featureId) {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadWordList();
     
+    // Mark O? and CURVED features as completed by default
+    document.getElementById('oFeature').classList.add('completed');
+    document.getElementById('curvedFeature').classList.add('completed');
+    
     // Mode toggle listener
     document.getElementById('modeToggle').addEventListener('change', toggleMode);
     
