@@ -907,35 +907,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // CURVED feature buttons
-    document.querySelectorAll('.curved-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const letter = button.textContent;
-            console.log('Curved letter selected:', letter);
-            selectedCurvedLetter = letter;
-            
-            // Filter to keep ONLY words that have the selected letter
-            const filteredWords = currentFilteredWords.filter(word => {
-                const hasLetter = word.toLowerCase().includes(letter.toLowerCase());
-                if (hasLetter) {
-                    console.log(`Keeping word "${word}" - has ${letter}`);
-                } else {
-                    console.log(`Removing word "${word}" - no ${letter}`);
-                }
-                return hasLetter;
-            });
-            
-            console.log('Before filtering:', currentFilteredWords.length, 'words');
-            currentFilteredWords = filteredWords;
-            console.log('After filtering (keeping only words with ' + letter + '):', currentFilteredWords.length, 'words');
-            
-            // Update the display immediately
-            displayResults(currentFilteredWords);
-            document.getElementById('curvedFeature').classList.add('completed');
-            document.getElementById('curvedFeature').style.display = 'none';
-            
-            // Show consonant question
-            document.getElementById('consonantQuestion').style.display = 'block';
+    document.getElementById('curvedYesBtn').addEventListener('click', () => {
+        console.log('CURVED YES button clicked');
+        // Filter to keep words that have B, C, D, G, or P
+        const yesLetters = new Set(['b', 'c', 'd', 'g', 'p']);
+        const filteredWords = currentFilteredWords.filter(word => {
+            const wordLower = word.toLowerCase();
+            return Array.from(yesLetters).some(letter => wordLower.includes(letter));
         });
+        
+        console.log('Before filtering:', currentFilteredWords.length, 'words');
+        currentFilteredWords = filteredWords;
+        console.log('After filtering (keeping words with B, C, D, G, or P):', currentFilteredWords.length, 'words');
+        
+        // Update the display immediately
+        displayResults(currentFilteredWords);
+        document.getElementById('curvedFeature').classList.add('completed');
+        document.getElementById('curvedFeature').style.display = 'none';
+        
+        // Show consonant question
+        document.getElementById('consonantQuestion').style.display = 'block';
+    });
+
+    document.getElementById('curvedNoBtn').addEventListener('click', () => {
+        console.log('CURVED NO button clicked');
+        // Filter to keep words that have J, O, Q, R, S, or U
+        const noLetters = new Set(['j', 'o', 'q', 'r', 's', 'u']);
+        const filteredWords = currentFilteredWords.filter(word => {
+            const wordLower = word.toLowerCase();
+            return Array.from(noLetters).some(letter => wordLower.includes(letter));
+        });
+        
+        console.log('Before filtering:', currentFilteredWords.length, 'words');
+        currentFilteredWords = filteredWords;
+        console.log('After filtering (keeping words with J, O, Q, R, S, or U):', currentFilteredWords.length, 'words');
+        
+        // Update the display immediately
+        displayResults(currentFilteredWords);
+        document.getElementById('curvedFeature').classList.add('completed');
+        document.getElementById('curvedFeature').style.display = 'none';
+        
+        // Show consonant question
+        document.getElementById('consonantQuestion').style.display = 'block';
     });
 
     document.getElementById('curvedSkipBtn').addEventListener('click', () => {
