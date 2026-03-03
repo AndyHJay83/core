@@ -1969,7 +1969,13 @@ input:checked + .slider:before {
     flex-direction: column;
     gap: 12px;
     width: 100%;
+    align-items: stretch;
     margin-top: 24px;
+}
+
+.home-action-buttons > button {
+    display: block;
+    width: 100%;
 }
 
 .perform-button,
