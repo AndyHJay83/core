@@ -2022,6 +2022,15 @@ input:checked + .slider:before {
     background-color: #546E7A;
 }
 
+/* Ensure homepage PERFORM / New Workflow buttons are truly full-width,
+   overriding older inline styles injected via script.js */
+#performButton,
+#createWorkflowButton {
+    width: 100% !important;
+    display: block !important;
+    margin: 0 !important;
+}
+
 /* Workflow Creation Styles */
 .workflow-creation {
     display: flex;
