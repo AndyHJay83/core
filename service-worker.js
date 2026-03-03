@@ -1,5 +1,5 @@
-const CACHE_NAME = 'word-filter-v13';
-const VERSION = 'v13';
+const CACHE_NAME = 'word-filter-v14';
+const VERSION = 'v14';
 
 // Install event - skip waiting immediately, don't pre-cache
 self.addEventListener('install', (event) => {

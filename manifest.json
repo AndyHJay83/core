@@ -2,7 +2,7 @@
   "name": "The Core",
   "short_name": "The Core",
   "description": "Word filtering and workflow management application",
-  "start_url": "/coretest-new/",
+  "start_url": "/coretest-new/?v=2",
   "scope": "/coretest-new/",
   "display": "standalone",
   "background_color": "#f0f0f0",
