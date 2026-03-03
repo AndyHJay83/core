@@ -54,7 +54,13 @@ body {
     }
 }
 
-/* Also hide in standalone PWA mode */
+/* PWA standalone: spacer to push content below status bar (hidden in browser) */
+.pwa-header-spacer {
+    display: none;
+    flex-shrink: 0;
+}
+
+/* In standalone PWA mode: show spacer, keep header hidden */
 @media (display-mode: standalone) {
     .header {
         display: none !important;
@@ -62,6 +68,12 @@ body {
         padding: 0 !important;
         margin: 0 !important;
         min-height: 0 !important;
+    }
+    .pwa-header-spacer {
+        display: block !important;
+        min-height: calc(env(safe-area-inset-top) + 44px);
+        background: #f0f0f0;
+        flex-shrink: 0;
     }
 }
 
