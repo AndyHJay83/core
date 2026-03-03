@@ -1781,8 +1781,13 @@
 
     <script src="script.js?v=14"></script>
     <script>
-        // Prevent double-tap zoom
+        // Prevent double-tap zoom, but do NOT interfere with Settings or info modals
         document.addEventListener('touchend', function(e) {
+            const inSettingsModal = e.target.closest('#settingsModal') !== null;
+            const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
+            if (inSettingsModal || inFeatureInfoModal) {
+                return;
+            }
             if (!e.target.matches('input[type="text"]')) {
                 e.preventDefault();
             }
@@ -1791,6 +1796,11 @@
         // Prevent double-tap zoom on specific elements
         document.querySelectorAll('button, .results-container').forEach(element => {
             element.addEventListener('touchend', function(e) {
+                const inSettingsModal = e.target.closest('#settingsModal') !== null;
+                const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
+                if (inSettingsModal || inFeatureInfoModal) {
+                    return;
+                }
                 e.preventDefault();
             }, { passive: false });
         });
@@ -1802,7 +1812,7 @@
             }, 0);
         });
 
-        // Prevent bounce effect on iOS
+        // Prevent bounce effect on iOS, but allow scrolling inside Settings and info modals
         document.body.addEventListener('touchmove', function(e) {
             // Allow touchmove on inputs and their containers, and scrollable containers
             if (e.target.closest('.results-container') !== null || 
@@ -1810,7 +1820,10 @@
                 e.target.closest('.position-cons-input-group') !== null ||
                 e.target.closest('.position-cons-form') !== null ||
                 e.target.closest('#availableFeatures') !== null ||
-                e.target.closest('.available-features') !== null) {
+                e.target.closest('.available-features') !== null ||
+                e.target.closest('#settingsModal') !== null ||
+                e.target.closest('.modal-content') !== null ||
+                e.target.closest('.feature-info-modal') !== null) {
                 return;
             }
             e.preventDefault();
