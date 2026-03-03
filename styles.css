@@ -1669,6 +1669,17 @@ input[type="text"] {
     position: relative;
 }
 
+/* Settings modal: ensure content is scrollable on mobile/short viewports */
+#settingsModal {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#settingsModal .settings-modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
 .close-button {
     position: absolute;
     right: 20px;

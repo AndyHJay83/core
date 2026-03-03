@@ -1895,7 +1895,15 @@
         // Settings button click handler
         document.getElementById('settingsButton').addEventListener('click', showSettings);
         const settingsModalCloseEl = document.getElementById('settingsModalClose');
-        if (settingsModalCloseEl) settingsModalCloseEl.addEventListener('click', hideSettings);
+        if (settingsModalCloseEl) {
+            settingsModalCloseEl.addEventListener('click', hideSettings);
+            // Ensure close works on touch devices even with global touch handlers
+            settingsModalCloseEl.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                hideSettings();
+            }, { passive: false });
+        }
 
         // Test if pako is loaded
         window.addEventListener('load', function() {
