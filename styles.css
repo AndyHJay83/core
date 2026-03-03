@@ -7,8 +7,6 @@
 
 html, body {
     height: 100%;
-    overflow: hidden;
-    position: fixed;
     width: 100%;
 }
 
@@ -2253,6 +2251,7 @@ input:checked + .slider:before {
 @media (max-width: 768px) {
     #availableFeatures {
         height: calc(100% - 48px) !important;
+        padding-bottom: calc(env(safe-area-inset-bottom) + 80px) !important;
     }
 }
 
