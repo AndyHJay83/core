@@ -206,6 +206,12 @@ body {
     margin-top: 4px;
 }
 
+/* SOLOGRAM book label (read-only from Settings) */
+.sologram-using-label {
+    font-size: 14px;
+    color: #555;
+    margin: 0 0 10px 0;
+}
 /* SOLOGRAM Y/N buttons and display */
 .sologram-yn-area {
     margin-bottom: 12px;
@@ -330,6 +336,27 @@ body {
     background-color: #f8f8f8;
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.atlas-input-row {
+    margin-bottom: 10px;
+}
+
+#atlasInput {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 12px;
+    font-size: 1.5rem;
+}
+
+.o-curves-prompt {
+    text-align: center;
+    margin: 10px 0 16px 0;
+    font-size: 1em;
+    color: #333;
+}
+.o-curves-part {
+    margin-top: 8px;
 }
 
 .feature-title {
@@ -505,6 +532,81 @@ body {
     background: #0056b3;
 }
 
+.shape-btn {
+    padding: 10px 14px;
+    margin: 6px;
+    border-radius: 8px;
+    border: none;
+    background: #222;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+.shape-btn:active {
+    background: #4CAF50;
+}
+
+/* ALPHA feature */
+.alpha-sequence-display {
+    margin: 12px 0;
+    font-size: 0.95em;
+    color: #555;
+    min-height: 1.4em;
+}
+.alpha-direction-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+}
+.alpha-btn {
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.alpha-btn:hover {
+    background: #f0f0f0;
+    border-color: #999;
+}
+.alpha-btn:active {
+    background: #e0e0e0;
+}
+.alpha-left { border-color: #4a90d9; color: #4a90d9; }
+.alpha-left:hover { background: #e8f0fa; }
+.alpha-repeat { border-color: #888; }
+.alpha-right { border-color: #4a90d9; color: #4a90d9; }
+.alpha-right:hover { background: #e8f0fa; }
+.alpha-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.consonants-mode-btn {
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: 1px solid #4a90d9;
+    background: #fff;
+    color: #4a90d9;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.consonants-mode-btn:hover {
+    background: #e8f0fa;
+    color: #2a70b9;
+}
+
 /* Reset Button */
 .reset-button {
     position: fixed;
@@ -634,6 +736,248 @@ input:checked + .slider:before {
 
 .close-button:hover {
     color: #333;
+}
+
+/* Delete workflow confirm modal */
+.delete-workflow-confirm-modal .delete-workflow-confirm-content {
+    max-width: 360px;
+    margin: 20vh auto;
+}
+.delete-workflow-confirm-message {
+    margin: 0 0 16px 0;
+    font-size: 1em;
+    color: #333;
+}
+.delete-workflow-confirm-dont-ask {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 20px 0;
+    font-size: 0.9em;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+}
+.delete-workflow-confirm-checkbox {
+    flex-shrink: 0;
+}
+.delete-workflow-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.delete-workflow-confirm-cancel,
+.delete-workflow-confirm-delete {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #333;
+}
+.delete-workflow-confirm-cancel:hover,
+.delete-workflow-confirm-delete:hover {
+    background: #f5f5f5;
+}
+.delete-workflow-confirm-delete {
+    border-color: #c00;
+    background: #c00;
+    color: #fff;
+}
+.delete-workflow-confirm-delete:hover {
+    background: #a00;
+    border-color: #a00;
+}
+
+/* Settings modal layout */
+.settings-modal-content {
+    max-width: 420px;
+}
+.settings-modal-content .settings-modal-title {
+    margin: 0 0 20px 0;
+    font-size: 1.5em;
+    color: #333;
+    padding-right: 30px;
+}
+.settings-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.settings-section {
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+.settings-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.settings-section-title {
+    margin: 0 0 4px 0;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #222;
+    letter-spacing: 0.02em;
+}
+.settings-section-subtitle {
+    margin: 0 0 12px 0;
+    font-size: 0.9em;
+    color: #666;
+}
+.settings-field-group-label {
+    margin: 10px 0 4px 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #333;
+}
+.settings-field-group-label:first-of-type {
+    margin-top: 8px;
+}
+
+/* Letter Lying: string source (Default / Unique / Personal / Saved) */
+.letter-lying-static-fields label[for="letterLyingStringSourceSelect"] {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+.letter-lying-source-fields {
+    margin-top: 10px;
+    margin-bottom: 8px;
+}
+.letter-lying-unique-display {
+    display: inline-block;
+    margin-left: 8px;
+    font-family: monospace;
+    font-size: 1.1em;
+    letter-spacing: 0.1em;
+}
+.letter-lying-save-row {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.letter-lying-save-row label {
+    margin: 0;
+}
+.letter-lying-save-row #letterLyingSaveNameInput {
+    flex: 1;
+    min-width: 120px;
+    max-width: 200px;
+}
+.letter-lying-saved-list {
+    margin-top: 10px;
+}
+.letter-lying-saved-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 0.95em;
+}
+.letter-lying-saved-item-name {
+    font-weight: 600;
+    min-width: 80px;
+}
+.letter-lying-saved-item-string {
+    font-family: monospace;
+    letter-spacing: 0.05em;
+    color: #555;
+}
+.letter-lying-saved-name {
+    margin: 0 0 6px 0;
+    font-size: 0.95em;
+    color: #333;
+}
+
+.omega-efficiency-subtitle {
+    margin: 6px 0 12px 0;
+    font-size: 0.85em;
+    color: #555;
+}
+.omega-custom-fields {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+.omega-custom-fields label[for="omegaCustomGroupName"] {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+.omega-custom-fields #omegaCustomGroupName {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    margin-bottom: 12px;
+}
+.omega-custom-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.omega-custom-row .omega-custom-shape-name {
+    flex: 1;
+    min-width: 0;
+    max-width: 160px;
+}
+.omega-custom-row .omega-custom-shape-letters {
+    width: 120px;
+    flex-shrink: 0;
+}
+.omega-custom-row .omega-custom-remove-btn {
+    flex-shrink: 0;
+}
+#omegaCustomAddShapeBtn {
+    margin-top: 8px;
+}
+.alpha-efficiency-subtitle {
+    margin: 6px 0 0 0;
+    font-size: 0.85em;
+    color: #555;
+}
+/* Toggle switch (pill style) */
+.toggle-switch {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-slider {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+    background-color: #ccc;
+    border-radius: 28px;
+    transition: background-color 0.25s;
+}
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    top: 3px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.25s;
+}
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #4CAF50;
+}
+.toggle-switch input:checked + .toggle-slider::after {
+    transform: translateX(24px);
 }
 
 .modal-body {
@@ -912,11 +1256,6 @@ input:checked + .slider:before {
         bottom: 15px;
     }
 
-    #settingsButton {
-        width: 40px;
-        height: 40px;
-    }
-
     #homepage, #workflowExecution {
         flex: 1 1 0; /* Use flex instead of fixed height */
         min-height: 0;
@@ -1184,12 +1523,7 @@ button:active {
     background-color: #1B5E20; /* Dark green */
 }
 
-/* Settings button */
-#settingsButton {
-    display: none; /* Hide the settings button */
-}
-
-/* Reset button - adjust position since settings button is hidden */
+/* Reset button */
 #resetButton {
     position: fixed;
     bottom: 20px;
@@ -1254,7 +1588,6 @@ button:focus {
         padding: 8px;
     }
 
-    #settingsButton,
     #resetButton {
         width: 44px;
         height: 44px;
@@ -1581,8 +1914,9 @@ input:checked + .slider:before {
 /* Homepage Styles */
 .homepage-content {
     padding: 20px;
-    max-width: 600px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .selection-container {
@@ -1618,21 +1952,57 @@ input:checked + .slider:before {
     border-color: #999;
 }
 
-.perform-button {
+/* Homepage action buttons: full width, stacked */
+.home-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     width: 100%;
+    margin-top: 24px;
+}
+
+.perform-button,
+.create-button,
+.settings-home-button {
+    width: 100%;
+    min-height: 52px;
     padding: 15px;
-    background-color: #4CAF50;
-    color: white;
     border: none;
     border-radius: 8px;
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s;
+    margin: 0;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.perform-button {
+    background-color: #4CAF50;
+    color: white;
 }
 
 .perform-button:hover {
     background-color: #45a049;
+}
+
+.create-button {
+    background-color: #1B5E20;
+    color: white;
+}
+
+.create-button:hover {
+    background-color: #145214;
+}
+
+.settings-home-button {
+    background-color: #607D8B;
+    color: white;
+}
+
+.settings-home-button:hover {
+    background-color: #546E7A;
 }
 
 /* Workflow Creation Styles */
@@ -1925,12 +2295,14 @@ input:checked + .slider:before {
     
     /* Ensure mode buttons match the width of regular feature buttons */
     .feature-group:has(.t9-mode-button),
-    .feature-group:has(.alphanumeric-mode-button) {
+    .feature-group:has(.alphanumeric-mode-button),
+    .feature-group:has(.chain-reaction-mode-button) {
         width: 100% !important;
     }
     
     .t9-mode-button,
-    .alphanumeric-mode-button {
+    .alphanumeric-mode-button,
+    .chain-reaction-mode-button {
         flex: 1 1 auto !important;
         max-width: 100% !important;
     }
@@ -2550,7 +2922,8 @@ input:checked + .slider:before {
     
     /* Ensure T9 and Alpha-Numeric mode buttons match mobile feature button sizing */
     .t9-mode-button,
-    .alphanumeric-mode-button {
+    .alphanumeric-mode-button,
+    .chain-reaction-mode-button {
         padding: 8px 12px !important;
         margin: 2px !important;
         font-size: 14px !important;
@@ -2731,6 +3104,10 @@ input:checked + .slider:before {
     flex-shrink: 0; /* Prevent feature groups from shrinking */
 }
 
+#availableFeatures .feature-group[data-builder-hidden="true"] {
+    display: none;
+}
+
 .info-button {
     background: none;
     border: none;
@@ -2866,8 +3243,8 @@ input:checked + .slider:before {
 }
 
 .results-container {
-    flex: 0 0 50%;
-    min-height: 0; /* Important for flex children to allow shrinking */
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
     padding: 10px;
     background-color: #f5f5f5;
@@ -2879,8 +3256,8 @@ input:checked + .slider:before {
 }
 
 .feature-area {
-    flex: 0 0 50%;
-    min-height: 0; /* Allow shrinking */
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
     padding: 10px;
     background-color: #f5f5f5;
@@ -2890,6 +3267,19 @@ input:checked + .slider:before {
     z-index: 2;
 }
 
+.hydra-label-container {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    margin-top: 6px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #1B5E20;
+    background: #E8F5E9;
+    border: 2px solid #1B5E20;
+    border-radius: 8px;
+}
+
 /* Mobile Styles for Workflow Execution */
 @media (max-width: 600px) {
     .workflow-execution {
@@ -2897,14 +3287,14 @@ input:checked + .slider:before {
     }
 
     .results-container {
-        flex: 0 0 50%;
+        flex: 1 1 0;
         min-height: 0;
         padding: 8px;
         margin-bottom: 5px;
     }
     
     .feature-area {
-        flex: 0 0 50%;
+        flex: 1 1 0;
         min-height: 0;
         padding: 8px;
     }
@@ -3473,6 +3863,25 @@ input:checked + .slider:before {
     background-color: #f57c00 !important;
 }
 
+/* CHAIN REACTION mode button (blue) */
+.chain-reaction-mode-button {
+    background-color: #2196F3 !important;
+    color: white !important;
+    border-color: #1976D2 !important;
+    font-weight: bold;
+    width: 100% !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    box-sizing: border-box !important;
+    flex: 1 1 auto !important;
+    max-width: 100% !important;
+}
+
+.chain-reaction-mode-button:hover {
+    background-color: #1976D2 !important;
+}
+
 /* Alpha-Numeric Feature Styles (Blue) */
 .alphanumeric-feature-button {
     background-color: #2196F3 !important; /* Blue - matches T9 orange pattern */
@@ -3762,11 +4171,11 @@ input:checked + .slider:before {
         min-height: 0 !important;
     }
     #results {
-        flex: 0 0 50% !important;
+        flex: 1 1 0 !important;
         min-height: 0 !important;
     }
     .feature-area {
-        flex: 0 0 50% !important;
+        flex: 1 1 0 !important;
         min-height: 0 !important;
     }
 }

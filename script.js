@@ -62,14 +62,15 @@ const SOLOGRAM_SECONDARY_WORDS = [
 // SOLOGRAM: word groups for pointed-to words. Default is "all" (button shows "DEFAULT").
 let sologramSelectedGroupId = 'all';
 const SOLOGRAM_WORD_GROUPS = {
-    all: { label: 'DEFAULT', words: SOLOGRAM_SECONDARY_WORDS },
+    all: { label: 'ALL', words: SOLOGRAM_SECONDARY_WORDS },
     moabt: { label: 'MOABT', words: ['LOUDSPEAKER', 'KITCHENWARE', 'UNDERWEAR', 'ILLUSTRATION', 'RECEPTIONIST', 'FIRECRACKER', 'MOUNTAINSIDE', 'NEWSPAPER', 'EYEGLASSES', 'TELEVISION', 'BARTENDER', 'DRUGSTORE', 'OPTOMETRIST', 'VIDEOCASSETTE', 'WEIGHTLIFTER', 'HANDKERCHIEF', 'SNOWFLAKES', 'GRAVEYARD', 'APARTMENT', 'PHOTOGRAPHER', 'CANDLESTICK', 'JACKHAMMER'] },
     brushwood: { label: 'BRUSHWOOD', words: ['ABSENTMINDEDLY', 'BRILLIANTLY', 'CANDLELIGHT', 'DISQUIETING', 'EMBARRASSMENT', 'FLABBERGASTED', 'GRANDFATHERLY', 'HALFHEARTEDLY', 'JUDGMENTALLY', 'KNOWLEDGEABLE', 'LIGHTHEARTEDLY', 'PREDETERMINED', 'RECOMMENDATION', 'THUNDERSTRUCK', 'ZESTFULNESS'] },
     glance: { label: 'GLANCE', words: ['ECONOMISTS', 'GRANDCHILDREN', 'HEARTBREAKINGLY', 'INDEPENDENCE', 'POSSIBILITIES', 'SPORTSMANSHIP', 'THOUGHTLESSLY', 'UNCOMFORTABLY'] },
     other: { label: 'OTHER', words: ['CANDELABRA', 'WILLOWHERB', 'STRAIGHTFORWARD', 'TEMPERATURE', 'HEADSCARF', 'JOHANNESBURG', 'POTPOURRI', 'SCHOOLWORK', 'SCHOOLGIRL', 'THUNDERSTORM', 'PEPPERCORN', 'SUPERHERO', 'SUPERSHARP', 'TROUBLEMAKER', 'HEADQUARTERS', 'SWEETHEART', 'TOSHIHARU', 'ANNIVERSARY', 'FLATLINERZ'] }
 };
 function getSologramSecondaryWords() {
-    const group = SOLOGRAM_WORD_GROUPS[sologramSelectedGroupId] || SOLOGRAM_WORD_GROUPS.all;
+    const bookId = (appSettings && appSettings.sologramBook) || 'all';
+    const group = SOLOGRAM_WORD_GROUPS[bookId] || SOLOGRAM_WORD_GROUPS.all;
     return group.words;
 }
 
@@ -85,6 +86,199 @@ let lastPositionConsGeneratedLetters = '';
 // Workflow Management
 let workflows = JSON.parse(localStorage.getItem('workflows')) || [];
 let currentWorkflow = null;
+
+// App-wide settings (persisted in localStorage)
+const DEFAULT_SETTINGS = {
+    lengthBuffer1: false,
+    t9LengthBuffer1: false,
+    e21CheckAnywhere: false,
+    atlasLetterSource: 'default',
+    atlasCustomName: '',
+    atlasCustomLetters: '',
+    letterLyingMode: 'static',
+    letterLyingStringSource: 'default',   // 'default' | 'unique' | 'personal' | 'saved'
+    letterLyingStaticString: 'NTRLCSAIEUO',
+    letterLyingUniqueString: '',          // 8 random letters when source is 'unique'
+    letterLyingSavedSets: [],             // [{ id, name, string }, ...]
+    letterLyingSavedId: null,             // id of selected saved set when source is 'saved'
+    letterLyingDynamicSteps: 4,
+    zeroCurvesApprox: false,
+    loveLettersRowCount: 5,
+    loveLettersRow1: 'ABC',
+    loveLettersRow2: 'DEF',
+    loveLettersRow3: 'GHI',
+    loveLettersRow4: 'JKL',
+    loveLettersRow5: 'MNO',
+    scrabbleBuffer1: false,
+    decodePositionOn: false,
+    decodePosition: 1,
+    sologramBook: 'all',
+    pianoForteUseCustomRange: false,
+    pianoForteStartLetter: 'A',
+    pianoForteEndLetter: 'G',
+    dictionaryAlphaUseCustomRange: false,
+    dictionaryAlphaBeginStart: 'A',
+    dictionaryAlphaBeginEnd: 'M',
+    dictionaryAlphaMidStart: 'I',
+    dictionaryAlphaMidEnd: 'T',
+    dictionaryAlphaEndStart: 'N',
+    dictionaryAlphaEndEnd: 'Z',
+    omegaMode: 'esp',
+    omegaCustomGroupName: '',
+    omegaCustomShapes: [], // [{ name: "Shape", letters: "ABC" }, ...]
+    skipWorkflowDeleteConfirm: false,
+    alphaDirectionsCount: 0,  // 0 = enter until SUBMIT; N = auto-submit after N directions
+    alphaSwapPov: false,       // OFF: Left=toward A, Right=toward Z; ON: swap
+};
+
+const DEFAULT_LETTER_LYING_STRING = 'NTRLCSAIEUO';
+
+// OMEGA: positional shape filter (mode = esp | pocket | restaurant)
+const omegaMappings = {
+    esp: {
+        Circle: 'BCDGJOPQRSU',
+        Cross: 'ABDEFGHIJKLMNPRTVWXYZ',
+        WavyLines: 'BCEFGIJLMNPRSUWYZ',
+        Square: 'ABCDEFGHIJKLMNOPQRTUWZ',
+        Star: 'AEHJKLMNRTVWXYZ'
+    },
+    pocket: {
+        Keys: 'MNRT',
+        Coin: 'OCDG',
+        Card: 'ACEK',
+        Phone: 'PHNOE',
+        Wallet: 'WALT'
+    },
+    restaurant: {
+        Plate: 'PLATE',
+        Knife: 'KNIFE',
+        Fork: 'FORK',
+        Glass: 'GLASS',
+        Napkin: 'NAPKIN'
+    },
+    straightCurved: {
+        Straight: 'AEFHIKLMNTVWXYZ',
+        Curved: 'BCDGJOPQRSUW'
+    }
+};
+const omegaForbiddenPairs = [['Q', 'Z'], ['J', 'Q'], ['V', 'Q']];
+let omegaSelections = [];
+let omegaActiveMapping = {};
+
+function applyOmegaFilter(words, selections) {
+    if (!selections || selections.length === 0) return words;
+    return words.filter(word => {
+        const w = word.toUpperCase();
+        if (w.length < selections.length) return false;
+        for (let i = 0; i < selections.length; i++) {
+            const allowed = omegaActiveMapping[selections[i]];
+            if (!allowed || !allowed.includes(w[i])) return false;
+        }
+        for (let i = 1; i < w.length; i++) {
+            if (omegaForbiddenPairs.some(pair =>
+                pair[0] === w[i - 1] && pair[1] === w[i]
+            )) return false;
+        }
+        return true;
+    });
+}
+
+function getWordlistPathForEfficiency(value) {
+    switch (value) {
+        case '4000': return { wordlistPath: 'words/4000.txt', gzippedPath: 'words/4000.txt.gz' };
+        case '19127': return { wordlistPath: 'words/19127.txt', gzippedPath: 'words/19127.txt.gz' };
+        case 'emotions': return { wordlistPath: 'words/EmotionsJobsSpiritAnimals.txt', gzippedPath: 'words/EmotionsJobsSpiritAnimals.txt.gz' };
+        case '134k': return { wordlistPath: 'words/134K.txt', gzippedPath: 'words/134K.txt.gz' };
+        case 'boysnames': return { wordlistPath: 'words/BoysNames.txt', gzippedPath: 'words/BoysNames.txt.gz' };
+        case 'girlsnames': return { wordlistPath: 'words/GirlsNames.txt', gzippedPath: 'words/GirlsNames.txt.gz' };
+        case 'allnames': return { wordlistPath: 'words/AllNames.txt', gzippedPath: 'words/AllNames.txt.gz' };
+        case 'colouritems': return { wordlistPath: 'words/ColourItems.txt', gzippedPath: 'words/ColourItems.txt.gz' };
+        case 'enuk': return { wordlistPath: 'words/ENUK-Long words Noun.txt', gzippedPath: 'words/ENUK-Long words Noun.txt.gz' };
+        case 'months_starsigns': return { wordlistPath: 'words/MONTHS_STARSIGNS.txt', gzippedPath: null };
+        default: return { wordlistPath: 'words/4000.txt', gzippedPath: 'words/4000.txt.gz' };
+    }
+}
+
+function permutations(arr, len) {
+    if (len <= 0 || len > arr.length) return len === 0 ? [[]] : [];
+    const out = [];
+    function pick(rest, chosen) {
+        if (chosen.length === len) {
+            out.push(chosen.slice());
+            return;
+        }
+        for (let i = 0; i < rest.length; i++) {
+            chosen.push(rest[i]);
+            pick(rest.slice(0, i).concat(rest.slice(i + 1)), chosen);
+            chosen.pop();
+        }
+    }
+    pick(arr.slice(), []);
+    return out;
+}
+
+function computeOmegaEfficiency(mapping, words) {
+    if (!words || words.length === 0) return null;
+    const keys = Object.keys(mapping);
+    if (keys.length === 0) return 0;
+    const saved = omegaActiveMapping;
+    omegaActiveMapping = mapping;
+    let minWords = words.length + 1;  // best among permutations with >= 1 word
+    let zeroCount = 0;
+    let totalCount = 0;
+    const maxLen = Math.min(5, keys.length);
+    try {
+        for (let len = 1; len <= maxLen; len++) {
+            const perms = permutations(keys, len);
+            for (const seq of perms) {
+                const filtered = applyOmegaFilter(words, seq);
+                totalCount++;
+                if (filtered.length === 0) {
+                    zeroCount++;
+                } else if (filtered.length < minWords) {
+                    minWords = filtered.length;
+                }
+            }
+        }
+    } finally {
+        omegaActiveMapping = saved;
+    }
+    const W = words.length;
+    if (W <= 1) return zeroCount === totalCount ? 0 : (minWords <= 1 ? 100 : 0);
+    if (totalCount === 0) return 0;
+    const noValidBest = minWords > words.length;  // no permutation had >= 1 word
+    if (noValidBest) return 0;
+    const base = minWords === 1 ? 100 : (W - minWords) / (W - 1) * 100;
+    const multiplier = 1 - zeroCount / totalCount;
+    return Math.round(Math.max(0, Math.min(100, multiplier * base)));
+}
+
+const LOVE_LETTERS_DEFAULT = {
+    rowCount: 5,
+    row1: 'ABC', row2: 'DEF', row3: 'GHI', row4: 'JKL', row5: 'MNO',
+};
+
+let appSettings = loadAppSettings();
+
+function loadAppSettings() {
+    try {
+        const raw = localStorage.getItem('revolutionSettings');
+        if (!raw) return { ...DEFAULT_SETTINGS };
+        const parsed = JSON.parse(raw);
+        return { ...DEFAULT_SETTINGS, ...parsed };
+    } catch (e) {
+        console.warn('Failed to load settings, using defaults', e);
+        return { ...DEFAULT_SETTINGS };
+    }
+}
+
+function saveAppSettings() {
+    try {
+        localStorage.setItem('revolutionSettings', JSON.stringify(appSettings));
+    } catch (e) {
+        console.warn('Failed to save settings', e);
+    }
+}
 
 // Global workflow state management
 let workflowState = {
@@ -313,6 +507,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
+
+    // Initialize Settings UI (buffer toggles etc.)
+    initSettingsUI();
     
     // Initialize version display
     function initializeVersionDisplay() {
@@ -765,6 +962,76 @@ function filterWordsByCurvedPositions(words, positions) {
             }
         }
         
+        return true;
+    });
+}
+
+/** ZERO CURVES: positions 1–6 only. approx: if true, only require curved at entered positions; if false, non-entered positions in 1–6 must be straight. "0" = no curved letters in 1–6. */
+function filterWordsByZeroCurves(words, positions, approx) {
+    const posStr = (positions || '').toString().trim();
+    const checkLen = 6;
+
+    if (posStr === '0') {
+        return words.filter(word => {
+            for (let i = 0; i < Math.min(checkLen, word.length); i++) {
+                if (isCurvedLetter(word[i])) return false;
+            }
+            return true;
+        });
+    }
+
+    const positionArray = posStr.split('').map(Number).filter(p => p >= 1 && p <= checkLen);
+    if (positionArray.length === 0) return words;
+
+    return words.filter(word => {
+        const maxPos = Math.max(...positionArray);
+        if (word.length < maxPos) return false;
+        for (let i = 0; i < checkLen; i++) {
+            const pos = i + 1;
+            const letter = word[i];
+            if (!letter) continue;
+            const isCurved = isCurvedLetter(letter);
+            if (positionArray.includes(pos)) {
+                if (!isCurved) return false;
+            } else {
+                if (!approx && isCurved) return false;
+            }
+        }
+        return true;
+    });
+}
+
+// --- Love Letters: count of distinct letters per group (rows 1-5) ---
+/** Build array of Sets from settings; each Set = distinct A-Z letters for that row. */
+function getLoveLettersGroups() {
+    const count = Math.max(1, Math.min(5, (appSettings && appSettings.loveLettersRowCount) || 5));
+    const out = [];
+    for (let r = 1; r <= count; r++) {
+        const key = 'loveLettersRow' + r;
+        const s = (appSettings && appSettings[key]) || '';
+        const set = new Set();
+        const upper = (typeof s === 'string' ? s : '').toUpperCase().replace(/[^A-Z]/g, '');
+        for (const c of upper) set.add(c);
+        out.push(set);
+    }
+    return out;
+}
+
+/** Pure filter: keep words where, for each row, the number of distinct letters from that row's group that appear in the word equals the digit at that position. */
+function filterWordsByLoveLetters(words, digitString, groups) {
+    if (!groups || groups.length === 0) return words;
+    const digits = (digitString || '').toString().replace(/\D/g, '');
+    if (digits.length !== groups.length) return words;
+    return words.filter(word => {
+        const upper = word.toUpperCase();
+        for (let i = 0; i < groups.length; i++) {
+            let distinct = 0;
+            for (const letter of groups[i]) {
+                if (upper.includes(letter)) distinct++;
+            }
+            const want = parseInt(digits[i], 10);
+            if (isNaN(want) || distinct !== want) return false;
+        }
         return true;
     });
 }
@@ -1366,9 +1633,47 @@ async function loadWordList() {
     }
 }
 
+async function loadWordsForEfficiency() {
+    const wordlistSelect = document.getElementById('wordlistSelect');
+    const value = (wordlistSelect && wordlistSelect.value) || '4000';
+    if (wordList.length > 0 && lastLoadedWordlist === value) {
+        return [...wordList];
+    }
+    const { wordlistPath, gzippedPath } = getWordlistPathForEfficiency(value);
+    let text;
+    if (gzippedPath && typeof pako !== 'undefined') {
+        try {
+            const res = await fetch(gzippedPath);
+            if (res.ok) {
+                const buf = await res.arrayBuffer();
+                text = pako.inflate(new Uint8Array(buf), { to: 'string' });
+            } else {
+                const res2 = await fetch(wordlistPath);
+                text = await res2.text();
+            }
+        } catch (_) {
+            const res = await fetch(wordlistPath);
+            text = await res.text();
+        }
+    } else {
+        const res = await fetch(wordlistPath);
+        text = await res.text();
+    }
+    const wordSet = new Set();
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const t = lines[i].trim();
+        if (t) wordSet.add(t);
+    }
+    return Array.from(wordSet);
+}
+
 // Add lazy loading flag
 let wordListLoaded = false;
 let lastLoadedWordlist = '';
+
+// ALPHA: first-letter range comes from Dictionary (Alpha) when that step ran in this workflow
+let lastDictionaryAlphaSection = null;
 
 // Function to execute workflow
 async function executeWorkflow(steps) {
@@ -1430,7 +1735,11 @@ async function executeWorkflow(steps) {
         // SOLOGRAM: clear last Y/N and set flag if this workflow includes SOLOGRAM
         lastSologramYnString = null;
         workflowHasSologram = steps.some(step => step.feature === 'sologram');
-        sologramSelectedGroupId = 'all';
+        // OMEGA: reset state
+        omegaSelections = [];
+        omegaActiveMapping = {};
+        // ALPHA: reset so first-letter range is taken from Dictionary (Alpha) only if that step ran
+        lastDictionaryAlphaSection = null;
         
         console.log('Starting workflow with steps:', steps);
         console.log('Using wordlist:', selectedWordlist);
@@ -1526,13 +1835,17 @@ async function executeWorkflow(steps) {
             position1Feature: createPosition1Feature(),
             vowelFeature: createVowelFeature(),
             oFeature: createOFeature(),
+            oCurvesFeature: createOCurvesFeature(),
             lexiconFeature: createLexiconFeature(),
+            zeroCurvesFeature: createZeroCurvesFeature(),
             eeeFeature: createEeeFeature(),
             eeeFirstFeature: createEeeFirstFeature(),
             originalLexFeature: createOriginalLexFeature(),
             consonantQuestion: createConsonantQuestion(),
             colour3Feature: createColour3Feature(),
             atlasFeature: createAtlasFeature(),
+            letterLyingFeature: createLetterLyingFeature(),
+            loveLettersFeature: createLoveLettersFeature(),
             shapeFeature: createShapeFeature(),
             curvedFeature: createCurvedFeature(),
             lengthFeature: createLengthFeature(),
@@ -1543,6 +1856,7 @@ async function executeWorkflow(steps) {
             mostFrequentFeature: createMostFrequentFeature(),
             leastFrequentFeature: createLeastFrequentFeature(),
             notInFeature: createNotInFeature(),
+            presentFeature: createPresentFeature(),
             whatItsNot1Feature: createWhatItsNot1Feature(),
             whatItsNot2Feature: createWhatItsNot2Feature(),
             whatItsNot3Feature: createWhatItsNot3Feature(),
@@ -1553,6 +1867,8 @@ async function executeWorkflow(steps) {
             positionConsFeature: createPositionConsFeature(),
             firstCurvedFeature: createFirstCurvedFeature(),
             pinFeature: createPinFeature(),
+            eeeFeature: createEeeFeature(),
+            eeeFirstFeature: createEeeFirstFeature(),
         };
         
         // Add all feature elements to the document body
@@ -1585,17 +1901,15 @@ async function executeWorkflow(steps) {
             workflowExecution.appendChild(featureArea);
         }
         
-        // Set up the layout - 50/50 split
-        // Top half: results container (wordlist)
-        resultsContainer.style.flex = '0 0 50%';
+        // Set up the layout: results and feature area share space so Hydra label fits in 100% height
+        resultsContainer.style.flex = '1 1 0';
         resultsContainer.style.minHeight = '0';
         resultsContainer.style.overflowY = 'auto';
         resultsContainer.style.padding = '20px';
         resultsContainer.style.backgroundColor = '#fff';
         resultsContainer.style.borderBottom = '1px solid #ddd';
         
-        // Bottom half: feature area
-        featureArea.style.flex = '0 0 50%';
+        featureArea.style.flex = '1 1 0';
         featureArea.style.minHeight = '0';
         featureArea.style.overflowY = 'auto';
         featureArea.style.padding = '20px';
@@ -1604,6 +1918,14 @@ async function executeWorkflow(steps) {
         // Clear any existing content
         featureArea.innerHTML = '';
         resultsContainer.innerHTML = '';
+        
+        // Hide and clear Hydra label (shown when T9 LAST submits GUESS+ACTUAL sum)
+        const hydraLabelContainer = document.getElementById('hydraLabelContainer');
+        if (hydraLabelContainer) {
+            hydraLabelContainer.style.display = 'none';
+            const hydraLabelValue = document.getElementById('hydraLabelValue');
+            if (hydraLabelValue) hydraLabelValue.textContent = '';
+        }
         
         // Display initial wordlist
         displayResults(currentFilteredWords);
@@ -1636,6 +1958,21 @@ async function executeWorkflow(steps) {
                     break;
                 case 'notIn':
                     featureElement = createNotInFeature();
+                    break;
+                case 'present':
+                    featureElement = createPresentFeature();
+                    break;
+                case 'anywhere':
+                    featureElement = createAnywhereFeature();
+                    break;
+                case 'together':
+                    featureElement = createTogetherFeature();
+                    break;
+                case 'middle':
+                    featureElement = createMiddleFeature();
+                    break;
+                case 'consonants':
+                    featureElement = createConsonantsFeature();
                     break;
                 case 'whatItsNot1':
                     featureElement = createWhatItsNot1Feature();
@@ -1673,14 +2010,23 @@ async function executeWorkflow(steps) {
                 case 'o':
                     featureElement = createOFeature();
                     break;
+                case 'oCurves':
+                    featureElement = createOCurvesFeature();
+                    break;
                 case 'lexicon':
                     featureElement = createLexiconFeature();
+                    break;
+                case 'zeroCurves':
+                    featureElement = createZeroCurvesFeature();
                     break;
                 case 'eee':
                     featureElement = createEeeFeature();
                     break;
                 case 'eeeFirst':
                     featureElement = createEeeFirstFeature();
+                    break;
+                case 'e21':
+                    featureElement = createE21Feature();
                     break;
                 case 'originalLex':
                     featureElement = createOriginalLexFeature();
@@ -1694,7 +2040,16 @@ async function executeWorkflow(steps) {
                 case 'atlas':
                     featureElement = createAtlasFeature();
                     break;
+                case 'letterLying':
+                    featureElement = createLetterLyingFeature();
+                    break;
+                case 'loveLetters':
+                    featureElement = createLoveLettersFeature();
+                    break;
                 case 'shape':
+                    featureElement = createShapeFeature();
+                    break;
+                case 'omega':
                     featureElement = createShapeFeature();
                     break;
                 case 'curved':
@@ -1771,6 +2126,9 @@ async function executeWorkflow(steps) {
                     break;
                 case 'dictionaryAlpha':
                     featureElement = createDictionaryAlphaFeature();
+                    break;
+                case 'alpha':
+                    featureElement = createAlphaFeature();
                     break;
                 case 'smlLength':
                     featureElement = createSmlLengthFeature();
@@ -2090,6 +2448,32 @@ function createOFeature() {
     return div;
 }
 
+function createOCurvesFeature() {
+    const div = document.createElement('div');
+    div.id = 'oCurvesFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">O-CURVES</h2>
+        <div id="oCurvesPart1" class="o-curves-part">
+            <p class="o-curves-prompt">Is there an O in the word?</p>
+            <div class="button-container">
+                <button id="oCurvesYesBtn" class="yes-btn">YES</button>
+                <button id="oCurvesNoBtn" class="no-btn">NO</button>
+                <button id="oCurvesSkipBtn" class="skip-button">SKIP</button>
+            </div>
+        </div>
+        <div id="oCurvesPart2" class="o-curves-part" style="display: none;">
+            <p class="o-curves-prompt">Positions of curved letters (1–5). e.g. 123 or 0 for all straight.</p>
+            <div class="lexicon-input">
+                <input type="text" id="oCurvesPositionsInput" placeholder="Enter positions (e.g. 123)">
+                <button id="oCurvesSubmitBtn">SUBMIT</button>
+                <button id="oCurvesCurvedSkipBtn" class="skip-button">SKIP</button>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
 function createLexiconFeature() {
     const div = document.createElement('div');
     div.id = 'lexiconFeature';
@@ -2100,6 +2484,22 @@ function createLexiconFeature() {
             <input type="text" id="lexiconInput" placeholder="Enter positions (e.g., 123)">
             <button id="lexiconButton">SUBMIT</button>
             <button id="lexiconSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createZeroCurvesFeature() {
+    const div = document.createElement('div');
+    div.id = 'zeroCurvesFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">ZERO CURVES</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter positions 1–6 where letters are curved (e.g. 135, or 0 for no curved letters in 1–6). APPROX in Settings relaxes other positions.</p>
+        <div class="lexicon-input">
+            <input type="text" id="zeroCurvesInput" placeholder="Enter positions (e.g. 135 or 0)">
+            <button id="zeroCurvesButton">SUBMIT</button>
+            <button id="zeroCurvesSkipButton" class="skip-button">SKIP</button>
         </div>
     `;
     return div;
@@ -2132,6 +2532,42 @@ function createEeeFirstFeature() {
             <button id="eeeFirstNoBtn" class="no-btn">NO</button>
         </div>
         <button id="eeeFirstSkipButton" class="skip-button">SKIP</button>
+    `;
+    return div;
+}
+
+function createE21Feature() {
+    const div = document.createElement('div');
+    div.id = 'e21Feature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">E21</h2>
+        <div id="e21Part1" class="e21-part">
+            <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Second letter (EEE?): E, E-sound, or No E.</p>
+            <div class="button-container">
+                <button id="e21SecondEBtn" class="yes-btn">E</button>
+                <button id="e21SecondYesBtn" class="yes-btn">E SOUND</button>
+                <button id="e21SecondNoBtn" class="no-btn">NO E</button>
+            </div>
+        </div>
+        <div id="e21Part2" class="e21-part" style="display: none;">
+            <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">First letter (EEEFIRST): E, E-sound, or No E.</p>
+            <div class="button-container">
+                <button id="e21FirstEBtn" class="yes-btn">E</button>
+                <button id="e21FirstYesBtn" class="yes-btn">E SOUND</button>
+                <button id="e21FirstNoBtn" class="no-btn">NO E</button>
+            </div>
+        </div>
+        <div id="e21Part3" class="e21-part" style="display: none;">
+            <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Is there an E anywhere in the word?</p>
+            <div class="button-container">
+                <button id="e21AnywhereYesBtn" class="yes-btn">YES</button>
+                <button id="e21AnywhereNoBtn" class="no-btn">NO</button>
+            </div>
+        </div>
+        <div class="button-container" style="margin-top: 16px;">
+            <button id="e21SkipBtn" class="skip-button">SKIP</button>
+        </div>
     `;
     return div;
 }
@@ -2191,10 +2627,47 @@ function createAtlasFeature() {
     div.innerHTML = `
         <h2 class="feature-title">ATLAS</h2>
         <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">How many of the first 6 letters can start a colour? (0–6)</p>
-        <div class="input-group">
+        <div class="atlas-input-row">
             <input type="number" id="atlasInput" placeholder="0–6" min="0" max="6" step="1">
+        </div>
+        <div class="input-group">
             <button id="atlasButton">SUBMIT</button>
             <button id="atlasSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createLetterLyingFeature() {
+    const div = document.createElement('div');
+    div.id = 'letterLyingFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">Letter Lying</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Is this letter in your word?</p>
+        <div class="letter-lying-letter-display" id="letterLyingLetterDisplay">—</div>
+        <div class="button-container">
+            <button id="letterLyingYesBtn" class="yes-btn">YES</button>
+            <button id="letterLyingNoBtn" class="no-btn">NO</button>
+            <button id="letterLyingSkipLetterBtn" class="skip-letter-btn" title="Skip this letter">→</button>
+            <button id="letterLyingSkipBtn" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createLoveLettersFeature() {
+    const rowCount = Math.max(1, Math.min(5, (appSettings && appSettings.loveLettersRowCount) || 5));
+    const div = document.createElement('div');
+    div.id = 'loveLettersFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">Love Letters</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter the number for each row (how many distinct letters from that row appear in the word). ${rowCount} digit(s).</p>
+        <div class="input-group">
+            <input type="text" id="loveLettersInput" placeholder="e.g. 11112" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="off">
+            <button id="loveLettersButton">SUBMIT</button>
+            <button id="loveLettersSkipButton" class="skip-button">SKIP</button>
         </div>
     `;
     return div;
@@ -2212,6 +2685,177 @@ function createShapeFeature() {
         </div>
     `;
     return div;
+}
+
+function updateOmegaSequenceDisplay() {
+    const el = document.querySelector('#shapeFeature .position-display');
+    if (!el) return;
+    if (omegaSelections.length === 0) {
+        el.textContent = 'Tap shapes to build sequence, then SUBMIT';
+    } else {
+        el.textContent = omegaSelections.length + ' shape(s): ' + omegaSelections.join(' → ');
+    }
+}
+
+function getOmegaActiveMapping() {
+    const mode = (appSettings && appSettings.omegaMode) || 'esp';
+    if (mode === 'custom') {
+        const shapes = (appSettings && appSettings.omegaCustomShapes) || [];
+        return Object.fromEntries(
+            shapes
+                .filter(s => s && (s.name || '').trim() && (s.letters || '').trim())
+                .map(s => [(s.name || '').trim(), (s.letters || '').toUpperCase().replace(/[^A-Z]/g, '')])
+        );
+    }
+    return omegaMappings[mode] || omegaMappings.esp;
+}
+
+function updateOmegaEfficiencySubtitle() {
+    const el = document.getElementById('omegaEfficiencySubtitle');
+    if (!el) return;
+    el.textContent = 'Loading…';
+    const modeSelect = document.getElementById('omegaModeSelect');
+    const mode = (modeSelect && modeSelect.value) || (appSettings && appSettings.omegaMode) || 'esp';
+    const mapping = mode === 'custom' ? getOmegaActiveMapping() : (omegaMappings[mode] || omegaMappings.esp);
+    const keys = Object.keys(mapping);
+    loadWordsForEfficiency()
+        .then(words => {
+            const pct = computeOmegaEfficiency(mapping, words);
+            const wordlistSelect = document.getElementById('wordlistSelect');
+            const label = (wordlistSelect && wordlistSelect.options[wordlistSelect.selectedIndex])
+                ? wordlistSelect.options[wordlistSelect.selectedIndex].textContent
+                : 'wordlist';
+            if (pct === null) {
+                el.textContent = '';
+                return;
+            }
+            if (keys.length === 0) {
+                el.textContent = '0% effective (add shapes)';
+                return;
+            }
+            el.textContent = pct + '% effective (vs ' + label + ')';
+        })
+        .catch(() => {
+            el.textContent = '—';
+        });
+}
+
+function updateAlphaEfficiencySubtitle() {
+    const el = document.getElementById('alphaEfficiencySubtitle');
+    if (!el) return;
+    const n = Math.max(0, parseInt((appSettings && appSettings.alphaDirectionsCount) || 0, 10));
+    const swapPov = !!(appSettings && appSettings.alphaSwapPov);
+    if (n === 0) {
+        el.textContent = 'Set number of directions to see efficiency';
+        return;
+    }
+    el.textContent = 'Loading…';
+    loadWordsForEfficiency()
+        .then(words => {
+            const pct = computeAlphaEfficiency(words, n, swapPov);
+            const wordlistSelect = document.getElementById('wordlistSelect');
+            const label = (wordlistSelect && wordlistSelect.options[wordlistSelect.selectedIndex])
+                ? wordlistSelect.options[wordlistSelect.selectedIndex].textContent
+                : 'wordlist';
+            if (pct === null) {
+                el.textContent = '';
+                return;
+            }
+            el.textContent = pct + '% effective with ' + n + ' direction(s) (vs ' + label + ')';
+        })
+        .catch(() => {
+            el.textContent = '—';
+        });
+}
+
+function startOmega(callback) {
+    const modeSelect = document.getElementById('omegaModeSelect');
+    const mode = (modeSelect && modeSelect.value) || (appSettings && appSettings.omegaMode) || 'esp';
+    omegaActiveMapping = mode === 'custom' ? getOmegaActiveMapping() : (omegaMappings[mode] || omegaMappings.esp);
+    omegaSelections = [];
+
+    const shapeFeature = document.getElementById('shapeFeature');
+    if (!shapeFeature) return;
+    const titleEl = shapeFeature.querySelector('.feature-title');
+    if (titleEl) titleEl.textContent = 'OMEGA';
+    const positionDisplay = shapeFeature.querySelector('.position-display');
+    const categoryButtons = shapeFeature.querySelector('.category-buttons');
+    if (!categoryButtons) return;
+
+    updateOmegaSequenceDisplay();
+
+    categoryButtons.innerHTML = '';
+    Object.keys(omegaActiveMapping).forEach(shape => {
+        const btn = document.createElement('button');
+        btn.className = 'shape-btn';
+        btn.textContent = shape;
+        btn.type = 'button';
+        btn.onclick = () => {
+            omegaSelections.push(shape);
+            updateOmegaSequenceDisplay();
+        };
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.click(); }, { passive: false });
+        categoryButtons.appendChild(btn);
+    });
+    if (mode === 'custom' && Object.keys(omegaActiveMapping).length === 0) {
+        const msg = document.createElement('p');
+        msg.className = 'omega-empty-custom-msg';
+        msg.style.margin = '12px 0'; msg.style.color = '#666'; msg.style.fontSize = '0.9em';
+        msg.textContent = 'Add shapes in Settings → OMEGA → Custom';
+        categoryButtons.appendChild(msg);
+    }
+
+    let actionsRow = shapeFeature.querySelector('.omega-actions');
+    if (!actionsRow) {
+        actionsRow = document.createElement('div');
+        actionsRow.className = 'omega-actions';
+        actionsRow.style.marginTop = '16px';
+        actionsRow.style.display = 'flex';
+        actionsRow.style.gap = '10px';
+        actionsRow.style.flexWrap = 'wrap';
+        actionsRow.style.justifyContent = 'center';
+        shapeFeature.querySelector('.shape-display').appendChild(actionsRow);
+    }
+    actionsRow.innerHTML = '';
+    const backspaceBtn = document.createElement('button');
+    backspaceBtn.className = 'omega-backspace-btn';
+    backspaceBtn.textContent = 'Backspace';
+    backspaceBtn.type = 'button';
+    backspaceBtn.onclick = () => {
+        if (omegaSelections.length) {
+            omegaSelections.pop();
+            updateOmegaSequenceDisplay();
+        }
+    };
+    backspaceBtn.addEventListener('touchstart', (e) => { e.preventDefault(); backspaceBtn.click(); }, { passive: false });
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'omega-submit-btn';
+    submitBtn.textContent = 'SUBMIT';
+    submitBtn.type = 'button';
+    submitBtn.onclick = () => {
+        if (omegaSelections.length === 0) {
+            alert('Add at least one shape to the sequence, then SUBMIT.');
+            return;
+        }
+        const filtered = applyOmegaFilter(currentFilteredWords, omegaSelections);
+        callback(filtered);
+        shapeFeature.classList.add('completed');
+        shapeFeature.dispatchEvent(new Event('completed'));
+    };
+    submitBtn.addEventListener('touchstart', (e) => { e.preventDefault(); submitBtn.click(); }, { passive: false });
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'skip-button';
+    skipBtn.textContent = 'SKIP';
+    skipBtn.type = 'button';
+    skipBtn.onclick = () => {
+        callback(currentFilteredWords);
+        shapeFeature.classList.add('completed');
+        shapeFeature.dispatchEvent(new Event('completed'));
+    };
+    skipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipBtn.click(); }, { passive: false });
+    actionsRow.appendChild(backspaceBtn);
+    actionsRow.appendChild(submitBtn);
+    actionsRow.appendChild(skipBtn);
 }
 
 function createCurvedFeature() {
@@ -2284,22 +2928,15 @@ function createScrabble1Feature() {
 }
 
 function createSologramFeature() {
+    const bookId = (appSettings && appSettings.sologramBook) || 'all';
+    const group = SOLOGRAM_WORD_GROUPS[bookId] || SOLOGRAM_WORD_GROUPS.all;
     const div = document.createElement('div');
     div.id = 'sologramFeature';
     div.className = 'feature-section';
     div.dataset.sologramYn = '';
     div.innerHTML = `
         <h2 class="feature-title">SOLOGRAM</h2>
-        <div class="sologram-group-wrap">
-            <button type="button" id="sologramGroupBtn" class="sologram-group-btn">DEFAULT</button>
-            <div id="sologramGroupDropdown" class="sologram-group-dropdown" style="display: none;">
-                <button type="button" class="sologram-group-option" data-group="all">DEFAULT</button>
-                <button type="button" class="sologram-group-option" data-group="moabt">MOABT</button>
-                <button type="button" class="sologram-group-option" data-group="brushwood">BRUSHWOOD</button>
-                <button type="button" class="sologram-group-option" data-group="glance">GLANCE</button>
-                <button type="button" class="sologram-group-option" data-group="other">OTHER</button>
-            </div>
-        </div>
+        <p class="sologram-using-label">Using: <span id="sologramBookLabel">${group.label}</span></p>
         <div class="sologram-yn-area">
             <div class="sologram-display-label">Y/N string:</div>
             <div id="sologramDisplay" class="sologram-display">(empty)</div>
@@ -2322,19 +2959,12 @@ function createScrambleFeature() {
     div.id = 'scrambleFeature';
     div.className = 'feature-section';
     div.innerHTML = `
-        <h2 class="feature-title">SCRAMBLE</h2>
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-            <button id="scrambleTruthToggle" class="scramble-toggle-btn" style="padding: 10px 20px; background: #f0f0f0; border: 2px solid #1B5E20; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: #1B5E20;">
-                TRUTH ON ONE? <span id="scrambleTruthStatus">OFF</span>
-            </button>
-            <div id="scramblePositionContainer" style="display: none !important; width: 100%; max-width: 300px;">
-                <input type="text" id="scramblePositionInput" placeholder="Position (optional)" inputmode="numeric" pattern="[0-9]*" autocomplete="off" style="width: 100%; padding: 8px; text-align: center; border: 2px solid #1B5E20; border-radius: 8px; font-size: 14px;">
-            </div>
-            <div class="length-input">
-                <input type="text" id="scrambleInput" placeholder="Enter letter string" autocomplete="off" style="text-transform: uppercase;">
-                <button id="scrambleButton">SUBMIT</button>
-                <button id="scrambleSkipButton" class="skip-button">SKIP</button>
-            </div>
+        <h2 class="feature-title">DECODE</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter the letter string. One character is correct at its position (Settings: Position for which one).</p>
+        <div class="length-input">
+            <input type="text" id="scrambleInput" placeholder="Enter letter string" autocomplete="off" style="text-transform: uppercase;">
+            <button id="scrambleButton">SUBMIT</button>
+            <button id="scrambleSkipButton" class="skip-button">SKIP</button>
         </div>
     `;
     return div;
@@ -2381,11 +3011,97 @@ function createNotInFeature() {
     div.id = 'notInFeature';
     div.className = 'feature-section';
     div.innerHTML = `
-        <h2 class="feature-title">NOT IN</h2>
+        <h2 class="feature-title">ABSENT</h2>
         <div class="input-group">
             <input type="text" id="notInInput" placeholder="Enter letters...">
             <button id="notInButton">SUBMIT</button>
             <button id="notInSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createPresentFeature() {
+    const div = document.createElement('div');
+    div.id = 'presentFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">PRESENT</h2>
+        <div class="input-group">
+            <input type="text" id="presentInput" placeholder="Enter letters in the word...">
+            <button id="presentButton">SUBMIT</button>
+            <button id="presentSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createAnywhereFeature() {
+    const div = document.createElement('div');
+    div.id = 'anywhereFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">ANYWHERE</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Two consonants: word must contain both letters (any position, any order).</p>
+        <div class="input-group">
+            <input type="text" id="anywhereInput" placeholder="Two consonants (e.g. RP)" maxlength="2" autocomplete="off" style="text-transform: uppercase;">
+            <button id="anywhereButton">SUBMIT</button>
+            <button id="anywhereSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createTogetherFeature() {
+    const div = document.createElement('div');
+    div.id = 'togetherFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">TOGETHER</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Two consonants: word must have both letters adjacent (RP or PR).</p>
+        <div class="input-group">
+            <input type="text" id="togetherInput" placeholder="Two consonants (e.g. RP)" maxlength="2" autocomplete="off" style="text-transform: uppercase;">
+            <button id="togetherButton">SUBMIT</button>
+            <button id="togetherSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createMiddleFeature() {
+    const div = document.createElement('div');
+    div.id = 'middleFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">MIDDLE</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Two consonants: both must appear in the word and neither as first or last letter.</p>
+        <div class="input-group">
+            <input type="text" id="middleInput" placeholder="Two consonants (e.g. RP)" maxlength="2" autocomplete="off" style="text-transform: uppercase;">
+            <button id="middleButton">SUBMIT</button>
+            <button id="middleSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+// --- CONSONANTS (merged: ANYWHERE / TOGETHER / MIDDLE) ---
+function createConsonantsFeature() {
+    const div = document.createElement('div');
+    div.id = 'consonantsFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">CONSONANTS</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter two consonants, then choose how to filter.</p>
+        <div class="input-group" style="margin-bottom: 16px; display: flex; justify-content: center; align-items: center;">
+            <input type="text" id="consonantsInput" placeholder="Two consonants (e.g. RP)" maxlength="2" autocomplete="off" style="text-transform: uppercase; width: 120px; text-align: center;">
+        </div>
+        <div class="consonants-mode-buttons" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 16px 0;">
+            <button type="button" id="consonantsTogetherBtn" class="consonants-mode-btn">TOGETHER</button>
+            <button type="button" id="consonantsMiddleBtn" class="consonants-mode-btn">MIDDLE</button>
+            <button type="button" id="consonantsAnywhereBtn" class="consonants-mode-btn">ANYWHERE</button>
+        </div>
+        <div style="display: flex; justify-content: center; margin-top: 16px;">
+            <button type="button" id="consonantsSkipBtn" class="skip-button">SKIP</button>
         </div>
     `;
     return div;
@@ -2504,20 +3220,34 @@ function createAbcFeature() {
 }
 
 // --- PIANO FORTE Feature Logic ---
+function getPianoForteLetters() {
+    const DEFAULT = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    if (!appSettings || !appSettings.pianoForteUseCustomRange) return DEFAULT;
+    const start = (appSettings.pianoForteStartLetter || '').toUpperCase();
+    const end = (appSettings.pianoForteEndLetter || '').toUpperCase();
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const iStart = alphabet.indexOf(start);
+    const iEnd = alphabet.indexOf(end);
+    if (iStart === -1 || iEnd === -1 || iStart === iEnd) return DEFAULT;
+    const step = iEnd > iStart ? 1 : -1;
+    const letters = [];
+    for (let i = iStart; ; i += step) {
+        letters.push(alphabet[i]);
+        if (i === iEnd) break;
+    }
+    return letters;
+}
+
 function createPianoForteFeature() {
+    const letters = getPianoForteLetters();
+    const buttonHtml = letters.map(l => `<button class="piano-forte-btn" data-letter="${l}">${l}</button>`).join('\n            ');
     const div = document.createElement('div');
     div.id = 'pianoForteFeature';
     div.className = 'feature-section';
     div.innerHTML = `
         <h2 class="feature-title">PIANO FORTE</h2>
         <div class="piano-forte-row" style="display: flex; justify-content: center; gap: 10px;">
-            <button class="piano-forte-btn" data-letter="A">A</button>
-            <button class="piano-forte-btn" data-letter="B">B</button>
-            <button class="piano-forte-btn" data-letter="C">C</button>
-            <button class="piano-forte-btn" data-letter="D">D</button>
-            <button class="piano-forte-btn" data-letter="E">E</button>
-            <button class="piano-forte-btn" data-letter="F">F</button>
-            <button class="piano-forte-btn" data-letter="G">G</button>
+            ${buttonHtml}
         </div>
         <div id="pianoForteStringDisplay" style="display: flex; justify-content: center; align-items: center; min-height: 50px; margin-top: 20px; padding: 10px; font-size: 24px; font-weight: bold; color: #1B5E20; letter-spacing: 8px;">
             <span id="pianoForteString">-</span>
@@ -2818,19 +3548,45 @@ function createLettersAboveFeature() {
 
 // --- Dictionary (Alpha) Feature Logic ---
 function createDictionaryAlphaFeature() {
+    const ranges = getDictionaryAlphaRanges();
+    const label = (section) => {
+        const [minCode, maxCode] = ranges[section] || [65, 90];
+        return String.fromCharCode(minCode) + '–' + String.fromCharCode(maxCode);
+    };
     const div = document.createElement('div');
     div.id = 'dictionaryAlphaFeature';
     div.className = 'feature-section';
     div.innerHTML = `
         <h2 class="feature-title">Dictionary (Alpha)</h2>
         <div class="section-buttons">
-            <button class="section-btn" data-section="begin">Beginning</button>
-            <button class="section-btn" data-section="mid">Middle</button>
-            <button class="section-btn" data-section="end">End</button>
+            <button class="section-btn" data-section="begin">Beginning (${label('begin')})</button>
+            <button class="section-btn" data-section="mid">Middle (${label('mid')})</button>
+            <button class="section-btn" data-section="end">End (${label('end')})</button>
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; gap: 10px;">
             <button id="dictionaryAlphaSubmitButton">SUBMIT</button>
             <button id="dictionaryAlphaSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+// --- ALPHA Feature Logic ---
+function createAlphaFeature() {
+    const div = document.createElement('div');
+    div.id = 'alphaFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">ALPHA</h2>
+        <p class="alpha-sequence-display" id="alphaSequenceDisplay">—</p>
+        <div class="alpha-direction-buttons">
+            <button type="button" class="alpha-btn alpha-left" id="alphaLeftBtn" aria-label="Left (toward A)">← Left</button>
+            <button type="button" class="alpha-btn alpha-repeat" id="alphaRepeatBtn" aria-label="Repeat (same letter)">Repeat</button>
+            <button type="button" class="alpha-btn alpha-right" id="alphaRightBtn" aria-label="Right (toward Z)">Right →</button>
+        </div>
+        <div class="alpha-actions">
+            <button type="button" id="alphaSubmitBtn" class="alpha-submit-btn">SUBMIT</button>
+            <button type="button" id="alphaSkipBtn" class="skip-button">SKIP</button>
         </div>
     `;
     return div;
@@ -3003,6 +3759,8 @@ function filterWordsByAbc(words, yesLetters) {
 
 // Filtering logic for PIANO FORTE feature (chronological order)
 function filterWordsByPianoForte(words, letterSequence) {
+    const letters = getPianoForteLetters();
+    const letterSet = new Set(letters);
     return words.filter(word => {
         const wordUpper = word.toUpperCase();
         const sequence = letterSequence.map(letter => letter.toUpperCase());
@@ -3010,20 +3768,16 @@ function filterWordsByPianoForte(words, letterSequence) {
         // Get unique letters that were pressed
         const pressedLetters = new Set(sequence);
         
-        // Get letters that were NOT pressed (A-G not in sequence)
-        const unpressedLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].filter(
-            letter => !pressedLetters.has(letter)
-        );
+        // Get letters in the range that were NOT pressed
+        const unpressedLetters = letters.filter(letter => !pressedLetters.has(letter));
         
         // Check that unpressed letters are NOT in the word
         for (const letter of unpressedLetters) {
             if (wordUpper.includes(letter)) return false;
         }
         
-        // Extract only A-G letters from the word, maintaining their order
-        const wordPressedSequence = wordUpper.split('').filter(char => 
-            ['A', 'B', 'C', 'D', 'E', 'F', 'G'].includes(char)
-        );
+        // Extract only letters from the range in the word, maintaining their order
+        const wordPressedSequence = wordUpper.split('').filter(char => letterSet.has(char));
         
         // Check if the extracted sequence matches the pressed sequence exactly
         if (wordPressedSequence.length !== sequence.length) {
@@ -3508,24 +4262,162 @@ function filterWordsByLettersAbove(words, count) {
 }
 
 // --- Dictionary (Alpha) Filter Logic ---
+const DICTIONARY_ALPHA_DEFAULT_RANGES = {
+    begin: [65, 77],   // A-M
+    mid: [73, 84],     // I-T
+    end: [78, 90]      // N-Z
+};
+
+function getDictionaryAlphaRanges() {
+    if (!appSettings || !appSettings.dictionaryAlphaUseCustomRange) {
+        return DICTIONARY_ALPHA_DEFAULT_RANGES;
+    }
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const toCode = (letter) => {
+        const L = (letter || '').toUpperCase();
+        const i = alphabet.indexOf(L);
+        return i === -1 ? null : L.charCodeAt(0);
+    };
+    const beginStart = toCode(appSettings.dictionaryAlphaBeginStart);
+    const beginEnd = toCode(appSettings.dictionaryAlphaBeginEnd);
+    const midStart = toCode(appSettings.dictionaryAlphaMidStart);
+    const midEnd = toCode(appSettings.dictionaryAlphaMidEnd);
+    const endStart = toCode(appSettings.dictionaryAlphaEndStart);
+    const endEnd = toCode(appSettings.dictionaryAlphaEndEnd);
+    if ([beginStart, beginEnd, midStart, midEnd, endStart, endEnd].some(c => c === null)) {
+        return DICTIONARY_ALPHA_DEFAULT_RANGES;
+    }
+    return {
+        begin: [Math.min(beginStart, beginEnd), Math.max(beginStart, beginEnd)],
+        mid: [Math.min(midStart, midEnd), Math.max(midStart, midEnd)],
+        end: [Math.min(endStart, endEnd), Math.max(endStart, endEnd)]
+    };
+}
+
 function filterWordsByDictionaryAlpha(words, section) {
+    const ranges = getDictionaryAlphaRanges();
+    const range = ranges[section];
+    if (!range) return words.filter(() => false);
+    const [minCode, maxCode] = range;
     return words.filter(word => {
         if (!word || word.length === 0) return false;
-        const firstLetter = word[0].toUpperCase();
-        const letterCode = firstLetter.charCodeAt(0);
-        
-        // A=65, M=77, I=73, T=84, N=78, Z=90
-        if (section === 'begin') {
-            // Beginning: A-M
-            return letterCode >= 65 && letterCode <= 77;
-        } else if (section === 'mid') {
-            // Middle: I-T
-            return letterCode >= 73 && letterCode <= 84;
-        } else if (section === 'end') {
-            // End: N-Z
-            return letterCode >= 78 && letterCode <= 90;
+        const letterCode = word[0].toUpperCase().charCodeAt(0);
+        return letterCode >= minCode && letterCode <= maxCode;
+    });
+}
+
+// --- ALPHA: directional filter (Left/Right/Repeat); first letter from Dictionary (Alpha) ---
+function filterWordsByAlpha(words, directions, firstLetterSection, swapPov) {
+    if (!directions || directions.length === 0) return words;
+    const ranges = getDictionaryAlphaRanges();
+    const range = ranges[firstLetterSection] || ranges.begin;
+    const [minCode, maxCode] = range;
+    const needLen = 1 + directions.length;
+    return words.filter(word => {
+        const w = (word || '').toUpperCase();
+        if (w.length < needLen) return false;
+        const code0 = w.charCodeAt(0);
+        if (code0 < minCode || code0 > maxCode) return false;
+        for (let i = 0; i < directions.length; i++) {
+            const d = directions[i];
+            const cPrev = w.charCodeAt(i);
+            const cCur = w.charCodeAt(i + 1);
+            if (d === 'Repeat') {
+                if (cCur !== cPrev) return false;
+            } else {
+                const towardA = (d === 'L' && !swapPov) || (d === 'R' && swapPov);
+                if (towardA) {
+                    if (cCur >= cPrev) return false;
+                } else {
+                    if (cCur <= cPrev) return false;
+                }
+            }
         }
-        return false;
+        return true;
+    });
+}
+
+function alphaDirectionSequences(n) {
+    if (n <= 0) return [[]];
+    const options = ['L', 'R', 'Repeat'];
+    const out = [];
+    function build(seq) {
+        if (seq.length === n) {
+            out.push(seq.slice());
+            return;
+        }
+        for (const d of options) {
+            seq.push(d);
+            build(seq);
+            seq.pop();
+        }
+    }
+    build([]);
+    return out;
+}
+
+function computeAlphaEfficiency(words, nDirections, swapPov) {
+    if (!words || words.length === 0) return null;
+    const n = Math.max(0, Math.min(6, nDirections)); // cap at 6 so 3^6 sequences is manageable
+    if (n === 0) return null;
+    const sequences = alphaDirectionSequences(n);
+    let minWords = words.length + 1;
+    let zeroCount = 0;
+    const totalCount = sequences.length;
+    const section = 'begin'; // use beginning range for efficiency estimate
+    for (const seq of sequences) {
+        const filtered = filterWordsByAlpha(words, seq, section, swapPov);
+        if (filtered.length === 0) zeroCount++;
+        else if (filtered.length < minWords) minWords = filtered.length;
+    }
+    const W = words.length;
+    if (W <= 1) return zeroCount === totalCount ? 0 : (minWords <= 1 ? 100 : 0);
+    if (totalCount === 0) return 0;
+    const noValidBest = minWords > words.length;
+    if (noValidBest) return 0;
+    const base = minWords === 1 ? 100 : (W - minWords) / (W - 1) * 100;
+    const multiplier = 1 - zeroCount / totalCount;
+    return Math.round(Math.max(0, Math.min(100, multiplier * base)));
+}
+
+// --- ANYWHERE / TOGETHER / MIDDLE (two consonants) ---
+function parseTwoConsonants(input) {
+    const raw = (input || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (raw.length !== 2) return null;
+    const vowels = new Set(['A', 'E', 'I', 'O', 'U']);
+    if (vowels.has(raw[0]) || vowels.has(raw[1])) return null;
+    return raw;
+}
+
+function filterWordsByAnywhere(words, twoLetters) {
+    if (!twoLetters || twoLetters.length !== 2) return [];
+    const a = twoLetters[0];
+    const b = twoLetters[1];
+    return words.filter(word => {
+        const w = word.toUpperCase();
+        return w.includes(a) && w.includes(b);
+    });
+}
+
+function filterWordsByTogether(words, twoLetters) {
+    if (!twoLetters || twoLetters.length !== 2) return [];
+    const pair1 = twoLetters;
+    const pair2 = twoLetters[1] + twoLetters[0];
+    return words.filter(word => {
+        const w = word.toUpperCase();
+        return w.includes(pair1) || w.includes(pair2);
+    });
+}
+
+function filterWordsByMiddle(words, twoLetters) {
+    if (!twoLetters || twoLetters.length !== 2) return [];
+    const a = twoLetters[0];
+    const b = twoLetters[1];
+    return words.filter(word => {
+        const w = word.toUpperCase();
+        if (w.length < 3) return false;
+        const middle = w.slice(1, -1);
+        return middle.includes(a) && middle.includes(b);
     });
 }
 
@@ -4142,21 +5034,13 @@ function setupFeatureListeners(feature, callback, options) {
                         return;
                     }
                     
-                    if (!selectedVowel) {
-                        alert('Please select a vowel');
-                        return;
-                    }
-                    
-                    if (!selectedSection) {
-                        alert('Please select a position (START/MID/END)');
-                        return;
-                    }
-                    
                     // Filter by consonants (like Short Word)
                     let filteredWords = filterWordsByPosition1(currentFilteredWords, consonants);
                     
-                    // Filter by vowel position (like VOWEL-POS)
-                    filteredWords = filterWordsByVowelSection(filteredWords, selectedVowel, selectedSection);
+                    // Optionally filter by vowel position if both vowel and section are selected
+                    if (selectedVowel && selectedSection) {
+                        filteredWords = filterWordsByVowelSection(filteredWords, selectedVowel, selectedSection);
+                    }
                     
                     callback(filteredWords);
                     document.getElementById('nameFeature').classList.add('completed');
@@ -4268,6 +5152,74 @@ function setupFeatureListeners(feature, callback, options) {
                     e.preventDefault();
                     oSkipBtn.click();
                 }, { passive: false });
+            }
+            break;
+        }
+
+        case 'oCurves': {
+            const part1 = document.getElementById('oCurvesPart1');
+            const part2 = document.getElementById('oCurvesPart2');
+            const yesBtn = document.getElementById('oCurvesYesBtn');
+            const noBtn = document.getElementById('oCurvesNoBtn');
+            const skipBtn = document.getElementById('oCurvesSkipBtn');
+            const positionsInput = document.getElementById('oCurvesPositionsInput');
+            const submitBtn = document.getElementById('oCurvesSubmitBtn');
+            const curvedSkipBtn = document.getElementById('oCurvesCurvedSkipBtn');
+            const complete = () => {
+                document.getElementById('oCurvesFeature').classList.add('completed');
+                document.getElementById('oCurvesFeature').dispatchEvent(new Event('completed'));
+            };
+            const showPart2 = () => {
+                if (part1) part1.style.display = 'none';
+                if (part2) part2.style.display = 'block';
+            };
+            if (yesBtn) {
+                yesBtn.onclick = () => {
+                    const filtered = filterWordsByO(currentFilteredWords, true);
+                    currentFilteredWords = filtered;
+                    displayResults(currentFilteredWords);
+                    showPart2();
+                };
+                yesBtn.addEventListener('touchstart', (e) => { e.preventDefault(); yesBtn.click(); }, { passive: false });
+            }
+            if (noBtn) {
+                noBtn.onclick = () => {
+                    const filtered = filterWordsByO(currentFilteredWords, false);
+                    currentFilteredWords = filtered;
+                    displayResults(currentFilteredWords);
+                    showPart2();
+                };
+                noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); noBtn.click(); }, { passive: false });
+            }
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    complete();
+                };
+                skipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipBtn.click(); }, { passive: false });
+            }
+            if (submitBtn && positionsInput) {
+                submitBtn.onclick = () => {
+                    const input = positionsInput.value.trim();
+                    if (input) {
+                        const filtered = filterWordsByCurvedPositions(currentFilteredWords, input);
+                        currentFilteredWords = filtered;
+                        displayResults(currentFilteredWords);
+                        callback(currentFilteredWords);
+                        complete();
+                    } else {
+                        alert('Please enter positions (e.g. 123 or 0 for all straight)');
+                    }
+                };
+                submitBtn.addEventListener('touchstart', (e) => { e.preventDefault(); submitBtn.click(); }, { passive: false });
+                positionsInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') submitBtn.click(); });
+            }
+            if (curvedSkipBtn) {
+                curvedSkipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    complete();
+                };
+                curvedSkipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); curvedSkipBtn.click(); }, { passive: false });
             }
             break;
         }
@@ -4419,6 +5371,41 @@ function setupFeatureListeners(feature, callback, options) {
             }
             break;
         }
+
+        case 'zeroCurves': {
+            const zeroCurvesButton = document.getElementById('zeroCurvesButton');
+            const zeroCurvesSkipButton = document.getElementById('zeroCurvesSkipButton');
+            const zeroCurvesInput = document.getElementById('zeroCurvesInput');
+            if (zeroCurvesButton && zeroCurvesInput) {
+                zeroCurvesButton.onclick = () => {
+                    const input = zeroCurvesInput.value.trim();
+                    if (input) {
+                        const approx = !!(appSettings && appSettings.zeroCurvesApprox);
+                        const filteredWords = filterWordsByZeroCurves(currentFilteredWords, input, approx);
+                        currentFilteredWords = filteredWords;
+                        displayResults(currentFilteredWords);
+                        callback(currentFilteredWords);
+                        document.getElementById('zeroCurvesFeature').classList.add('completed');
+                        document.getElementById('zeroCurvesFeature').dispatchEvent(new Event('completed'));
+                    } else {
+                        alert('Please enter positions (e.g. 135 or 0)');
+                    }
+                };
+                zeroCurvesButton.addEventListener('touchstart', (e) => { e.preventDefault(); zeroCurvesButton.click(); }, { passive: false });
+            }
+            if (zeroCurvesSkipButton) {
+                zeroCurvesSkipButton.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('zeroCurvesFeature').classList.add('completed');
+                    document.getElementById('zeroCurvesFeature').dispatchEvent(new Event('completed'));
+                };
+                zeroCurvesSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); zeroCurvesSkipButton.click(); }, { passive: false });
+            }
+            if (zeroCurvesInput) {
+                zeroCurvesInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') zeroCurvesButton.click(); });
+            }
+            break;
+        }
             
         case 'consonant': {
             const consonantYesBtn = document.getElementById('consonantYesBtn');
@@ -4567,6 +5554,294 @@ function setupFeatureListeners(feature, callback, options) {
             }
             break;
         }
+
+        case 'e21': {
+            const part1 = document.getElementById('e21Part1');
+            const part2 = document.getElementById('e21Part2');
+            const part3 = document.getElementById('e21Part3');
+            const secondEBtn = document.getElementById('e21SecondEBtn');
+            const secondYesBtn = document.getElementById('e21SecondYesBtn');
+            const secondNoBtn = document.getElementById('e21SecondNoBtn');
+            const firstEBtn = document.getElementById('e21FirstEBtn');
+            const firstYesBtn = document.getElementById('e21FirstYesBtn');
+            const firstNoBtn = document.getElementById('e21FirstNoBtn');
+            const anywhereYesBtn = document.getElementById('e21AnywhereYesBtn');
+            const anywhereNoBtn = document.getElementById('e21AnywhereNoBtn');
+            const skipBtn = document.getElementById('e21SkipBtn');
+
+            const hasAnywherePart = appSettings && appSettings.e21CheckAnywhere;
+            let e21AnsweredEInPosition = false; // true if user answered "E" for part 1 or part 2
+
+            const showStage = (stage) => {
+                if (part1) part1.style.display = stage === 1 ? 'block' : 'none';
+                if (part2) part2.style.display = stage === 2 ? 'block' : 'none';
+                if (part3) part3.style.display = stage === 3 ? 'block' : 'none';
+            };
+
+            const complete = () => {
+                const featureDiv = document.getElementById('e21Feature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+            };
+
+            showStage(1);
+
+            const applyEee = (mode) => {
+                const filtered = filterWordsByEee(currentFilteredWords, mode);
+                currentFilteredWords = filtered;
+                displayResults(currentFilteredWords);
+            };
+
+            const applyEeeFirst = (mode) => {
+                const filtered = filterWordsByEeeFirst(currentFilteredWords, mode);
+                currentFilteredWords = filtered;
+                displayResults(currentFilteredWords);
+            };
+
+            // Part 1: EEE? (second letter)
+            if (secondEBtn) {
+                secondEBtn.onclick = () => {
+                    e21AnsweredEInPosition = true; // E in second position => E is in the word
+                    applyEee('E');
+                    showStage(2);
+                };
+                secondEBtn.addEventListener('touchstart', (e) => { e.preventDefault(); secondEBtn.click(); }, { passive: false });
+            }
+            if (secondYesBtn) {
+                secondYesBtn.onclick = () => {
+                    applyEee('YES');
+                    showStage(2);
+                };
+                secondYesBtn.addEventListener('touchstart', (e) => { e.preventDefault(); secondYesBtn.click(); }, { passive: false });
+            }
+            if (secondNoBtn) {
+                secondNoBtn.onclick = () => {
+                    applyEee('NO');
+                    showStage(2);
+                };
+                secondNoBtn.addEventListener('touchstart', (e) => { e.preventDefault(); secondNoBtn.click(); }, { passive: false });
+            }
+
+            // Part 2: EEEFIRST (first letter). Skip "Is E in the word?" if user answered E in part 1 or part 2.
+            const finishOrNext = () => {
+                if (hasAnywherePart && !e21AnsweredEInPosition) {
+                    showStage(3);
+                } else {
+                    callback(currentFilteredWords);
+                    complete();
+                }
+            };
+
+            if (firstEBtn) {
+                firstEBtn.onclick = () => {
+                    e21AnsweredEInPosition = true; // E in first position => E is in the word
+                    applyEeeFirst('E');
+                    finishOrNext();
+                };
+                firstEBtn.addEventListener('touchstart', (e) => { e.preventDefault(); firstEBtn.click(); }, { passive: false });
+            }
+            if (firstYesBtn) {
+                firstYesBtn.onclick = () => {
+                    applyEeeFirst('YES');
+                    finishOrNext();
+                };
+                firstYesBtn.addEventListener('touchstart', (e) => { e.preventDefault(); firstYesBtn.click(); }, { passive: false });
+            }
+            if (firstNoBtn) {
+                firstNoBtn.onclick = () => {
+                    applyEeeFirst('NO');
+                    finishOrNext();
+                };
+                firstNoBtn.addEventListener('touchstart', (e) => { e.preventDefault(); firstNoBtn.click(); }, { passive: false });
+            }
+
+            // Part 3: E anywhere (optional)
+            const applyEAnywhere = (hasE) => {
+                const filtered = currentFilteredWords.filter(word => {
+                    const has = word.toUpperCase().includes('E');
+                    return hasE ? has : !has;
+                });
+                currentFilteredWords = filtered;
+                displayResults(currentFilteredWords);
+                callback(currentFilteredWords);
+                complete();
+            };
+
+            if (anywhereYesBtn) {
+                anywhereYesBtn.onclick = () => applyEAnywhere(true);
+                anywhereYesBtn.addEventListener('touchstart', (e) => { e.preventDefault(); anywhereYesBtn.click(); }, { passive: false });
+            }
+            if (anywhereNoBtn) {
+                anywhereNoBtn.onclick = () => applyEAnywhere(false);
+                anywhereNoBtn.addEventListener('touchstart', (e) => { e.preventDefault(); anywhereNoBtn.click(); }, { passive: false });
+            }
+
+            // Skip entire E21
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    complete();
+                };
+                skipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipBtn.click(); }, { passive: false });
+            }
+
+            break;
+        }
+
+        case 'letterLying': {
+            const letterDisplay = document.getElementById('letterLyingLetterDisplay');
+            const yesBtn = document.getElementById('letterLyingYesBtn');
+            const noBtn = document.getElementById('letterLyingNoBtn');
+            const skipLetterBtn = document.getElementById('letterLyingSkipLetterBtn');
+            const skipBtn = document.getElementById('letterLyingSkipBtn');
+            const askedLetters = new Set();
+
+            const complete = () => {
+                const featureDiv = document.getElementById('letterLyingFeature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+            };
+
+            const isStatic = (appSettings && appSettings.letterLyingMode) === 'static';
+            const staticLetters = getLetterLyingStaticLetters();
+            const totalParts = isStatic ? staticLetters.length : (Math.max(1, Math.min(26, (appSettings && appSettings.letterLyingDynamicSteps) || 4)));
+            let partIndex = 0;
+            let currentLetter = null;
+
+            const showNextLetter = () => {
+                if (currentFilteredWords.length === 0) {
+                    callback(currentFilteredWords);
+                    complete();
+                    return;
+                }
+                if (partIndex >= totalParts) {
+                    callback(currentFilteredWords);
+                    complete();
+                    return;
+                }
+                currentLetter = isStatic ? staticLetters[partIndex] : getMostFrequentLetterInWordlist(currentFilteredWords, askedLetters);
+                if (!currentLetter) {
+                    callback(currentFilteredWords);
+                    complete();
+                    return;
+                }
+                askedLetters.add(currentLetter);
+                if (letterDisplay) letterDisplay.textContent = currentLetter;
+            };
+
+            showNextLetter();
+            if (partIndex >= totalParts || currentFilteredWords.length === 0) break;
+
+            const advanceOrComplete = () => {
+                partIndex++;
+                if (partIndex >= totalParts) {
+                    callback(currentFilteredWords);
+                    complete();
+                    return;
+                }
+                showNextLetter();
+            };
+
+            if (yesBtn) {
+                yesBtn.onclick = () => {
+                    if (!currentLetter) return;
+                    const filtered = filterWordsByLetterPresence(currentFilteredWords, currentLetter, true);
+                    currentFilteredWords = filtered;
+                    callback(currentFilteredWords);
+                    displayResults(currentFilteredWords);
+                    if (filtered.length === 0) {
+                        complete();
+                        return;
+                    }
+                    advanceOrComplete();
+                };
+                yesBtn.addEventListener('touchstart', (e) => { e.preventDefault(); yesBtn.click(); }, { passive: false });
+            }
+            if (noBtn) {
+                noBtn.onclick = () => {
+                    if (!currentLetter) return;
+                    const filtered = filterWordsByLetterPresence(currentFilteredWords, currentLetter, false);
+                    currentFilteredWords = filtered;
+                    callback(currentFilteredWords);
+                    displayResults(currentFilteredWords);
+                    if (filtered.length === 0) {
+                        complete();
+                        return;
+                    }
+                    advanceOrComplete();
+                };
+                noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); noBtn.click(); }, { passive: false });
+            }
+            if (skipLetterBtn) {
+                skipLetterBtn.onclick = () => advanceOrComplete();
+                skipLetterBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipLetterBtn.click(); }, { passive: false });
+            }
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    complete();
+                };
+                skipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipBtn.click(); }, { passive: false });
+            }
+            break;
+        }
+
+        case 'loveLetters': {
+            const loveLettersButton = document.getElementById('loveLettersButton');
+            const loveLettersSkipButton = document.getElementById('loveLettersSkipButton');
+            const loveLettersInput = document.getElementById('loveLettersInput');
+            const groups = getLoveLettersGroups();
+            const rowCount = groups.length;
+            if (loveLettersInput) loveLettersInput.maxLength = rowCount;
+            if (loveLettersButton && loveLettersInput) {
+                loveLettersButton.onclick = () => {
+                    const raw = loveLettersInput.value.trim();
+                    const digits = raw.replace(/\D/g, '');
+                    if (digits.length !== rowCount) {
+                        alert(`Enter exactly ${rowCount} digit(s) (one per row).`);
+                        return;
+                    }
+                    let valid = true;
+                    for (let i = 0; i < rowCount; i++) {
+                        const d = parseInt(digits[i], 10);
+                        if (isNaN(d) || d < 0 || d > groups[i].size) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if (!valid) {
+                        alert(`Each digit must be 0–${Math.max(...groups.map(g => g.size))} (max per row).`);
+                        return;
+                    }
+                    const filtered = filterWordsByLoveLetters(currentFilteredWords, digits, groups);
+                    currentFilteredWords = filtered;
+                    displayResults(currentFilteredWords);
+                    callback(currentFilteredWords);
+                    document.getElementById('loveLettersFeature').classList.add('completed');
+                    document.getElementById('loveLettersFeature').dispatchEvent(new Event('completed'));
+                };
+                loveLettersButton.addEventListener('touchstart', (e) => { e.preventDefault(); loveLettersButton.click(); }, { passive: false });
+            }
+            if (loveLettersSkipButton) {
+                loveLettersSkipButton.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('loveLettersFeature').classList.add('completed');
+                    document.getElementById('loveLettersFeature').dispatchEvent(new Event('completed'));
+                };
+                loveLettersSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); loveLettersSkipButton.click(); }, { passive: false });
+            }
+            if (loveLettersInput) {
+                loveLettersInput.addEventListener('input', () => {
+                    loveLettersInput.value = loveLettersInput.value.replace(/\D/g, '').slice(0, rowCount);
+                });
+                loveLettersInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loveLettersButton.click(); });
+            }
+            break;
+        }
         
         case 'originalLex': {
             const originalLexButton = document.getElementById('originalLexButton');
@@ -4634,7 +5909,17 @@ function setupFeatureListeners(feature, callback, options) {
                     if (input) {
                         const length = parseInt(input);
                         if (length >= 3) {
-                            const filteredWords = filterWordsByLength(currentFilteredWords, length);
+                            let filteredWords;
+                            if (appSettings && appSettings.lengthBuffer1) {
+                                const minLen = Math.max(1, length - 1);
+                                const maxLen = length + 1;
+                                filteredWords = currentFilteredWords.filter(word => {
+                                    const len = word.length;
+                                    return len >= minLen && len <= maxLen;
+                                });
+                            } else {
+                                filteredWords = filterWordsByLength(currentFilteredWords, length);
+                            }
                             callback(filteredWords);
                             document.getElementById('lengthFeature').dispatchEvent(new Event('completed'));
                         } else {
@@ -4678,7 +5963,10 @@ function setupFeatureListeners(feature, callback, options) {
                     if (input) {
                         const score = parseInt(input);
                         if (!isNaN(score) && score > 0) {
-                            const filteredWords = filterWordsByScrabble(currentFilteredWords, score);
+                            const useBuffer = !!(appSettings && appSettings.scrabbleBuffer1);
+                            const filteredWords = useBuffer
+                                ? filterWordsByScrabble1(currentFilteredWords, score)
+                                : filterWordsByScrabble(currentFilteredWords, score);
                             callback(filteredWords);
                             document.getElementById('scrabbleFeature').classList.add('completed');
                             document.getElementById('scrabbleFeature').dispatchEvent(new Event('completed'));
@@ -4761,8 +6049,7 @@ function setupFeatureListeners(feature, callback, options) {
         case 'sologram': {
             const sologramFeature = document.getElementById('sologramFeature');
             const sologramDisplay = document.getElementById('sologramDisplay');
-            const sologramGroupBtn = document.getElementById('sologramGroupBtn');
-            const sologramGroupDropdown = document.getElementById('sologramGroupDropdown');
+            const sologramBookLabel = document.getElementById('sologramBookLabel');
             const sologramYBtn = document.getElementById('sologramYBtn');
             const sologramNBtn = document.getElementById('sologramNBtn');
             const sologramBackspaceBtn = document.getElementById('sologramBackspaceBtn');
@@ -4773,53 +6060,9 @@ function setupFeatureListeners(feature, callback, options) {
                 if (sologramFeature) sologramFeature.dataset.sologramYn = s;
                 if (sologramDisplay) sologramDisplay.textContent = s || '(empty)';
             };
-            const updateGroupButtonLabel = () => {
-                const group = SOLOGRAM_WORD_GROUPS[sologramSelectedGroupId] || SOLOGRAM_WORD_GROUPS.all;
-                if (sologramGroupBtn) sologramGroupBtn.textContent = group.label;
-            };
-            let outsideClickHandler = null;
-            const closeGroupDropdown = () => {
-                if (sologramGroupDropdown) sologramGroupDropdown.style.display = 'none';
-                if (outsideClickHandler) {
-                    document.removeEventListener('click', outsideClickHandler);
-                    document.removeEventListener('touchstart', outsideClickHandler);
-                    outsideClickHandler = null;
-                }
-            };
-            if (sologramGroupBtn && sologramGroupDropdown) {
-                updateGroupButtonLabel();
-                sologramGroupBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    const isOpen = sologramGroupDropdown.style.display === 'block';
-                    sologramGroupDropdown.style.display = isOpen ? 'none' : 'block';
-                    if (!isOpen) {
-                        outsideClickHandler = (ev) => {
-                            if (!sologramGroupBtn.contains(ev.target) && !sologramGroupDropdown.contains(ev.target)) {
-                                closeGroupDropdown();
-                            }
-                        };
-                        document.addEventListener('click', outsideClickHandler);
-                        document.addEventListener('touchstart', outsideClickHandler, { passive: false });
-                    } else if (outsideClickHandler) {
-                        document.removeEventListener('click', outsideClickHandler);
-                        document.removeEventListener('touchstart', outsideClickHandler);
-                        outsideClickHandler = null;
-                    }
-                };
-                sologramGroupBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sologramGroupBtn.click(); }, { passive: false });
-                sologramGroupDropdown.querySelectorAll('.sologram-group-option').forEach(opt => {
-                    opt.onclick = (e) => {
-                        e.stopPropagation();
-                        const id = opt.getAttribute('data-group');
-                        if (id && SOLOGRAM_WORD_GROUPS[id]) {
-                            sologramSelectedGroupId = id;
-                            updateGroupButtonLabel();
-                            closeGroupDropdown();
-                        }
-                    };
-                    opt.addEventListener('touchstart', (e) => { e.preventDefault(); opt.click(); }, { passive: false });
-                });
-            }
+            const bookId = (appSettings && appSettings.sologramBook) || 'all';
+            const group = SOLOGRAM_WORD_GROUPS[bookId] || SOLOGRAM_WORD_GROUPS.all;
+            if (sologramBookLabel) sologramBookLabel.textContent = group.label;
             if (sologramYBtn) {
                 sologramYBtn.onclick = () => setSologramString(getSologramString() + 'Y');
                 sologramYBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sologramYBtn.click(); }, { passive: false });
@@ -4856,163 +6099,51 @@ function setupFeatureListeners(feature, callback, options) {
                 sologramSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); sologramSkipButton.click(); }, { passive: false });
             }
             setSologramString(''); // reset when step is shown
-            updateGroupButtonLabel();
             break;
         }
 
         case 'scramble': {
-            console.log('Setting up scramble feature listeners');
-            // Use an object to store state that can be accessed by closures
-            const scrambleState = { truthOnOne: false };
-            
-            // Wait a bit for DOM to be ready, then query elements
-            setTimeout(() => {
-                const scrambleFeatureEl = document.getElementById('scrambleFeature');
-                console.log('Scramble feature element found:', !!scrambleFeatureEl);
-                
-                if (!scrambleFeatureEl) {
-                    console.error('scrambleFeature element not found!');
-                    return;
-                }
-                
-                const scrambleButton = scrambleFeatureEl.querySelector('#scrambleButton');
-                const scrambleSkipButton = scrambleFeatureEl.querySelector('#scrambleSkipButton');
-                const scrambleInput = scrambleFeatureEl.querySelector('#scrambleInput');
-                const scrambleTruthToggle = scrambleFeatureEl.querySelector('#scrambleTruthToggle');
-                const scrambleTruthStatus = scrambleFeatureEl.querySelector('#scrambleTruthStatus');
-                const scramblePositionContainer = scrambleFeatureEl.querySelector('#scramblePositionContainer');
-                const scramblePositionInput = scrambleFeatureEl.querySelector('#scramblePositionInput');
-                
-                console.log('Scramble elements found:', {
-                    button: !!scrambleButton,
-                    skipButton: !!scrambleSkipButton,
-                    input: !!scrambleInput,
-                    toggle: !!scrambleTruthToggle,
-                    status: !!scrambleTruthStatus,
-                    container: !!scramblePositionContainer,
-                    positionInput: !!scramblePositionInput
+            const scrambleButton = document.getElementById('scrambleButton');
+            const scrambleSkipButton = document.getElementById('scrambleSkipButton');
+            const scrambleInput = document.getElementById('scrambleInput');
+            if (scrambleInput) {
+                scrambleInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
                 });
-                
-                // Toggle button handler
-                if (scrambleTruthToggle) {
-                    scrambleTruthToggle.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        scrambleState.truthOnOne = !scrambleState.truthOnOne;
-                        console.log('Toggle clicked, truthOnOne:', scrambleState.truthOnOne);
-                        
-                        // Re-query elements from the feature element
-                        const featureEl = document.getElementById('scrambleFeature');
-                        const container = featureEl?.querySelector('#scramblePositionContainer');
-                        const positionInput = featureEl?.querySelector('#scramblePositionInput');
-                        const status = featureEl?.querySelector('#scrambleTruthStatus');
-                        
-                        console.log('After toggle - Elements found:', {
-                            container: !!container,
-                            input: !!positionInput,
-                            status: !!status
-                        });
-                        
-                        if (scrambleState.truthOnOne) {
-                            if (status) status.textContent = 'ON';
-                            scrambleTruthToggle.style.background = '#1B5E20';
-                            scrambleTruthToggle.style.color = 'white';
-                            // Show position input when toggle is ON
-                            if (container) {
-                                container.style.display = 'block';
-                                container.style.visibility = 'visible';
-                                container.style.width = '100%';
-                                container.style.maxWidth = '300px';
-                                console.log('Container shown, computed display:', window.getComputedStyle(container).display);
-                                console.log('Container element:', container);
-                            } else {
-                                console.error('scramblePositionContainer not found after toggle');
-                            }
+            }
+            if (scrambleButton && scrambleInput) {
+                scrambleButton.onclick = () => {
+                    const input = scrambleInput.value.trim();
+                    if (!input || input.length === 0) {
+                        alert('Please enter a letter string');
+                        return;
+                    }
+                    const usePosition = !!(appSettings && appSettings.decodePositionOn);
+                    let specifiedPosition = null;
+                    if (usePosition && appSettings.decodePosition != null) {
+                        const pos = parseInt(appSettings.decodePosition, 10);
+                        if (pos >= 1 && pos <= input.length) {
+                            specifiedPosition = pos;
                         } else {
-                            if (status) status.textContent = 'OFF';
-                            scrambleTruthToggle.style.background = '#f0f0f0';
-                            scrambleTruthToggle.style.color = '#1B5E20';
-                            // Hide position input when toggle is OFF
-                            if (container) {
-                                container.style.display = 'none';
-                                container.style.visibility = 'hidden';
-                            }
-                            // Clear position input
-                            if (positionInput) {
-                                positionInput.value = '';
-                            }
+                            alert(`Truth position must be between 1 and ${input.length} for this string.`);
+                            return;
                         }
-                    });
-                    
-                    // Add touch event for mobile
-                    scrambleTruthToggle.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        scrambleTruthToggle.click();
-                    }, { passive: false });
-                } else {
-                    console.error('scrambleTruthToggle not found!');
-                }
-                
-                // Convert input to uppercase as user types
-                if (scrambleInput) {
-                    scrambleInput.addEventListener('input', (e) => {
-                        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-                    });
-                }
-                
-                // Restrict position input to numbers only
-                if (scramblePositionInput) {
-                    scramblePositionInput.addEventListener('input', (e) => {
-                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                    });
-                }
-                
-                if (scrambleButton) {
-                    scrambleButton.addEventListener('click', () => {
-                        const input = scrambleInput?.value.trim();
-                        if (input && input.length > 0) {
-                            // Get optional position (1-based, convert to 0-based for internal use)
-                            const positionInput = scramblePositionInput?.value.trim();
-                            const specifiedPosition = positionInput ? parseInt(positionInput) : null;
-                            
-                            // Validate position if provided
-                            if (specifiedPosition !== null) {
-                                if (isNaN(specifiedPosition) || specifiedPosition < 1 || specifiedPosition > input.length) {
-                                    alert(`Position must be between 1 and ${input.length}`);
-                                    return;
-                                }
-                            }
-                            
-                            const filteredWords = filterWordsByScramble(currentFilteredWords, input, scrambleState.truthOnOne, specifiedPosition);
-                            callback(filteredWords);
-                            document.getElementById('scrambleFeature').classList.add('completed');
-                            document.getElementById('scrambleFeature').dispatchEvent(new Event('completed'));
-                        } else {
-                            alert('Please enter a letter string');
-                        }
-                    });
-                    
-                    // Add touch event for mobile
-                    scrambleButton.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        scrambleButton.click();
-                    }, { passive: false });
-                }
-                
-                if (scrambleSkipButton) {
-                    scrambleSkipButton.addEventListener('click', () => {
-                        callback(currentFilteredWords);
-                        document.getElementById('scrambleFeature').classList.add('completed');
-                        document.getElementById('scrambleFeature').dispatchEvent(new Event('completed'));
-                    });
-                    
-                    // Add touch event for mobile
-                    scrambleSkipButton.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        scrambleSkipButton.click();
-                    }, { passive: false });
-                }
-            }, 100);
+                    }
+                    const filteredWords = filterWordsByScramble(currentFilteredWords, input, true, specifiedPosition);
+                    callback(filteredWords);
+                    document.getElementById('scrambleFeature').classList.add('completed');
+                    document.getElementById('scrambleFeature').dispatchEvent(new Event('completed'));
+                };
+                scrambleButton.addEventListener('touchstart', (e) => { e.preventDefault(); scrambleButton.click(); }, { passive: false });
+            }
+            if (scrambleSkipButton) {
+                scrambleSkipButton.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('scrambleFeature').classList.add('completed');
+                    document.getElementById('scrambleFeature').dispatchEvent(new Event('completed'));
+                };
+                scrambleSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); scrambleSkipButton.click(); }, { passive: false });
+            }
             break;
         }
 
@@ -5241,6 +6372,226 @@ function setupFeatureListeners(feature, callback, options) {
                     newNotInSkipButton.click();
                 }, { passive: false });
             }
+            break;
+        }
+
+        case 'present': {
+            const presentButton = document.getElementById('presentButton');
+            const presentSkipButton = document.getElementById('presentSkipButton');
+            const presentInput = document.getElementById('presentInput');
+
+            if (presentButton && presentInput && presentSkipButton) {
+                const newPresentButton = presentButton.cloneNode(true);
+                const newPresentSkipButton = presentSkipButton.cloneNode(true);
+                const newPresentInput = presentInput.cloneNode(true);
+                presentButton.parentNode.replaceChild(newPresentButton, presentButton);
+                presentSkipButton.parentNode.replaceChild(newPresentSkipButton, presentSkipButton);
+                presentInput.parentNode.replaceChild(newPresentInput, presentInput);
+
+                newPresentButton.addEventListener('click', () => {
+                    const letters = newPresentInput.value.trim();
+                    if (letters) {
+                        filterWordsByPresent(letters);
+                        callback(currentFilteredWords);
+                        document.getElementById('presentFeature').classList.add('completed');
+                        document.getElementById('presentFeature').dispatchEvent(new Event('completed'));
+                    }
+                });
+
+                newPresentSkipButton.addEventListener('click', () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('presentFeature').classList.add('completed');
+                    document.getElementById('presentFeature').dispatchEvent(new Event('completed'));
+                });
+
+                newPresentInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        newPresentButton.click();
+                    }
+                });
+
+                newPresentButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    newPresentButton.click();
+                }, { passive: false });
+
+                newPresentSkipButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    newPresentSkipButton.click();
+                }, { passive: false });
+            }
+            break;
+        }
+
+        case 'anywhere': {
+            const anywhereInput = document.getElementById('anywhereInput');
+            const anywhereButton = document.getElementById('anywhereButton');
+            const anywhereSkipButton = document.getElementById('anywhereSkipButton');
+            if (anywhereInput) {
+                anywhereInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+                });
+                anywhereInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') anywhereButton?.click(); });
+            }
+            if (anywhereButton) {
+                anywhereButton.onclick = () => {
+                    const two = parseTwoConsonants(anywhereInput?.value);
+                    if (!two) {
+                        alert('Enter exactly two consonants (no vowels).');
+                        return;
+                    }
+                    const filteredWords = filterWordsByAnywhere(currentFilteredWords, two);
+                    callback(filteredWords);
+                    document.getElementById('anywhereFeature').classList.add('completed');
+                    document.getElementById('anywhereFeature').dispatchEvent(new Event('completed'));
+                };
+                anywhereButton.addEventListener('touchstart', (e) => { e.preventDefault(); anywhereButton.click(); }, { passive: false });
+            }
+            if (anywhereSkipButton) {
+                anywhereSkipButton.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('anywhereFeature').classList.add('completed');
+                    document.getElementById('anywhereFeature').dispatchEvent(new Event('completed'));
+                };
+                anywhereSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); anywhereSkipButton.click(); }, { passive: false });
+            }
+            break;
+        }
+
+        case 'together': {
+            const togetherInput = document.getElementById('togetherInput');
+            const togetherButton = document.getElementById('togetherButton');
+            const togetherSkipButton = document.getElementById('togetherSkipButton');
+            if (togetherInput) {
+                togetherInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+                });
+                togetherInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') togetherButton?.click(); });
+            }
+            if (togetherButton) {
+                togetherButton.onclick = () => {
+                    const two = parseTwoConsonants(togetherInput?.value);
+                    if (!two) {
+                        alert('Enter exactly two consonants (no vowels).');
+                        return;
+                    }
+                    const filteredWords = filterWordsByTogether(currentFilteredWords, two);
+                    callback(filteredWords);
+                    document.getElementById('togetherFeature').classList.add('completed');
+                    document.getElementById('togetherFeature').dispatchEvent(new Event('completed'));
+                };
+                togetherButton.addEventListener('touchstart', (e) => { e.preventDefault(); togetherButton.click(); }, { passive: false });
+            }
+            if (togetherSkipButton) {
+                togetherSkipButton.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('togetherFeature').classList.add('completed');
+                    document.getElementById('togetherFeature').dispatchEvent(new Event('completed'));
+                };
+                togetherSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); togetherSkipButton.click(); }, { passive: false });
+            }
+            break;
+        }
+
+        case 'middle': {
+            const middleInput = document.getElementById('middleInput');
+            const middleButton = document.getElementById('middleButton');
+            const middleSkipButton = document.getElementById('middleSkipButton');
+            if (middleInput) {
+                middleInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+                });
+                middleInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') middleButton?.click(); });
+            }
+            if (middleButton) {
+                middleButton.onclick = () => {
+                    const two = parseTwoConsonants(middleInput?.value);
+                    if (!two) {
+                        alert('Enter exactly two consonants (no vowels).');
+                        return;
+                    }
+                    const filteredWords = filterWordsByMiddle(currentFilteredWords, two);
+                    callback(filteredWords);
+                    document.getElementById('middleFeature').classList.add('completed');
+                    document.getElementById('middleFeature').dispatchEvent(new Event('completed'));
+                };
+                middleButton.addEventListener('touchstart', (e) => { e.preventDefault(); middleButton.click(); }, { passive: false });
+            }
+            if (middleSkipButton) {
+                middleSkipButton.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('middleFeature').classList.add('completed');
+                    document.getElementById('middleFeature').dispatchEvent(new Event('completed'));
+                };
+                middleSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); middleSkipButton.click(); }, { passive: false });
+            }
+            break;
+        }
+
+        case 'consonants': {
+            const consonantsInput = document.getElementById('consonantsInput');
+            const consonantsTogetherBtn = document.getElementById('consonantsTogetherBtn');
+            const consonantsMiddleBtn = document.getElementById('consonantsMiddleBtn');
+            const consonantsAnywhereBtn = document.getElementById('consonantsAnywhereBtn');
+            const consonantsSkipBtn = document.getElementById('consonantsSkipBtn');
+            const consonantsFeature = document.getElementById('consonantsFeature');
+            function consonantsComplete(filtered) {
+                callback(filtered);
+                if (consonantsFeature) {
+                    consonantsFeature.classList.add('completed');
+                    consonantsFeature.dispatchEvent(new Event('completed'));
+                }
+            }
+            if (consonantsInput) {
+                consonantsInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+                });
+                consonantsInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') consonantsTogetherBtn?.focus();
+                });
+            }
+            if (consonantsTogetherBtn) {
+                consonantsTogetherBtn.onclick = () => {
+                    const two = parseTwoConsonants(consonantsInput?.value);
+                    if (!two) {
+                        alert('Enter exactly two consonants (no vowels).');
+                        return;
+                    }
+                    consonantsComplete(filterWordsByTogether(currentFilteredWords, two));
+                };
+                consonantsTogetherBtn.addEventListener('touchstart', (e) => { e.preventDefault(); consonantsTogetherBtn.click(); }, { passive: false });
+            }
+            if (consonantsMiddleBtn) {
+                consonantsMiddleBtn.onclick = () => {
+                    const two = parseTwoConsonants(consonantsInput?.value);
+                    if (!two) {
+                        alert('Enter exactly two consonants (no vowels).');
+                        return;
+                    }
+                    consonantsComplete(filterWordsByMiddle(currentFilteredWords, two));
+                };
+                consonantsMiddleBtn.addEventListener('touchstart', (e) => { e.preventDefault(); consonantsMiddleBtn.click(); }, { passive: false });
+            }
+            if (consonantsAnywhereBtn) {
+                consonantsAnywhereBtn.onclick = () => {
+                    const two = parseTwoConsonants(consonantsInput?.value);
+                    if (!two) {
+                        alert('Enter exactly two consonants (no vowels).');
+                        return;
+                    }
+                    consonantsComplete(filterWordsByAnywhere(currentFilteredWords, two));
+                };
+                consonantsAnywhereBtn.addEventListener('touchstart', (e) => { e.preventDefault(); consonantsAnywhereBtn.click(); }, { passive: false });
+            }
+            if (consonantsSkipBtn) {
+                consonantsSkipBtn.onclick = () => consonantsComplete(currentFilteredWords);
+                consonantsSkipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); consonantsSkipBtn.click(); }, { passive: false });
+            }
+            break;
+        }
+
+        case 'omega': {
+            startOmega(callback);
             break;
         }
 
@@ -5634,9 +6985,10 @@ function setupFeatureListeners(feature, callback, options) {
                     // Update workflow state with Piano Forte selections
                     workflowState.pianoForteSelection = letterSequence;
                     
-                    // Get unique pressed letters
+                    // Get unique pressed letters and unpressed letters in the range
+                    const pianoForteLetters = getPianoForteLetters();
                     const pressedLetters = new Set(letterSequence);
-                    const unpressedLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].filter(
+                    const unpressedLetters = pianoForteLetters.filter(
                         letter => !pressedLetters.has(letter)
                     );
                     
@@ -5667,20 +7019,19 @@ function setupFeatureListeners(feature, callback, options) {
             
             if (noneBtn) {
                 noneBtn.onclick = () => {
-                    // Update workflow state - exclude all Piano Forte letters
+                    // Update workflow state - exclude all Piano Forte letters in the range
                     workflowState.pianoForteSelection = [];
-                    
-                    // Add all Piano Forte letters to excluded letters
-                    ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(letter => {
+                    const pianoForteLetters = getPianoForteLetters();
+                    pianoForteLetters.forEach(letter => {
                         workflowState.excludedLetters.add(letter);
                     });
                     
                     console.log(`Piano Forte feature completed. NONE selected - all letters excluded`);
                     logWorkflowState();
                     
-                    // Filter out words containing any of A, B, C, D, E, F, G
+                    // Filter out words containing any letter in the range
                     const filteredWords = currentFilteredWords.filter(word => {
-                        return !['A', 'B', 'C', 'D', 'E', 'F', 'G'].some(letter => 
+                        return !pianoForteLetters.some(letter => 
                             word.toUpperCase().includes(letter)
                         );
                     });
@@ -5823,7 +7174,18 @@ function setupFeatureListeners(feature, callback, options) {
                     // Calculate T9 strings if not already done
                     calculateT9Strings(currentFilteredWords);
                     
-                    const filteredWords = filterWordsByT9Length(currentFilteredWords, lengthValue);
+                    let filteredWords;
+                    if (appSettings && appSettings.t9LengthBuffer1) {
+                        const minLen = Math.max(1, lengthValue - 1);
+                        const maxLen = lengthValue + 1;
+                        filteredWords = currentFilteredWords.filter(word => {
+                            const t9String = t9StringsMap.get(word) || wordToT9(word);
+                            const len = t9String.length;
+                            return len >= minLen && len <= maxLen;
+                        });
+                    } else {
+                        filteredWords = filterWordsByT9Length(currentFilteredWords, lengthValue);
+                    }
                     callback(filteredWords);
                     document.getElementById('t9LengthFeature').classList.add('completed');
                     document.getElementById('t9LengthFeature').dispatchEvent(new Event('completed'));
@@ -5978,6 +7340,16 @@ function setupFeatureListeners(feature, callback, options) {
                     callback(filteredWords);
                     document.getElementById('t9LastFeature').classList.add('completed');
                     document.getElementById('t9LastFeature').dispatchEvent(new Event('completed'));
+                    // Show SEND TO HYDRA label (sum of GUESS + ACTUAL) for rest of workflow
+                    const guessNum = parseInt(t9LastGuessDigits.join('') || '0', 10);
+                    const actualNum = parseInt(actual || '0', 10);
+                    const hydraSum = guessNum + actualNum;
+                    const hydraLabelContainer = document.getElementById('hydraLabelContainer');
+                    const hydraLabelValue = document.getElementById('hydraLabelValue');
+                    if (hydraLabelContainer && hydraLabelValue) {
+                        hydraLabelValue.textContent = String(hydraSum);
+                        hydraLabelContainer.style.display = 'block';
+                    }
                 };
                 t9LastButton.addEventListener('touchstart', (e) => {
                     e.preventDefault();
@@ -6688,6 +8060,7 @@ function setupFeatureListeners(feature, callback, options) {
             sectionBtns.forEach(btn => {
                 btn.onclick = () => {
                     const section = btn.dataset.section;
+                    lastDictionaryAlphaSection = section; // for ALPHA step if it runs later in workflow
                     // Visual feedback
                     sectionBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
@@ -6720,7 +8093,77 @@ function setupFeatureListeners(feature, callback, options) {
             }
             break;
         }
-        
+
+        case 'alpha': {
+            const alphaLeftBtn = document.getElementById('alphaLeftBtn');
+            const alphaRepeatBtn = document.getElementById('alphaRepeatBtn');
+            const alphaRightBtn = document.getElementById('alphaRightBtn');
+            const alphaSubmitBtn = document.getElementById('alphaSubmitBtn');
+            const alphaSkipBtn = document.getElementById('alphaSkipBtn');
+            const alphaSequenceDisplay = document.getElementById('alphaSequenceDisplay');
+            const alphaDirectionsCount = Math.max(0, parseInt((appSettings && appSettings.alphaDirectionsCount) || 0, 10));
+            const alphaSwapPov = !!(appSettings && appSettings.alphaSwapPov);
+            let alphaDirections = [];
+
+            function alphaUpdateDisplay() {
+                if (alphaSequenceDisplay) {
+                    alphaSequenceDisplay.textContent = alphaDirections.length ? alphaDirections.map(d => d === 'L' ? 'Left' : d === 'R' ? 'Right' : 'Repeat').join(', ') : '—';
+                }
+            }
+
+            function alphaSubmit() {
+                const section = lastDictionaryAlphaSection || 'begin';
+                const filtered = filterWordsByAlpha(currentFilteredWords, alphaDirections, section, alphaSwapPov);
+                callback(filtered);
+                document.getElementById('alphaFeature').classList.add('completed');
+                document.getElementById('alphaFeature').dispatchEvent(new Event('completed'));
+            }
+
+            if (alphaLeftBtn) {
+                alphaLeftBtn.onclick = () => {
+                    alphaDirections.push('L');
+                    alphaUpdateDisplay();
+                    if (alphaDirectionsCount > 0 && alphaDirections.length >= alphaDirectionsCount) alphaSubmit();
+                };
+                alphaLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); alphaLeftBtn.click(); }, { passive: false });
+            }
+            if (alphaRepeatBtn) {
+                alphaRepeatBtn.onclick = () => {
+                    alphaDirections.push('Repeat');
+                    alphaUpdateDisplay();
+                    if (alphaDirectionsCount > 0 && alphaDirections.length >= alphaDirectionsCount) alphaSubmit();
+                };
+                alphaRepeatBtn.addEventListener('touchstart', (e) => { e.preventDefault(); alphaRepeatBtn.click(); }, { passive: false });
+            }
+            if (alphaRightBtn) {
+                alphaRightBtn.onclick = () => {
+                    alphaDirections.push('R');
+                    alphaUpdateDisplay();
+                    if (alphaDirectionsCount > 0 && alphaDirections.length >= alphaDirectionsCount) alphaSubmit();
+                };
+                alphaRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); alphaRightBtn.click(); }, { passive: false });
+            }
+            if (alphaSubmitBtn) {
+                alphaSubmitBtn.onclick = () => {
+                    if (alphaDirections.length === 0) {
+                        alert('Add at least one direction (Left, Right, or Repeat), then SUBMIT.');
+                        return;
+                    }
+                    alphaSubmit();
+                };
+                alphaSubmitBtn.addEventListener('touchstart', (e) => { e.preventDefault(); alphaSubmitBtn.click(); }, { passive: false });
+            }
+            if (alphaSkipBtn) {
+                alphaSkipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('alphaFeature').classList.add('completed');
+                    document.getElementById('alphaFeature').dispatchEvent(new Event('completed'));
+                };
+                alphaSkipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); alphaSkipBtn.click(); }, { passive: false });
+            }
+            break;
+        }
+
         case 'smlLength': {
             const categoryBtns = document.querySelectorAll('#smlLengthFeature .section-btn');
             const smlLengthSkipButton = document.getElementById('smlLengthSkipButton');
@@ -7560,31 +9003,136 @@ function filterWordsByO(words, includeO) {
     return filteredWords;
 }
 
-// Letters that can start a colour name (shared by COLOUR3 and ATLAS)
-const COLOUR_START_LETTERS = new Set(['A', 'B', 'C', 'E', 'G', 'I', 'L', 'N', 'M', 'O', 'P', 'R', 'S', 'T', 'V', 'W', 'Y']);
+// Default ATLAS/Colours letters (locked; COLOUR3 always uses this set)
+const ATLAS_DEFAULT_LETTERS = new Set(['A', 'B', 'C', 'E', 'G', 'I', 'L', 'N', 'M', 'O', 'P', 'R', 'S', 'T', 'V', 'W', 'Y']);
 
-// Function to filter words by COLOUR3
+// Months preset: first letters of month names, deduplicated → J F M A S O N D
+const ATLAS_MONTHS_LETTERS = new Set(['J', 'F', 'M', 'A', 'S', 'O', 'N', 'D']);
+
+function lettersStringToSet(s) {
+    if (typeof s !== 'string') return new Set();
+    const letters = s.toUpperCase().replace(/[^A-Z]/g, '').split('');
+    return new Set(letters);
+}
+
+/** Returns the letter set for ATLAS based on settings. Empty custom defaults to Colours. */
+function getAtlasLetterSet() {
+    const source = appSettings && appSettings.atlasLetterSource;
+    if (source === 'months') return new Set(ATLAS_MONTHS_LETTERS);
+    if (source === 'custom') {
+        const custom = (appSettings && appSettings.atlasCustomLetters) || '';
+        const set = lettersStringToSet(custom);
+        if (set.size === 0) return new Set(ATLAS_DEFAULT_LETTERS);
+        return set;
+    }
+    return new Set(ATLAS_DEFAULT_LETTERS);
+}
+
+// Function to filter words by COLOUR3 (always uses default colour letters)
 function filterWordsByColour3(words) {
     const filteredWords = words.filter(word => {
-        // Check only position 5 (0-based index 4)
         const pos5 = word.length > 4 ? word[4].toUpperCase() : null;
-        return pos5 && COLOUR_START_LETTERS.has(pos5);
+        return pos5 && ATLAS_DEFAULT_LETTERS.has(pos5);
     });
     return filteredWords;
 }
 
-/** Pure filter: keep words where exactly `count` of positions 1–6 are colour-start letters. */
+/** Pure filter: keep words where exactly `count` of positions 1–6 are in the ATLAS letter set. */
 function filterWordsByAtlas(words, count) {
     const n = typeof count === 'number' && count >= 0 && count <= 6 ? count : null;
     if (n === null) return words;
+    const letterSet = getAtlasLetterSet();
     return words.filter(word => {
         const slice = word.slice(0, 6).toUpperCase();
         let c = 0;
         for (let i = 0; i < slice.length; i++) {
-            if (COLOUR_START_LETTERS.has(slice[i])) c++;
+            if (letterSet.has(slice[i])) c++;
         }
         return c === n;
     });
+}
+
+// --- Letter Lying: letter presence in word (any position) ---
+/** Pure filter: keep words that contain / do not contain the letter (anywhere). */
+function filterWordsByLetterPresence(words, letter, inWord) {
+    if (!letter || typeof letter !== 'string') return words;
+    const L = letter.toUpperCase().charAt(0);
+    if (!/^[A-Z]$/.test(L)) return words;
+    return words.filter(word => {
+        const has = word.toUpperCase().includes(L);
+        return inWord ? has : !has;
+    });
+}
+
+/** Letter that appears in the most words; tie-break alphabetical. Returns null if words empty.
+ *  `excludedLetters` is an optional Set of letters that must NOT be returned (e.g. already asked).
+ */
+function getMostFrequentLetterInWordlist(words, excludedLetters) {
+    if (!words || words.length === 0) return null;
+    const countByLetter = new Map();
+    for (const word of words) {
+        const seen = new Set();
+        const upper = word.toUpperCase();
+        for (let i = 0; i < upper.length; i++) {
+            const c = upper[i];
+            if (/^[A-Z]$/.test(c) && !seen.has(c)) {
+                if (excludedLetters && excludedLetters.has(c)) continue;
+                seen.add(c);
+                countByLetter.set(c, (countByLetter.get(c) || 0) + 1);
+            }
+        }
+    }
+    if (countByLetter.size === 0) return null;
+    const sorted = [...countByLetter.entries()]
+        .sort((a, b) => {
+            if (b[1] !== a[1]) return b[1] - a[1];
+            return a[0].localeCompare(b[0]);
+        });
+    return sorted[0][0];
+}
+
+/** Pick 8 random letters A–Z without replacement. */
+function generateLetterLyingUniqueString() {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    for (let i = letters.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [letters[i], letters[j]] = [letters[j], letters[i]];
+    }
+    return letters.slice(0, 8).join('');
+}
+
+/** Static letter list for Letter Lying: from Default, Unique, Personal, or Saved set. */
+function getLetterLyingStaticLetters() {
+    const source = (appSettings && appSettings.letterLyingStringSource) || 'default';
+    let s = '';
+    if (source === 'default') {
+        s = DEFAULT_LETTER_LYING_STRING;
+    } else if (source === 'unique') {
+        s = (appSettings && appSettings.letterLyingUniqueString) || '';
+        if (!s || s.length !== 8) {
+            s = generateLetterLyingUniqueString();
+            if (appSettings) appSettings.letterLyingUniqueString = s;
+        }
+    } else if (source === 'personal') {
+        s = (appSettings && appSettings.letterLyingStaticString) || DEFAULT_LETTER_LYING_STRING;
+    } else if (source === 'saved') {
+        const sets = (appSettings && appSettings.letterLyingSavedSets) || [];
+        const id = appSettings && appSettings.letterLyingSavedId;
+        const set = sets.find(x => x.id === id);
+        s = (set && set.string) || DEFAULT_LETTER_LYING_STRING;
+    } else {
+        s = (appSettings && appSettings.letterLyingStaticString) || DEFAULT_LETTER_LYING_STRING;
+    }
+    const normalized = (typeof s === 'string' ? s : '').toUpperCase().replace(/[^A-Z]/g, '');
+    const seen = new Set();
+    const out = [];
+    for (const c of normalized) {
+        if (!seen.has(c)) {
+            seen.add(c);
+            out.push(c);
+        }
+    }
+    return out;
 }
 
 const VOWEL2_VOWELS = new Set(['a', 'e', 'i', 'o', 'u']);
@@ -7606,6 +9154,8 @@ function showNextFeature() {
         'vowelFeature',
         'oFeature',
         'lexiconFeature',
+        'zeroCurvesFeature',
+        'loveLettersFeature',
         'eeeFeature',
         'eeeFirstFeature',
         'lengthFeature',
@@ -7717,6 +9267,8 @@ function resetApp() {
         'oFeature',
         'curvedFeature',
         'lexiconFeature',
+        'zeroCurvesFeature',
+        'loveLettersFeature',
         'originalLexFeature',
         'eeeFeature',
         'eeeFirstFeature',
@@ -7744,6 +9296,8 @@ function resetApp() {
     document.getElementById('position1Input').value = '';
     document.getElementById('originalLexInput').value = '';
     document.getElementById('lexiconInput').value = '';
+    const loveLettersInputEl = document.getElementById('loveLettersInput');
+    if (loveLettersInputEl) loveLettersInputEl.value = '';
     document.getElementById('notInInput').value = '';
     document.getElementById('whatItsNot1Input').value = '';
     document.getElementById('whatItsNot2Input').value = '';
@@ -8340,29 +9894,26 @@ function toggleSavedWorkflows() {
         deleteButton.textContent = '×';
         deleteButton.setAttribute('aria-label', `Delete workflow ${workflow.name}`);
         
-        // Handle delete with both click and touch events
+        // Handle delete with both click and touch events (custom confirm so browser "don't ask again" doesn't block future deletes)
         const handleDelete = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (confirm(`Are you sure you want to delete "${workflow.name}"?`)) {
+            showDeleteWorkflowConfirm(workflow, () => {
                 const index = workflows.findIndex(w => w.name === workflow.name);
                 if (index !== -1) {
                     workflows.splice(index, 1);
                     localStorage.setItem('workflows', JSON.stringify(workflows));
-                    
                     const workflowSelect = document.getElementById('workflowSelect');
                     if (workflowSelect) {
                         const option = workflowSelect.querySelector(`option[value="${workflow.name}"]`);
                         if (option) option.remove();
                     }
-                    
                     workflowItem.remove();
-                    
                     if (workflows.length === 0) {
                         workflowsList.innerHTML = '<p class="no-workflows">No saved workflows yet.</p>';
                     }
                 }
-            }
+            });
         };
         
         deleteButton.addEventListener('click', handleDelete);
@@ -8427,30 +9978,78 @@ function editWorkflow(workflow) {
     showWorkflowCreation();
 }
 
+// Custom confirm dialog for workflow delete (avoids browser "don't ask again" blocking future deletes)
+let deleteWorkflowConfirmCallback = null;
+
+function showDeleteWorkflowConfirm(workflow, onConfirmed) {
+    if (appSettings && appSettings.skipWorkflowDeleteConfirm) {
+        onConfirmed();
+        return;
+    }
+    let modal = document.getElementById('deleteWorkflowConfirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'deleteWorkflowConfirmModal';
+        modal.className = 'modal delete-workflow-confirm-modal';
+        modal.innerHTML = `
+            <div class="modal-content delete-workflow-confirm-content">
+                <p class="delete-workflow-confirm-message"></p>
+                <label class="delete-workflow-confirm-dont-ask">
+                    <input type="checkbox" class="delete-workflow-confirm-checkbox"> Don't ask again
+                </label>
+                <div class="delete-workflow-confirm-actions">
+                    <button type="button" class="delete-workflow-confirm-cancel">Cancel</button>
+                    <button type="button" class="delete-workflow-confirm-delete">Delete</button>
+                </div>
+            </div>
+        `;
+        const cancelBtn = modal.querySelector('.delete-workflow-confirm-cancel');
+        const deleteBtn = modal.querySelector('.delete-workflow-confirm-delete');
+        function close(doConfirm) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            if (doConfirm) {
+                const cb = modal.querySelector('.delete-workflow-confirm-checkbox');
+                if (cb && cb.checked) {
+                    appSettings.skipWorkflowDeleteConfirm = true;
+                    saveAppSettings();
+                }
+                if (typeof deleteWorkflowConfirmCallback === 'function') deleteWorkflowConfirmCallback();
+            }
+            deleteWorkflowConfirmCallback = null;
+        }
+        cancelBtn.addEventListener('click', () => close(false));
+        deleteBtn.addEventListener('click', () => close(true));
+        modal.addEventListener('click', (e) => { if (e.target === modal) close(false); });
+        modal.addEventListener('touchstart', (e) => { if (e.target === modal) close(false); }, { passive: false });
+        document.body.appendChild(modal);
+    }
+    deleteWorkflowConfirmCallback = onConfirmed;
+    const msg = modal.querySelector('.delete-workflow-confirm-message');
+    if (msg) msg.textContent = `Are you sure you want to delete "${workflow.name}"?`;
+    const checkbox = modal.querySelector('.delete-workflow-confirm-checkbox');
+    if (checkbox) checkbox.checked = !!(appSettings && appSettings.skipWorkflowDeleteConfirm);
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    const deleteBtn = modal.querySelector('.delete-workflow-confirm-delete');
+    if (deleteBtn) deleteBtn.focus();
+}
+
 // Function to delete a workflow
 function deleteWorkflow(workflow) {
-    if (confirm(`Are you sure you want to delete the workflow "${workflow.name}"?`)) {
-        // Remove from workflows array
+    showDeleteWorkflowConfirm(workflow, () => {
         const index = workflows.findIndex(w => w.id === workflow.id);
         if (index !== -1) {
             workflows.splice(index, 1);
-            
-            // Update localStorage
             localStorage.setItem('workflows', JSON.stringify(workflows));
-            
-            // Update workflow select dropdown
             const workflowSelect = document.getElementById('workflowSelect');
             if (workflowSelect) {
                 const option = workflowSelect.querySelector(`option[value="${workflow.name}"]`);
-                if (option) {
-                    option.remove();
-                }
+                if (option) option.remove();
             }
-            
-            // Update saved workflows display
             displaySavedWorkflows();
         }
-    }
+    });
 }
 
 // Initialize drag and drop functionality
@@ -8909,6 +10508,53 @@ function showNormalFeatures() {
     initializeInfoButtons();
 }
 
+function showChainReactionFeatures() {
+    const availableFeatures = document.getElementById('availableFeatures');
+    const normalFeatures = availableFeatures.innerHTML;
+    if (!availableFeatures.dataset.normalFeatures) {
+        availableFeatures.dataset.normalFeatures = normalFeatures;
+    }
+    availableFeatures.innerHTML = `
+        <div class="feature-group">
+            <button class="feature-button" data-feature="whatItsNot1" draggable="true">1-CHAIN REACTION</button>
+            <button class="info-button" data-feature="whatItsNot1"><i class="fas fa-info-circle"></i></button>
+        </div>
+        <div class="feature-group">
+            <button class="feature-button" data-feature="whatItsNot2" draggable="true">2-CHAIN REACTION</button>
+            <button class="info-button" data-feature="whatItsNot2"><i class="fas fa-info-circle"></i></button>
+        </div>
+        <div class="feature-group">
+            <button class="feature-button" data-feature="whatItsNot3" draggable="true">3-CHAIN REACTION</button>
+            <button class="info-button" data-feature="whatItsNot3"><i class="fas fa-info-circle"></i></button>
+        </div>
+        <div class="feature-group">
+            <button class="feature-button" data-feature="whatItsNotL" draggable="true">L-CHAIN REACTION</button>
+            <button class="info-button" data-feature="whatItsNotL"><i class="fas fa-info-circle"></i></button>
+        </div>
+    `;
+    const backButton = document.querySelector('.available-features .back-button');
+    if (!backButton) {
+        const h3 = document.querySelector('.available-features h3');
+        if (h3 && h3.parentElement) {
+            const backBtn = document.createElement('button');
+            backBtn.className = 'back-button';
+            backBtn.textContent = 'BACK';
+            backBtn.onclick = showNormalFeatures;
+            backBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showNormalFeatures();
+            }, { passive: false });
+            backBtn.style.pointerEvents = 'auto';
+            backBtn.style.zIndex = '100';
+            h3.parentElement.style.position = 'relative';
+            h3.parentElement.insertBefore(backBtn, h3);
+        }
+    }
+    initializeFeatureSelection();
+    initializeInfoButtons();
+}
+
 function showAlphaNumericFeatures() {
     isAlphaNumericMode = true;
     const availableFeatures = document.getElementById('availableFeatures');
@@ -8985,6 +10631,15 @@ document.addEventListener('DOMContentLoaded', function() {
         alphanumericButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             showAlphaNumericFeatures();
+        }, { passive: false });
+    }
+    // Initialize CHAIN REACTION mode button
+    const chainReactionButton = document.getElementById('chainReactionModeButton');
+    if (chainReactionButton) {
+        chainReactionButton.addEventListener('click', showChainReactionFeatures);
+        chainReactionButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            showChainReactionFeatures();
         }, { passive: false });
     }
 });
@@ -9414,6 +11069,604 @@ document.head.appendChild(workflowDropdownCSS);
 // Add filtering function
 function filterWordsByLength(words, length) {
     return words.filter(word => word.length === length);
+}
+
+function initSettingsUI() {
+    const lengthToggle = document.getElementById('lengthBuffer1Toggle');
+    const t9LengthToggle = document.getElementById('t9LengthBuffer1Toggle');
+    const e21Toggle = document.getElementById('e21AnywhereToggle');
+    
+    if (lengthToggle) {
+        lengthToggle.checked = !!appSettings.lengthBuffer1;
+        lengthToggle.addEventListener('change', () => {
+            appSettings.lengthBuffer1 = lengthToggle.checked;
+            saveAppSettings();
+        });
+    }
+    
+    if (t9LengthToggle) {
+        t9LengthToggle.checked = !!appSettings.t9LengthBuffer1;
+        t9LengthToggle.addEventListener('change', () => {
+            appSettings.t9LengthBuffer1 = t9LengthToggle.checked;
+            saveAppSettings();
+        });
+    }
+
+    if (e21Toggle) {
+        e21Toggle.checked = !!appSettings.e21CheckAnywhere;
+        e21Toggle.addEventListener('change', () => {
+            appSettings.e21CheckAnywhere = e21Toggle.checked;
+            saveAppSettings();
+        });
+    }
+
+    const scrabbleBuffer1Toggle = document.getElementById('scrabbleBuffer1Toggle');
+    if (scrabbleBuffer1Toggle) {
+        scrabbleBuffer1Toggle.checked = !!appSettings.scrabbleBuffer1;
+        scrabbleBuffer1Toggle.addEventListener('change', () => {
+            appSettings.scrabbleBuffer1 = scrabbleBuffer1Toggle.checked;
+            saveAppSettings();
+        });
+    }
+
+    const decodePositionToggle = document.getElementById('decodePositionToggle');
+    const decodePositionFields = document.getElementById('decodePositionFields');
+    const decodePositionInput = document.getElementById('decodePositionInput');
+    if (decodePositionToggle) {
+        decodePositionToggle.checked = !!appSettings.decodePositionOn;
+        if (decodePositionFields) decodePositionFields.style.display = appSettings.decodePositionOn ? '' : 'none';
+        if (decodePositionInput) decodePositionInput.value = Math.max(1, Math.min(20, (appSettings.decodePosition || 1)));
+        decodePositionToggle.addEventListener('change', () => {
+            appSettings.decodePositionOn = decodePositionToggle.checked;
+            if (decodePositionFields) decodePositionFields.style.display = decodePositionToggle.checked ? '' : 'none';
+            saveAppSettings();
+        });
+    }
+    if (decodePositionInput) {
+        decodePositionInput.addEventListener('input', () => {
+            const n = parseInt(decodePositionInput.value, 10);
+            if (!isNaN(n) && n >= 1 && n <= 20) {
+                appSettings.decodePosition = n;
+                saveAppSettings();
+            }
+        });
+    }
+
+    const sologramBookSelect = document.getElementById('sologramBookSelect');
+    if (sologramBookSelect) {
+        const book = (appSettings && appSettings.sologramBook) || 'all';
+        sologramBookSelect.value = book;
+        sologramBookSelect.addEventListener('change', () => {
+            appSettings.sologramBook = sologramBookSelect.value;
+            saveAppSettings();
+        });
+    }
+
+    const pianoForteUseCustomRangeToggle = document.getElementById('pianoForteUseCustomRangeToggle');
+    const pianoForteCustomRangeFields = document.getElementById('pianoForteCustomRangeFields');
+    const pianoForteStartLetterInput = document.getElementById('pianoForteStartLetterInput');
+    const pianoForteEndLetterInput = document.getElementById('pianoForteEndLetterInput');
+    if (pianoForteUseCustomRangeToggle) {
+        pianoForteUseCustomRangeToggle.checked = !!(appSettings && appSettings.pianoForteUseCustomRange);
+        if (pianoForteCustomRangeFields) pianoForteCustomRangeFields.style.display = pianoForteUseCustomRangeToggle.checked ? '' : 'none';
+        pianoForteUseCustomRangeToggle.addEventListener('change', () => {
+            appSettings.pianoForteUseCustomRange = pianoForteUseCustomRangeToggle.checked;
+            if (pianoForteCustomRangeFields) pianoForteCustomRangeFields.style.display = pianoForteUseCustomRangeToggle.checked ? '' : 'none';
+            saveAppSettings();
+        });
+    }
+    if (pianoForteStartLetterInput) {
+        pianoForteStartLetterInput.value = (appSettings && appSettings.pianoForteStartLetter) || 'A';
+        pianoForteStartLetterInput.addEventListener('input', () => {
+            const v = pianoForteStartLetterInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+            pianoForteStartLetterInput.value = v;
+            if (v.length) { appSettings.pianoForteStartLetter = v; saveAppSettings(); }
+        });
+    }
+    if (pianoForteEndLetterInput) {
+        pianoForteEndLetterInput.value = (appSettings && appSettings.pianoForteEndLetter) || 'G';
+        pianoForteEndLetterInput.addEventListener('input', () => {
+            const v = pianoForteEndLetterInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+            pianoForteEndLetterInput.value = v;
+            if (v.length) { appSettings.pianoForteEndLetter = v; saveAppSettings(); }
+        });
+    }
+
+    const dictionaryAlphaUseCustomRangeToggle = document.getElementById('dictionaryAlphaUseCustomRangeToggle');
+    const dictionaryAlphaCustomRangeFields = document.getElementById('dictionaryAlphaCustomRangeFields');
+    const dictAlphaInputs = [
+        { id: 'dictionaryAlphaBeginStartInput', key: 'dictionaryAlphaBeginStart', default: 'A' },
+        { id: 'dictionaryAlphaBeginEndInput', key: 'dictionaryAlphaBeginEnd', default: 'M' },
+        { id: 'dictionaryAlphaMidStartInput', key: 'dictionaryAlphaMidStart', default: 'I' },
+        { id: 'dictionaryAlphaMidEndInput', key: 'dictionaryAlphaMidEnd', default: 'T' },
+        { id: 'dictionaryAlphaEndStartInput', key: 'dictionaryAlphaEndStart', default: 'N' },
+        { id: 'dictionaryAlphaEndEndInput', key: 'dictionaryAlphaEndEnd', default: 'Z' }
+    ];
+    if (dictionaryAlphaUseCustomRangeToggle) {
+        dictionaryAlphaUseCustomRangeToggle.checked = !!(appSettings && appSettings.dictionaryAlphaUseCustomRange);
+        if (dictionaryAlphaCustomRangeFields) dictionaryAlphaCustomRangeFields.style.display = dictionaryAlphaUseCustomRangeToggle.checked ? '' : 'none';
+        dictionaryAlphaUseCustomRangeToggle.addEventListener('change', () => {
+            appSettings.dictionaryAlphaUseCustomRange = dictionaryAlphaUseCustomRangeToggle.checked;
+            if (dictionaryAlphaCustomRangeFields) dictionaryAlphaCustomRangeFields.style.display = dictionaryAlphaUseCustomRangeToggle.checked ? '' : 'none';
+            saveAppSettings();
+        });
+    }
+    dictAlphaInputs.forEach(({ id, key, default: d }) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = (appSettings && appSettings[key]) || d;
+            el.addEventListener('input', () => {
+                const v = el.value.toUpperCase().replace(/[^A-Z]/g, '');
+                el.value = v;
+                if (v.length) { appSettings[key] = v; saveAppSettings(); }
+            });
+        }
+    });
+
+    const omegaModeSelect = document.getElementById('omegaModeSelect');
+    const omegaCustomFields = document.getElementById('omegaCustomFields');
+    const omegaCustomGroupName = document.getElementById('omegaCustomGroupName');
+    const omegaCustomShapeList = document.getElementById('omegaCustomShapeList');
+    const omegaCustomAddShapeBtn = document.getElementById('omegaCustomAddShapeBtn');
+
+    function syncOmegaCustomUI() {
+        const mode = (appSettings && appSettings.omegaMode) || 'esp';
+        if (omegaCustomFields) omegaCustomFields.style.display = mode === 'custom' ? '' : 'none';
+        if (omegaCustomGroupName) omegaCustomGroupName.value = (appSettings && appSettings.omegaCustomGroupName) || '';
+        if (!Array.isArray(appSettings.omegaCustomShapes)) appSettings.omegaCustomShapes = [];
+        if (omegaCustomShapeList && mode === 'custom') {
+            const shapes = appSettings.omegaCustomShapes;
+            omegaCustomShapeList.innerHTML = '';
+            shapes.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'omega-custom-row';
+                row.dataset.index = String(index);
+                row.innerHTML = `
+                    <input type="text" class="omega-custom-shape-name" placeholder="Shape name" value="${(item.name || '').replace(/"/g, '&quot;')}" maxlength="30">
+                    <input type="text" class="omega-custom-shape-letters" placeholder="Letters (A-Z)" value="${(item.letters || '').replace(/"/g, '&quot;')}" maxlength="26" style="text-transform: uppercase;">
+                    <button type="button" class="omega-custom-remove-btn small-button">Remove</button>
+                `;
+                const nameInput = row.querySelector('.omega-custom-shape-name');
+                const lettersInput = row.querySelector('.omega-custom-shape-letters');
+                const removeBtn = row.querySelector('.omega-custom-remove-btn');
+                nameInput.addEventListener('input', () => {
+                    const i = parseInt(row.dataset.index, 10);
+                    if (!appSettings.omegaCustomShapes[i]) return;
+                    appSettings.omegaCustomShapes[i].name = nameInput.value.trim();
+                    saveAppSettings();
+                    updateOmegaEfficiencySubtitle();
+                });
+                lettersInput.addEventListener('input', () => {
+                    const v = lettersInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+                    lettersInput.value = v;
+                    const i = parseInt(row.dataset.index, 10);
+                    if (!appSettings.omegaCustomShapes[i]) return;
+                    appSettings.omegaCustomShapes[i].letters = v;
+                    saveAppSettings();
+                    updateOmegaEfficiencySubtitle();
+                });
+                removeBtn.addEventListener('click', () => {
+                    const i = parseInt(row.dataset.index, 10);
+                    if (appSettings.omegaCustomShapes) appSettings.omegaCustomShapes.splice(i, 1);
+                    saveAppSettings();
+                    syncOmegaCustomUI();
+                });
+                omegaCustomShapeList.appendChild(row);
+            });
+        }
+        updateOmegaEfficiencySubtitle();
+    }
+
+    if (omegaModeSelect) {
+        const mode = (appSettings && appSettings.omegaMode) || 'esp';
+        omegaModeSelect.value = mode;
+        omegaModeSelect.addEventListener('change', () => {
+            appSettings.omegaMode = omegaModeSelect.value;
+            saveAppSettings();
+            syncOmegaCustomUI();
+            updateOmegaEfficiencySubtitle();
+        });
+    }
+    if (omegaCustomGroupName) {
+        omegaCustomGroupName.addEventListener('input', () => {
+            appSettings.omegaCustomGroupName = omegaCustomGroupName.value.trim();
+            saveAppSettings();
+        });
+    }
+    if (omegaCustomAddShapeBtn) {
+        omegaCustomAddShapeBtn.addEventListener('click', () => {
+            if (!appSettings.omegaCustomShapes) appSettings.omegaCustomShapes = [];
+            appSettings.omegaCustomShapes.push({ name: '', letters: '' });
+            saveAppSettings();
+            syncOmegaCustomUI();
+        });
+    }
+    syncOmegaCustomUI();
+
+    const alphaDirectionsCountInput = document.getElementById('alphaDirectionsCountInput');
+    const alphaSwapPovToggle = document.getElementById('alphaSwapPovToggle');
+    if (alphaDirectionsCountInput) {
+        alphaDirectionsCountInput.value = String(Math.max(0, parseInt((appSettings && appSettings.alphaDirectionsCount) || 0, 10)));
+        alphaDirectionsCountInput.addEventListener('input', () => {
+            const n = parseInt(alphaDirectionsCountInput.value, 10);
+            if (!isNaN(n) && n >= 0 && n <= 99) {
+                appSettings.alphaDirectionsCount = n;
+                saveAppSettings();
+                updateAlphaEfficiencySubtitle();
+            }
+        });
+    }
+    if (alphaSwapPovToggle) {
+        alphaSwapPovToggle.checked = !!(appSettings && appSettings.alphaSwapPov);
+        alphaSwapPovToggle.addEventListener('change', () => {
+            appSettings.alphaSwapPov = alphaSwapPovToggle.checked;
+            saveAppSettings();
+            updateAlphaEfficiencySubtitle();
+        });
+    }
+    updateAlphaEfficiencySubtitle();
+
+    const atlasSourceSelect = document.getElementById('atlasLetterSourceSelect');
+    const atlasCustomFields = document.getElementById('atlasCustomFields');
+    const atlasLettersDisplay = document.getElementById('atlasLettersDisplay');
+    const atlasCustomName = document.getElementById('atlasCustomName');
+    const atlasCustomLetters = document.getElementById('atlasCustomLetters');
+
+    function getAtlasLetterDisplayString() {
+        const source = (appSettings && appSettings.atlasLetterSource) || 'default';
+        if (source === 'default') return Array.from(ATLAS_DEFAULT_LETTERS).sort().join(' ');
+        if (source === 'months') return Array.from(ATLAS_MONTHS_LETTERS).sort().join(' ');
+        const custom = (appSettings && appSettings.atlasCustomLetters) || '';
+        const set = lettersStringToSet(custom);
+        if (set.size === 0) return Array.from(ATLAS_DEFAULT_LETTERS).sort().join(' ') + ' (defaulting to Colours)';
+        return Array.from(set).sort().join(' ');
+    }
+
+    function syncAtlasUI() {
+        const source = (appSettings && appSettings.atlasLetterSource) || 'default';
+        if (atlasSourceSelect) atlasSourceSelect.value = source;
+        if (atlasCustomFields) atlasCustomFields.style.display = source === 'custom' ? '' : 'none';
+        if (atlasLettersDisplay) atlasLettersDisplay.textContent = getAtlasLetterDisplayString();
+        if (atlasCustomName) atlasCustomName.value = (appSettings && appSettings.atlasCustomName) || '';
+        if (atlasCustomLetters) atlasCustomLetters.value = (appSettings && appSettings.atlasCustomLetters) || '';
+    }
+
+    if (atlasSourceSelect) {
+        syncAtlasUI();
+        atlasSourceSelect.addEventListener('change', () => {
+            appSettings.atlasLetterSource = atlasSourceSelect.value;
+            syncAtlasUI();
+            saveAppSettings();
+        });
+    }
+    if (atlasCustomName) {
+        atlasCustomName.addEventListener('input', () => {
+            appSettings.atlasCustomName = atlasCustomName.value.trim();
+            saveAppSettings();
+        });
+    }
+    if (atlasCustomLetters) {
+        atlasCustomLetters.addEventListener('input', () => {
+            appSettings.atlasCustomLetters = atlasCustomLetters.value;
+            saveAppSettings();
+            if (atlasLettersDisplay) atlasLettersDisplay.textContent = getAtlasLetterDisplayString();
+        });
+    }
+
+    const letterLyingModeSelect = document.getElementById('letterLyingModeSelect');
+    const letterLyingStaticFields = document.getElementById('letterLyingStaticFields');
+    const letterLyingDynamicFields = document.getElementById('letterLyingDynamicFields');
+    const letterLyingStringSourceSelect = document.getElementById('letterLyingStringSourceSelect');
+    const letterLyingDefaultFields = document.getElementById('letterLyingDefaultFields');
+    const letterLyingUniqueFields = document.getElementById('letterLyingUniqueFields');
+    const letterLyingPersonalFields = document.getElementById('letterLyingPersonalFields');
+    const letterLyingSavedFields = document.getElementById('letterLyingSavedFields');
+    const letterLyingGenerateUniqueBtn = document.getElementById('letterLyingGenerateUniqueBtn');
+    const letterLyingUniqueDisplay = document.getElementById('letterLyingUniqueDisplay');
+    const letterLyingStaticInput = document.getElementById('letterLyingStaticInput');
+    const letterLyingDuplicateMsg = document.getElementById('letterLyingDuplicateMsg');
+    const letterLyingResetDefaultBtn = document.getElementById('letterLyingResetDefaultBtn');
+    const letterLyingSavedOptgroup = document.getElementById('letterLyingSavedOptgroup');
+    const letterLyingSavedSelectedName = document.getElementById('letterLyingSavedSelectedName');
+    const letterLyingDeleteSavedBtn = document.getElementById('letterLyingDeleteSavedBtn');
+    const letterLyingSaveNameInput = document.getElementById('letterLyingSaveNameInput');
+    const letterLyingSaveAsBtn = document.getElementById('letterLyingSaveAsBtn');
+    const letterLyingSavedList = document.getElementById('letterLyingSavedList');
+    const letterLyingStepsInput = document.getElementById('letterLyingStepsInput');
+
+    function getCurrentLetterLyingStringForSave() {
+        const source = (appSettings && appSettings.letterLyingStringSource) || 'default';
+        if (source === 'default') return DEFAULT_LETTER_LYING_STRING;
+        if (source === 'unique') {
+            let u = (appSettings && appSettings.letterLyingUniqueString) || '';
+            if (u.length !== 8) u = generateLetterLyingUniqueString();
+            return u;
+        }
+        if (source === 'personal') return (appSettings && appSettings.letterLyingStaticString) || DEFAULT_LETTER_LYING_STRING;
+        if (source === 'saved') {
+            const sets = (appSettings && appSettings.letterLyingSavedSets) || [];
+            const set = sets.find(x => x.id === (appSettings && appSettings.letterLyingSavedId));
+            return (set && set.string) || DEFAULT_LETTER_LYING_STRING;
+        }
+        return (appSettings && appSettings.letterLyingStaticString) || DEFAULT_LETTER_LYING_STRING;
+    }
+
+    function populateLetterLyingSavedOptgroup() {
+        if (!letterLyingSavedOptgroup) return;
+        letterLyingSavedOptgroup.innerHTML = '';
+        const sets = (appSettings && appSettings.letterLyingSavedSets) || [];
+        sets.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.name;
+            letterLyingSavedOptgroup.appendChild(opt);
+        });
+    }
+
+    function syncLetterLyingSourcePanels() {
+        const source = (appSettings && appSettings.letterLyingStringSource) || 'default';
+        const savedId = appSettings && appSettings.letterLyingSavedId;
+        const showDefault = source === 'default';
+        const showUnique = source === 'unique';
+        const showPersonal = source === 'personal';
+        const showSaved = source === 'saved' && savedId;
+        if (letterLyingDefaultFields) letterLyingDefaultFields.style.display = showDefault ? '' : 'none';
+        if (letterLyingUniqueFields) letterLyingUniqueFields.style.display = showUnique ? '' : 'none';
+        if (letterLyingPersonalFields) letterLyingPersonalFields.style.display = showPersonal ? '' : 'none';
+        if (letterLyingSavedFields) letterLyingSavedFields.style.display = showSaved ? '' : 'none';
+        if (showUnique && letterLyingUniqueDisplay) {
+            let u = (appSettings && appSettings.letterLyingUniqueString) || '';
+            if (u.length !== 8) u = generateLetterLyingUniqueString();
+            if (appSettings) appSettings.letterLyingUniqueString = u;
+            letterLyingUniqueDisplay.textContent = u || '—';
+        }
+        if (showPersonal && letterLyingStaticInput) letterLyingStaticInput.value = (appSettings && appSettings.letterLyingStaticString) || DEFAULT_LETTER_LYING_STRING;
+        if (showSaved && letterLyingSavedSelectedName) {
+            const sets = (appSettings && appSettings.letterLyingSavedSets) || [];
+            const set = sets.find(x => x.id === savedId);
+            letterLyingSavedSelectedName.textContent = set ? (set.name + ': ' + set.string) : '';
+        }
+        if (letterLyingSavedList) {
+            letterLyingSavedList.innerHTML = '';
+            const sets = (appSettings && appSettings.letterLyingSavedSets) || [];
+            sets.forEach(s => {
+                const row = document.createElement('div');
+                row.className = 'letter-lying-saved-row';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'letter-lying-saved-item-name';
+                nameSpan.textContent = s.name;
+                const strSpan = document.createElement('span');
+                strSpan.className = 'letter-lying-saved-item-string';
+                strSpan.textContent = s.string;
+                const useBtn = document.createElement('button');
+                useBtn.type = 'button';
+                useBtn.className = 'small-button letter-lying-use-saved-btn';
+                useBtn.dataset.id = s.id;
+                useBtn.textContent = 'Use';
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'small-button letter-lying-delete-saved-btn';
+                delBtn.dataset.id = s.id;
+                delBtn.textContent = 'Delete';
+                row.append(nameSpan, ' ', strSpan, ' ', useBtn, ' ', delBtn);
+                letterLyingSavedList.appendChild(row);
+            });
+        }
+    }
+
+    function syncLetterLyingUI() {
+        const mode = (appSettings && appSettings.letterLyingMode) || 'static';
+        if (letterLyingModeSelect) letterLyingModeSelect.value = mode;
+        if (letterLyingStaticFields) letterLyingStaticFields.style.display = mode === 'static' ? '' : 'none';
+        if (letterLyingDynamicFields) letterLyingDynamicFields.style.display = mode === 'dynamic' ? '' : 'none';
+        if (letterLyingStepsInput) letterLyingStepsInput.value = Math.max(1, Math.min(26, (appSettings && appSettings.letterLyingDynamicSteps) || 4));
+        if (letterLyingDuplicateMsg) letterLyingDuplicateMsg.style.display = 'none';
+        if (mode !== 'static') return;
+        const sets = (appSettings && appSettings.letterLyingSavedSets) || [];
+        const savedId = appSettings && appSettings.letterLyingSavedId;
+        const source = (appSettings && appSettings.letterLyingStringSource) || 'default';
+        if (source === 'saved' && (!savedId || !sets.some(s => s.id === savedId))) {
+            appSettings.letterLyingStringSource = 'default';
+            appSettings.letterLyingSavedId = null;
+        }
+        populateLetterLyingSavedOptgroup();
+        const effectiveSource = (appSettings && appSettings.letterLyingStringSource) || 'default';
+        const effectiveSavedId = appSettings && appSettings.letterLyingSavedId;
+        if (letterLyingStringSourceSelect) {
+            if (effectiveSource === 'saved' && effectiveSavedId) {
+                letterLyingStringSourceSelect.value = effectiveSavedId;
+            } else {
+                letterLyingStringSourceSelect.value = effectiveSource;
+            }
+        }
+        syncLetterLyingSourcePanels();
+    }
+
+    if (letterLyingModeSelect) {
+        syncLetterLyingUI();
+        letterLyingModeSelect.addEventListener('change', () => {
+            appSettings.letterLyingMode = letterLyingModeSelect.value;
+            syncLetterLyingUI();
+            saveAppSettings();
+        });
+    }
+    if (letterLyingStringSourceSelect) {
+        letterLyingStringSourceSelect.addEventListener('change', () => {
+            const val = letterLyingStringSourceSelect.value;
+            const sets = (appSettings && appSettings.letterLyingSavedSets) || [];
+            const isSavedId = sets.some(s => s.id === val);
+            if (isSavedId) {
+                appSettings.letterLyingStringSource = 'saved';
+                appSettings.letterLyingSavedId = val;
+            } else {
+                appSettings.letterLyingStringSource = val;
+                appSettings.letterLyingSavedId = null;
+            }
+            syncLetterLyingSourcePanels();
+            saveAppSettings();
+        });
+    }
+    if (letterLyingGenerateUniqueBtn) {
+        letterLyingGenerateUniqueBtn.addEventListener('click', () => {
+            const u = generateLetterLyingUniqueString();
+            if (appSettings) appSettings.letterLyingUniqueString = u;
+            if (letterLyingUniqueDisplay) letterLyingUniqueDisplay.textContent = u;
+            saveAppSettings();
+        });
+    }
+    if (letterLyingStaticInput) {
+        letterLyingStaticInput.addEventListener('input', () => {
+            const raw = letterLyingStaticInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+            const seen = new Set();
+            let result = '';
+            let hadDuplicate = false;
+            for (const c of raw) {
+                if (seen.has(c)) hadDuplicate = true;
+                else { seen.add(c); result += c; }
+            }
+            letterLyingStaticInput.value = result;
+            appSettings.letterLyingStaticString = result || DEFAULT_LETTER_LYING_STRING;
+            saveAppSettings();
+            if (letterLyingDuplicateMsg) {
+                letterLyingDuplicateMsg.style.display = hadDuplicate ? 'inline' : 'none';
+                if (hadDuplicate) setTimeout(() => { if (letterLyingDuplicateMsg) letterLyingDuplicateMsg.style.display = 'none'; }, 2000);
+            }
+        });
+        letterLyingStaticInput.addEventListener('keypress', (e) => {
+            if (!/^[a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.metaKey && e.key.length === 1) e.preventDefault();
+        });
+    }
+    if (letterLyingResetDefaultBtn) {
+        letterLyingResetDefaultBtn.addEventListener('click', () => {
+            appSettings.letterLyingStaticString = DEFAULT_LETTER_LYING_STRING;
+            if (letterLyingStaticInput) letterLyingStaticInput.value = DEFAULT_LETTER_LYING_STRING;
+            if (letterLyingDuplicateMsg) letterLyingDuplicateMsg.style.display = 'none';
+            syncLetterLyingSourcePanels();
+            saveAppSettings();
+        });
+    }
+    if (letterLyingDeleteSavedBtn) {
+        letterLyingDeleteSavedBtn.addEventListener('click', () => {
+            const id = appSettings && appSettings.letterLyingSavedId;
+            if (!id) return;
+            if (!appSettings.letterLyingSavedSets) return;
+            appSettings.letterLyingSavedSets = appSettings.letterLyingSavedSets.filter(s => s.id !== id);
+            appSettings.letterLyingSavedId = null;
+            appSettings.letterLyingStringSource = 'default';
+            if (letterLyingStringSourceSelect) letterLyingStringSourceSelect.value = 'default';
+            populateLetterLyingSavedOptgroup();
+            syncLetterLyingSourcePanels();
+            saveAppSettings();
+        });
+    }
+    if (letterLyingSaveAsBtn && letterLyingSaveNameInput) {
+        letterLyingSaveAsBtn.addEventListener('click', () => {
+            const name = letterLyingSaveNameInput.value.trim();
+            if (!name) return;
+            const str = getCurrentLetterLyingStringForSave();
+            if (!appSettings.letterLyingSavedSets) appSettings.letterLyingSavedSets = [];
+            const id = Date.now().toString();
+            appSettings.letterLyingSavedSets.push({ id, name, string: str });
+            letterLyingSaveNameInput.value = '';
+            populateLetterLyingSavedOptgroup();
+            appSettings.letterLyingStringSource = 'saved';
+            appSettings.letterLyingSavedId = id;
+            if (letterLyingStringSourceSelect) letterLyingStringSourceSelect.value = id;
+            syncLetterLyingSourcePanels();
+            saveAppSettings();
+        });
+    }
+    if (letterLyingSavedList) {
+        letterLyingSavedList.addEventListener('click', (e) => {
+            const useBtn = e.target.closest('.letter-lying-use-saved-btn');
+            const delBtn = e.target.closest('.letter-lying-delete-saved-btn');
+            if (useBtn && useBtn.dataset.id) {
+                appSettings.letterLyingStringSource = 'saved';
+                appSettings.letterLyingSavedId = useBtn.dataset.id;
+                if (letterLyingStringSourceSelect) letterLyingStringSourceSelect.value = useBtn.dataset.id;
+                syncLetterLyingSourcePanels();
+                saveAppSettings();
+            } else if (delBtn && delBtn.dataset.id) {
+                const id = delBtn.dataset.id;
+                appSettings.letterLyingSavedSets = (appSettings.letterLyingSavedSets || []).filter(s => s.id !== id);
+                if (appSettings.letterLyingSavedId === id) {
+                    appSettings.letterLyingSavedId = null;
+                    appSettings.letterLyingStringSource = 'default';
+                    if (letterLyingStringSourceSelect) letterLyingStringSourceSelect.value = 'default';
+                }
+                populateLetterLyingSavedOptgroup();
+                syncLetterLyingSourcePanels();
+                saveAppSettings();
+            }
+        });
+    }
+    if (letterLyingStepsInput) {
+        letterLyingStepsInput.addEventListener('input', () => {
+            const n = parseInt(letterLyingStepsInput.value, 10);
+            if (!isNaN(n) && n >= 1 && n <= 26) {
+                appSettings.letterLyingDynamicSteps = n;
+                saveAppSettings();
+            }
+        });
+    }
+
+    const zeroCurvesApproxToggle = document.getElementById('zeroCurvesApproxToggle');
+    if (zeroCurvesApproxToggle) {
+        zeroCurvesApproxToggle.checked = !!(appSettings && appSettings.zeroCurvesApprox);
+        zeroCurvesApproxToggle.addEventListener('change', () => {
+            appSettings.zeroCurvesApprox = zeroCurvesApproxToggle.checked;
+            saveAppSettings();
+        });
+    }
+
+    const loveLettersRowCountSelect = document.getElementById('loveLettersRowCountSelect');
+    const loveLettersRowInputs = [1, 2, 3, 4, 5].map(r => document.getElementById('loveLettersRow' + r + 'Input'));
+    const loveLettersResetDefaultBtn = document.getElementById('loveLettersResetDefaultBtn');
+
+    function syncLoveLettersUI() {
+        const count = Math.max(1, Math.min(5, (appSettings && appSettings.loveLettersRowCount) || 5));
+        if (loveLettersRowCountSelect) loveLettersRowCountSelect.value = String(count);
+        loveLettersRowInputs.forEach((el, i) => {
+            if (el) {
+                const key = 'loveLettersRow' + (i + 1);
+                el.value = (appSettings && appSettings[key]) || (LOVE_LETTERS_DEFAULT['row' + (i + 1)] || '');
+            }
+        });
+        document.querySelectorAll('#loveLettersRowFields .love-letters-row').forEach(row => {
+            const r = parseInt(row.getAttribute('data-row'), 10);
+            row.style.display = r <= count ? '' : 'none';
+        });
+    }
+
+    if (loveLettersRowCountSelect) {
+        syncLoveLettersUI();
+        loveLettersRowCountSelect.addEventListener('change', () => {
+            appSettings.loveLettersRowCount = parseInt(loveLettersRowCountSelect.value, 10);
+            syncLoveLettersUI();
+            saveAppSettings();
+        });
+    }
+    loveLettersRowInputs.forEach((el, i) => {
+        if (el) {
+            el.addEventListener('input', () => {
+                const key = 'loveLettersRow' + (i + 1);
+                appSettings[key] = el.value.toUpperCase().replace(/[^A-Z]/g, '');
+                saveAppSettings();
+            });
+        }
+    });
+    if (loveLettersResetDefaultBtn) {
+        loveLettersResetDefaultBtn.addEventListener('click', () => {
+            appSettings.loveLettersRowCount = LOVE_LETTERS_DEFAULT.rowCount;
+            appSettings.loveLettersRow1 = LOVE_LETTERS_DEFAULT.row1;
+            appSettings.loveLettersRow2 = LOVE_LETTERS_DEFAULT.row2;
+            appSettings.loveLettersRow3 = LOVE_LETTERS_DEFAULT.row3;
+            appSettings.loveLettersRow4 = LOVE_LETTERS_DEFAULT.row4;
+            appSettings.loveLettersRow5 = LOVE_LETTERS_DEFAULT.row5;
+            syncLoveLettersUI();
+            saveAppSettings();
+        });
+    }
 }
 
 // Scrabble letter values
@@ -9984,10 +12237,26 @@ function initializeNotInFeature() {
 }
 
 function filterWordsByNotIn(letters) {
-    const letterSet = new Set(letters.toLowerCase());
+    const sanitized = sanitizeLetterString(letters);
+    const letterSet = new Set(sanitized.split(''));
     currentFilteredWords = currentFilteredWords.filter(word => {
-        // Check if ANY of the letters are in the word
-        return !Array.from(letterSet).some(letter => word.toLowerCase().includes(letter));
+        const upper = word.toUpperCase();
+        // Check if ANY of the letters are in the word; if so, exclude
+        return !Array.from(letterSet).some(letter => upper.includes(letter));
+    });
+    displayResults(currentFilteredWords);
+}
+
+function filterWordsByPresent(letters) {
+    const sanitized = sanitizeLetterString(letters);
+    const letterSet = new Set(sanitized.split(''));
+    if (letterSet.size === 0) return;
+    currentFilteredWords = currentFilteredWords.filter(word => {
+        const upper = word.toUpperCase();
+        for (const letter of letterSet) {
+            if (!upper.includes(letter)) return false;
+        }
+        return true;
     });
     displayResults(currentFilteredWords);
 }

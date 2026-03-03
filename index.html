@@ -17,7 +17,7 @@
     <meta http-equiv="Expires" content="0">
     <title>The Core</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css?v=11">
+    <link rel="stylesheet" href="styles.css?v=13">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 </head>
@@ -25,9 +25,6 @@
     <div class="container">
         <div class="header">
             <h1>The Core</h1>
-            <button id="settingsButton" class="settings-button">
-                <i class="fas fa-cog"></i>
-            </button>
         </div>
         
         <!-- Homepage Content -->
@@ -70,8 +67,11 @@
                 </div>
             </div>
             
-            <button id="performButton" class="perform-button">PERFORM</button>
-            <button id="createWorkflowButton" class="create-button">New Workflow</button>
+            <div class="home-action-buttons">
+                <button id="performButton" class="perform-button">PERFORM</button>
+                <button id="createWorkflowButton" class="create-button">New Workflow</button>
+                <button id="settingsButton" class="settings-home-button">Settings</button>
+            </div>
         </div>
 
         <!-- Workflow Creation Page -->
@@ -97,10 +97,14 @@
                         <h3>Available Features</h3>
                         <div id="availableFeatures">
                             <div class="feature-group">
-                                <button class="feature-button t9-mode-button" id="t9ModeButton" draggable="false">T9</button>
+                                <button class="feature-button t9-mode-button" id="t9ModeButton" draggable="false">PIN-NACLE</button>
                                 <button class="info-button" data-feature="t9Mode"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
+                                <button class="feature-button chain-reaction-mode-button" id="chainReactionModeButton" draggable="false">CHAIN REACTION</button>
+                                <button class="info-button" data-feature="chainReactionMode"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button alphanumeric-mode-button" id="alphanumericModeButton" draggable="false">Alpha-Numeric</button>
                                 <button class="info-button" data-feature="alphanumericMode"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -108,11 +112,11 @@
                                 <button class="feature-button" data-feature="position1" draggable="true">Short Word</button>
                                 <button class="info-button" data-feature="position1"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="consMid" draggable="true">3 LETTER WORD</button>
                                 <button class="info-button" data-feature="consMid"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="consMid2" draggable="true">Cons MID</button>
                                 <button class="info-button" data-feature="consMid2"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -132,31 +136,43 @@
                                 <button class="feature-button" data-feature="name" draggable="true">NAME</button>
                                 <button class="info-button" data-feature="name"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="o" draggable="true">O?</button>
                                 <button class="info-button" data-feature="o"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
+                                <button class="feature-button" data-feature="oCurves" draggable="true">O-CURVES</button>
+                                <button class="info-button" data-feature="oCurves"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="lexicon" draggable="true">Curved Pos.</button>
                                 <button class="info-button" data-feature="lexicon"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
+                                <button class="feature-button" data-feature="zeroCurves" draggable="true">ZERO CURVES</button>
+                                <button class="info-button" data-feature="zeroCurves"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="eee" draggable="true">EEE?</button>
                                 <button class="info-button" data-feature="eee"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="eeeFirst" draggable="true">EEEFIRST</button>
                                 <button class="info-button" data-feature="eeeFirst"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group">
+                                <button class="feature-button" data-feature="e21" draggable="true">E21</button>
+                                <button class="info-button" data-feature="e21"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
                                 <button class="feature-button" data-feature="originalLex" draggable="true">Lexicon</button>
                                 <button class="info-button" data-feature="originalLex"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="consonant" draggable="true">Cons. Together</button>
                                 <button class="info-button" data-feature="consonant"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="colour3" draggable="true">Colour3</button>
                                 <button class="info-button" data-feature="colour3"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -165,36 +181,48 @@
                                 <button class="info-button" data-feature="atlas"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
+                                <button class="feature-button" data-feature="letterLying" draggable="true">Letter Lying</button>
+                                <button class="info-button" data-feature="letterLying"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group">
+                                <button class="feature-button" data-feature="loveLetters" draggable="true">Love Letters</button>
+                                <button class="info-button" data-feature="loveLetters"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group">
                                 <button class="feature-button" data-feature="length" draggable="true">LENGTH</button>
                                 <button class="info-button" data-feature="length"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="mostFrequent" draggable="true">MOST FREQUENT</button>
                                 <button class="info-button" data-feature="mostFrequent"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="leastFrequent" draggable="true">LEAST FREQUENT</button>
                                 <button class="info-button" data-feature="leastFrequent"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
-                                <button class="feature-button" data-feature="notIn" draggable="true">NOT IN</button>
+                                <button class="feature-button" data-feature="notIn" draggable="true">ABSENT</button>
                                 <button class="info-button" data-feature="notIn"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
-                                <button class="feature-button" data-feature="whatItsNot1" draggable="true">1-CHAIN REACTION</button>
-                                <button class="info-button" data-feature="whatItsNot1"><i class="fas fa-info-circle"></i></button>
+                                <button class="feature-button" data-feature="present" draggable="true">PRESENT</button>
+                                <button class="info-button" data-feature="present"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
-                                <button class="feature-button" data-feature="whatItsNot2" draggable="true">2-CHAIN REACTION</button>
-                                <button class="info-button" data-feature="whatItsNot2"><i class="fas fa-info-circle"></i></button>
+                                <button class="feature-button" data-feature="consonants" draggable="true">CONSONANTS</button>
+                                <button class="info-button" data-feature="consonants"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
-                                <button class="feature-button" data-feature="whatItsNot3" draggable="true">3-CHAIN REACTION</button>
-                                <button class="info-button" data-feature="whatItsNot3"><i class="fas fa-info-circle"></i></button>
+                            <div class="feature-group" data-builder-hidden="true">
+                                <button class="feature-button" data-feature="anywhere" draggable="true">ANYWHERE</button>
+                                <button class="info-button" data-feature="anywhere"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
-                                <button class="feature-button" data-feature="whatItsNotL" draggable="true">L-CHAIN REACTION</button>
-                                <button class="info-button" data-feature="whatItsNotL"><i class="fas fa-info-circle"></i></button>
+                            <div class="feature-group" data-builder-hidden="true">
+                                <button class="feature-button" data-feature="together" draggable="true">TOGETHER</button>
+                                <button class="info-button" data-feature="together"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group" data-builder-hidden="true">
+                                <button class="feature-button" data-feature="middle" draggable="true">MIDDLE</button>
+                                <button class="info-button" data-feature="middle"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
                                 <button class="feature-button" data-feature="abcde" draggable="true">ABCDE</button>
@@ -204,11 +232,11 @@
                                 <button class="feature-button" data-feature="abc" draggable="true">ABC</button>
                                 <button class="info-button" data-feature="abc"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="findEee" draggable="true">FIND-EEE</button>
                                 <button class="info-button" data-feature="findEee"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="positionCons" draggable="true">POSITION-CONS</button>
                                 <button class="info-button" data-feature="positionCons"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -216,7 +244,7 @@
                                 <button class="feature-button" data-feature="firstCurved" draggable="true">FIRST CURVED</button>
                                 <button class="info-button" data-feature="firstCurved"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="pin" draggable="true">PIN</button>
                                 <button class="info-button" data-feature="pin"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -224,7 +252,7 @@
                                 <button class="feature-button" data-feature="scrabble" draggable="true">SCRABBLE</button>
                                 <button class="info-button" data-feature="scrabble"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="scrabble1" draggable="true">SCRABBLE1</button>
                                 <button class="info-button" data-feature="scrabble1"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -233,14 +261,14 @@
                                 <button class="info-button" data-feature="sologram"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
-                                <button class="feature-button" data-feature="scramble" draggable="true">SCRAMBLE</button>
+                                <button class="feature-button" data-feature="scramble" draggable="true">DECODE</button>
                                 <button class="info-button" data-feature="scramble"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
                                 <button class="feature-button" data-feature="pianoForte" draggable="true">PIANO FORTE</button>
                                 <button class="info-button" data-feature="pianoForte"><i class="fas fa-info-circle"></i></button>
                             </div>
-                            <div class="feature-group">
+                            <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button" data-feature="pianoPiano" draggable="true">PIANO PIANO</button>
                                 <button class="info-button" data-feature="pianoPiano"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -249,8 +277,16 @@
                                 <button class="info-button" data-feature="dictionaryAlpha"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
+                                <button class="feature-button" data-feature="alpha" draggable="true">ALPHA</button>
+                                <button class="info-button" data-feature="alpha"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group">
                                 <button class="feature-button" data-feature="smlLength" draggable="true">S/M/L (Length)</button>
                                 <button class="info-button" data-feature="smlLength"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group">
+                                <button class="feature-button" data-feature="omega" draggable="true">OMEGA</button>
+                                <button class="info-button" data-feature="omega"><i class="fas fa-info-circle"></i></button>
                             </div>
                         </div>
                     </div>
@@ -353,10 +389,64 @@
                 <div id="atlasFeature" class="feature-section" style="display: none;">
                     <h2 class="feature-title">ATLAS</h2>
                     <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">How many of the first 6 letters can start a colour? (0–6)</p>
-                    <div class="input-group">
+                    <div class="atlas-input-row">
                         <input type="number" id="atlasInput" placeholder="0–6" min="0" max="6" step="1">
+                    </div>
+                    <div class="input-group">
                         <button id="atlasButton">SUBMIT</button>
                         <button id="atlasSkipButton" class="skip-button">SKIP</button>
+                    </div>
+                </div>
+
+                <!-- O-CURVES feature -->
+                <div id="oCurvesFeature" class="feature-section" style="display: none;">
+                    <h2 class="feature-title">O-CURVES</h2>
+                    <div id="oCurvesPart1" class="o-curves-part">
+                        <p class="o-curves-prompt">Is there an O in the word?</p>
+                        <div class="button-container">
+                            <button id="oCurvesYesBtn" class="yes-btn">YES</button>
+                            <button id="oCurvesNoBtn" class="no-btn">NO</button>
+                            <button id="oCurvesSkipBtn" class="skip-button">SKIP</button>
+                        </div>
+                    </div>
+                    <div id="oCurvesPart2" class="o-curves-part" style="display: none;">
+                        <p class="o-curves-prompt">Positions of curved letters (1–5). e.g. 123 or 0 for all straight.</p>
+                        <div class="lexicon-input">
+                            <input type="text" id="oCurvesPositionsInput" placeholder="Enter positions (e.g. 123)">
+                            <button id="oCurvesSubmitBtn">SUBMIT</button>
+                            <button id="oCurvesCurvedSkipBtn" class="skip-button">SKIP</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- E21 feature -->
+                <div id="e21Feature" class="feature-section" style="display: none;">
+                    <h2 class="feature-title">E21</h2>
+                    <div id="e21Part1" class="e21-part">
+                        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Second letter (EEE?): E, E-sound, or No E.</p>
+                        <div class="button-container">
+                            <button id="e21SecondEBtn" class="yes-btn">E</button>
+                            <button id="e21SecondYesBtn" class="yes-btn">E SOUND</button>
+                            <button id="e21SecondNoBtn" class="no-btn">NO E</button>
+                        </div>
+                    </div>
+                    <div id="e21Part2" class="e21-part" style="display: none;">
+                        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">First letter (EEEFIRST): E, E-sound, or No E.</p>
+                        <div class="button-container">
+                            <button id="e21FirstEBtn" class="yes-btn">E</button>
+                            <button id="e21FirstYesBtn" class="yes-btn">E SOUND</button>
+                            <button id="e21FirstNoBtn" class="no-btn">NO E</button>
+                        </div>
+                    </div>
+                    <div id="e21Part3" class="e21-part" style="display: none;">
+                        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Is there an E anywhere in the word?</p>
+                        <div class="button-container">
+                            <button id="e21AnywhereYesBtn" class="yes-btn">YES</button>
+                            <button id="e21AnywhereNoBtn" class="no-btn">NO</button>
+                        </div>
+                    </div>
+                    <div class="button-container" style="margin-top: 16px;">
+                        <button id="e21SkipBtn" class="skip-button">SKIP</button>
                     </div>
                 </div>
 
@@ -368,6 +458,17 @@
                         <button id="lexiconButton">DONE</button>
                     </div>
                     <button id="lexiconSkipButton" class="skip-button">SKIP</button>
+                </div>
+
+                <!-- ZERO CURVES feature -->
+                <div id="zeroCurvesFeature" class="feature-section" style="display: none;">
+                    <h2 class="feature-title">ZERO CURVES</h2>
+                    <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter positions 1–6 where letters are curved (e.g. 135, or 0 for no curved in 1–6). APPROX in Settings relaxes other positions.</p>
+                    <div class="lexicon-input">
+                        <input type="text" id="zeroCurvesInput" placeholder="Enter positions (e.g. 135 or 0)">
+                        <button id="zeroCurvesButton">SUBMIT</button>
+                        <button id="zeroCurvesSkipButton" class="skip-button">SKIP</button>
+                    </div>
                 </div>
 
                 <!-- Consonant question section -->
@@ -498,6 +599,17 @@
                     </div>
                 </div>
 
+                <!-- Love Letters feature -->
+                <div id="loveLettersFeature" class="feature-section" style="display: none;">
+                    <h2 class="feature-title">Love Letters</h2>
+                    <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter the number for each row (how many distinct letters from that row appear in the word).</p>
+                    <div class="input-group">
+                        <input type="text" id="loveLettersInput" placeholder="e.g. 11112" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="off">
+                        <button id="loveLettersButton">SUBMIT</button>
+                        <button id="loveLettersSkipButton" class="skip-button">SKIP</button>
+                    </div>
+                </div>
+
                 <!-- Scrabble feature -->
                 <div id="scrabbleFeature" class="feature-section" style="display: none;">
                     <h2 class="feature-title">SCRABBLE</h2>
@@ -521,16 +633,7 @@
                 <!-- Sologram feature -->
                 <div id="sologramFeature" class="feature-section" style="display: none;" data-sologram-yn="">
                     <h2 class="feature-title">SOLOGRAM</h2>
-                    <div class="sologram-group-wrap">
-                        <button type="button" id="sologramGroupBtn" class="sologram-group-btn">DEFAULT</button>
-                        <div id="sologramGroupDropdown" class="sologram-group-dropdown" style="display: none;">
-                            <button type="button" class="sologram-group-option" data-group="all">DEFAULT</button>
-                            <button type="button" class="sologram-group-option" data-group="moabt">MOABT</button>
-                            <button type="button" class="sologram-group-option" data-group="brushwood">BRUSHWOOD</button>
-                            <button type="button" class="sologram-group-option" data-group="glance">GLANCE</button>
-                            <button type="button" class="sologram-group-option" data-group="other">OTHER</button>
-                        </div>
-                    </div>
+                    <p class="sologram-using-label">Using: <span id="sologramBookLabel">ALL</span></p>
                     <div class="sologram-yn-area">
                         <div class="sologram-display-label">Y/N string:</div>
                         <div id="sologramDisplay" class="sologram-display">(empty)</div>
@@ -548,19 +651,12 @@
 
                 <!-- Scramble feature -->
                 <div id="scrambleFeature" class="feature-section" style="display: none;">
-                    <h2 class="feature-title">SCRAMBLE</h2>
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                        <button id="scrambleTruthToggle" class="scramble-toggle-btn" style="padding: 10px 20px; background: #f0f0f0; border: 2px solid #1B5E20; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: #1B5E20;">
-                            TRUTH ON ONE? <span id="scrambleTruthStatus">OFF</span>
-                        </button>
-                        <div id="scramblePositionContainer" style="display: none; width: 100%; max-width: 300px;">
-                            <input type="text" id="scramblePositionInput" placeholder="Position (optional)" inputmode="numeric" pattern="[0-9]*" autocomplete="off" style="width: 100%; padding: 8px; text-align: center; border: 2px solid #1B5E20; border-radius: 8px; font-size: 14px;">
-                        </div>
-                        <div class="length-input">
-                            <input type="text" id="scrambleInput" placeholder="Enter letter string" autocomplete="off" style="text-transform: uppercase;">
-                            <button id="scrambleButton">SUBMIT</button>
-                            <button id="scrambleSkipButton" class="skip-button">SKIP</button>
-                        </div>
+                    <h2 class="feature-title">DECODE</h2>
+                    <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter the letter string. One character is correct at its position (Settings: Position for which one).</p>
+                    <div class="length-input">
+                        <input type="text" id="scrambleInput" placeholder="Enter letter string" autocomplete="off" style="text-transform: uppercase;">
+                        <button id="scrambleButton">SUBMIT</button>
+                        <button id="scrambleSkipButton" class="skip-button">SKIP</button>
                     </div>
                 </div>
 
@@ -588,13 +684,23 @@
                     </div>
                 </div>
 
-                <!-- NOT IN feature -->
+                <!-- ABSENT feature -->
                 <div id="notInFeature" class="feature-section" style="display: none;">
-                    <h2 class="feature-title">NOT IN</h2>
+                    <h2 class="feature-title">ABSENT</h2>
                     <div class="input-group">
                         <input type="text" id="notInInput" placeholder="Enter letters...">
                         <button id="notInButton">SUBMIT</button>
                         <button id="notInSkipButton" class="skip-button">SKIP</button>
+                    </div>
+                </div>
+
+                <!-- PRESENT feature -->
+                <div id="presentFeature" class="feature-section" style="display: none;">
+                    <h2 class="feature-title">PRESENT</h2>
+                    <div class="input-group">
+                        <input type="text" id="presentInput" placeholder="Enter letters in the word...">
+                        <button id="presentButton">SUBMIT</button>
+                        <button id="presentSkipButton" class="skip-button">SKIP</button>
                     </div>
                 </div>
 
@@ -953,9 +1059,9 @@
                 <div id="dictionaryAlphaFeature" class="feature-section" style="display: none;">
                     <h2 class="feature-title">Dictionary (Alpha)</h2>
                     <div class="section-buttons">
-                        <button class="section-btn" data-section="begin">Beginning</button>
-                        <button class="section-btn" data-section="mid">Middle</button>
-                        <button class="section-btn" data-section="end">End</button>
+                        <button class="section-btn" data-section="begin">Beginning (A–M)</button>
+                        <button class="section-btn" data-section="mid">Middle (I–T)</button>
+                        <button class="section-btn" data-section="end">End (N–Z)</button>
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; gap: 10px;">
                         <button id="dictionaryAlphaSubmitButton">SUBMIT</button>
@@ -977,26 +1083,252 @@
                     </div>
                 </div>
             </div>
+            <div id="hydraLabelContainer" class="hydra-label-container" style="display: none;">
+                SEND TO HYDRA: <span id="hydraLabelValue"></span>
+            </div>
         </div>
 
         <!-- Settings Modal -->
         <div id="settingsModal" class="modal">
-            <div class="modal-content">
-                <span class="close-button">&times;</span>
-                <h2>Settings</h2>
-                <div class="settings-options">
-                    <label>
-                        <input type="checkbox" id="enableColour3" checked>
-                        Enable COLOUR3 Feature
-                    </label>
-                    <label>
-                        <input type="checkbox" id="enableVowel" checked>
-                        Enable VOWEL Feature
-                    </label>
-                    <label>
-                        <input type="checkbox" id="enableShape" checked>
-                        Enable SHAPE Feature
-                    </label>
+            <div class="modal-content settings-modal-content">
+                <span class="close-button" id="settingsModalClose">&times;</span>
+                <h2 class="settings-modal-title">Settings</h2>
+                <div class="settings-sections">
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">LENGTH</h3>
+                        <p class="settings-section-subtitle">1 Buffer</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lengthBuffer1Toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">T9 LENGTH</h3>
+                        <p class="settings-section-subtitle">1 Buffer</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="t9LengthBuffer1Toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">E21</h3>
+                        <p class="settings-section-subtitle">E in the word?</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="e21AnywhereToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">SCRABBLE</h3>
+                        <p class="settings-section-subtitle">1 Buffer (score ±1, like SCRABBLE1)</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="scrabbleBuffer1Toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">DECODE</h3>
+                        <p class="settings-section-subtitle">Position: which character in the string is the correct one (1-based)</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="decodePositionToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div id="decodePositionFields" class="decode-position-fields" style="display: none;">
+                            <label for="decodePositionInput">Truth position (1-based):</label>
+                            <input type="number" id="decodePositionInput" min="1" max="20" value="1">
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">SOLOGRAM</h3>
+                        <p class="settings-section-subtitle">Which word list to use for the SOLOGRAM step</p>
+                        <label for="sologramBookSelect">Book:</label>
+                        <select id="sologramBookSelect">
+                            <option value="all">ALL</option>
+                            <option value="moabt">MOABT</option>
+                            <option value="brushwood">BRUSHWOOD</option>
+                            <option value="glance">GLANCE</option>
+                            <option value="other">OTHER</option>
+                        </select>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">PIANO FORTE</h3>
+                        <p class="settings-section-subtitle">Default is A–G. Use custom range to set start and end letter (order = button order).</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="pianoForteUseCustomRangeToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="settings-toggle-label">Use custom range</span>
+                        <div id="pianoForteCustomRangeFields" class="piano-forte-range-fields" style="display: none;">
+                            <label for="pianoForteStartLetterInput">Start letter:</label>
+                            <input type="text" id="pianoForteStartLetterInput" placeholder="A" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                            <label for="pianoForteEndLetterInput">End letter:</label>
+                            <input type="text" id="pianoForteEndLetterInput" placeholder="G" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">Dictionary (Alpha)</h3>
+                        <p class="settings-section-subtitle">First letter ranges for Beginning, Middle, End. Default: Beginning A–M, Middle I–T, End N–Z.</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="dictionaryAlphaUseCustomRangeToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="settings-toggle-label">Use custom ranges</span>
+                        <div id="dictionaryAlphaCustomRangeFields" class="dictionary-alpha-range-fields" style="display: none;">
+                            <p class="settings-field-group-label">Beginning</p>
+                            <label for="dictionaryAlphaBeginStartInput">Start:</label>
+                            <input type="text" id="dictionaryAlphaBeginStartInput" placeholder="A" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                            <label for="dictionaryAlphaBeginEndInput">End:</label>
+                            <input type="text" id="dictionaryAlphaBeginEndInput" placeholder="M" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                            <p class="settings-field-group-label">Middle</p>
+                            <label for="dictionaryAlphaMidStartInput">Start:</label>
+                            <input type="text" id="dictionaryAlphaMidStartInput" placeholder="I" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                            <label for="dictionaryAlphaMidEndInput">End:</label>
+                            <input type="text" id="dictionaryAlphaMidEndInput" placeholder="T" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                            <p class="settings-field-group-label">End</p>
+                            <label for="dictionaryAlphaEndStartInput">Start:</label>
+                            <input type="text" id="dictionaryAlphaEndStartInput" placeholder="N" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                            <label for="dictionaryAlphaEndEndInput">End:</label>
+                            <input type="text" id="dictionaryAlphaEndEndInput" placeholder="Z" maxlength="1" autocomplete="off" style="width: 3em; text-transform: uppercase;">
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">OMEGA</h3>
+                        <p class="settings-section-subtitle">Which shape/object set to use for the OMEGA filter</p>
+                        <label for="omegaModeSelect">Mode:</label>
+                        <select id="omegaModeSelect">
+                            <option value="esp">ESP</option>
+                            <option value="pocket">Pocket</option>
+                            <option value="restaurant">Restaurant</option>
+                            <option value="straightCurved">Straight/Curved</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <div id="omegaCustomFields" class="omega-custom-fields" style="display: none;">
+                            <label for="omegaCustomGroupName">Group name (optional):</label>
+                            <input type="text" id="omegaCustomGroupName" placeholder="e.g. My set" maxlength="40">
+                            <p class="settings-field-group-label">Shapes / objects</p>
+                            <p id="omegaEfficiencySubtitle" class="omega-efficiency-subtitle" aria-live="polite"></p>
+                            <div id="omegaCustomShapeList"></div>
+                            <button type="button" id="omegaCustomAddShapeBtn" class="small-button">Add shape</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">ALPHA</h3>
+                        <p class="settings-section-subtitle">Directional filter: Left = toward A, Right = toward Z (or swap in Swap POV). First letter from Dictionary (Alpha).</p>
+                        <label for="alphaDirectionsCountInput">Number of directions (0 = until SUBMIT):</label>
+                        <input type="number" id="alphaDirectionsCountInput" min="0" max="99" value="0" style="width: 4em;">
+                        <p id="alphaEfficiencySubtitle" class="alpha-efficiency-subtitle" aria-live="polite"></p>
+                        <div class="settings-toggle-row" style="margin-top: 10px;">
+                            <label for="alphaSwapPovToggle">Swap POV (Left = toward Z, Right = toward A):</label>
+                            <input type="checkbox" id="alphaSwapPovToggle">
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">ATLAS letters</h3>
+                        <p class="settings-section-subtitle">Which letters count in ATLAS (COLOUR3 always uses Colours)</p>
+                        <label for="atlasLetterSourceSelect">Source:</label>
+                        <select id="atlasLetterSourceSelect">
+                            <option value="default">Default (Colours)</option>
+                            <option value="months">Months</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <div id="atlasLettersDisplay" class="atlas-letters-display">A B C E G I L N M O P R S T V W Y</div>
+                        <div id="atlasCustomFields" class="atlas-custom-fields" style="display: none;">
+                            <label for="atlasCustomName">Name (optional):</label>
+                            <input type="text" id="atlasCustomName" placeholder="e.g. My group">
+                            <label for="atlasCustomLetters">Letters:</label>
+                            <input type="text" id="atlasCustomLetters" placeholder="e.g. ABC or A B C" maxlength="80">
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">Letter Lying</h3>
+                        <p class="settings-section-subtitle">Multi-part filter: ask if each letter is in the word (YES/NO)</p>
+                        <label for="letterLyingModeSelect">Mode:</label>
+                        <select id="letterLyingModeSelect">
+                            <option value="static">Static</option>
+                            <option value="dynamic">Dynamic</option>
+                        </select>
+                        <div id="letterLyingStaticFields" class="letter-lying-static-fields">
+                            <label for="letterLyingStringSourceSelect">Letter set:</label>
+                            <select id="letterLyingStringSourceSelect">
+                                <option value="default">Default</option>
+                                <option value="unique">Unique (8 random)</option>
+                                <option value="personal">Personal (custom)</option>
+                                <optgroup id="letterLyingSavedOptgroup" label="Saved">
+                                    <!-- options filled by script -->
+                                </optgroup>
+                            </select>
+                            <div id="letterLyingDefaultFields" class="letter-lying-source-fields" style="display: none;">
+                                <p class="settings-section-subtitle">Uses the default letter string.</p>
+                            </div>
+                            <div id="letterLyingUniqueFields" class="letter-lying-source-fields" style="display: none;">
+                                <button type="button" id="letterLyingGenerateUniqueBtn" class="small-button">Generate 8 random letters</button>
+                                <span id="letterLyingUniqueDisplay" class="letter-lying-unique-display"></span>
+                            </div>
+                            <div id="letterLyingPersonalFields" class="letter-lying-source-fields" style="display: none;">
+                                <label for="letterLyingStaticInput">Letters (A–Z only, no duplicates):</label>
+                                <input type="text" id="letterLyingStaticInput" placeholder="e.g. NTRLCSAIEUO" maxlength="26" autocomplete="off">
+                                <span id="letterLyingDuplicateMsg" class="letter-lying-dup-msg" style="display: none;">Duplicate letter</span>
+                                <button type="button" id="letterLyingResetDefaultBtn" class="small-button">Reset to Default</button>
+                            </div>
+                            <div id="letterLyingSavedFields" class="letter-lying-source-fields" style="display: none;">
+                                <p id="letterLyingSavedSelectedName" class="letter-lying-saved-name"></p>
+                                <button type="button" id="letterLyingDeleteSavedBtn" class="small-button">Delete this set</button>
+                            </div>
+                            <div class="letter-lying-save-row">
+                                <label for="letterLyingSaveNameInput">Save current string as:</label>
+                                <input type="text" id="letterLyingSaveNameInput" placeholder="e.g. Show 1" maxlength="40" autocomplete="off">
+                                <button type="button" id="letterLyingSaveAsBtn" class="small-button">Save</button>
+                            </div>
+                            <div id="letterLyingSavedList" class="letter-lying-saved-list"></div>
+                        </div>
+                        <div id="letterLyingDynamicFields" class="letter-lying-dynamic-fields" style="display: none;">
+                            <label for="letterLyingStepsInput">Steps (most frequent letter each step):</label>
+                            <input type="number" id="letterLyingStepsInput" min="1" max="26" value="4">
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">ZERO CURVES</h3>
+                        <p class="settings-section-subtitle">APPROX: do not assume non-entered positions are straight</p>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="zeroCurvesApproxToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">Love Letters</h3>
+                        <p class="settings-section-subtitle">Letter groups per row (1–5 rows). Spectator counts how many distinct letters from each row appear in the word.</p>
+                        <label for="loveLettersRowCountSelect">Number of rows:</label>
+                        <select id="loveLettersRowCountSelect">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5" selected>5</option>
+                        </select>
+                        <div id="loveLettersRowFields">
+                            <div class="love-letters-row" data-row="1">
+                                <label for="loveLettersRow1Input">Row 1 letters:</label>
+                                <input type="text" id="loveLettersRow1Input" placeholder="e.g. ABC" maxlength="26" autocomplete="off">
+                            </div>
+                            <div class="love-letters-row" data-row="2">
+                                <label for="loveLettersRow2Input">Row 2 letters:</label>
+                                <input type="text" id="loveLettersRow2Input" placeholder="e.g. DEF" maxlength="26" autocomplete="off">
+                            </div>
+                            <div class="love-letters-row" data-row="3">
+                                <label for="loveLettersRow3Input">Row 3 letters:</label>
+                                <input type="text" id="loveLettersRow3Input" placeholder="e.g. GHI" maxlength="26" autocomplete="off">
+                            </div>
+                            <div class="love-letters-row" data-row="4">
+                                <label for="loveLettersRow4Input">Row 4 letters:</label>
+                                <input type="text" id="loveLettersRow4Input" placeholder="e.g. JKL" maxlength="26" autocomplete="off">
+                            </div>
+                            <div class="love-letters-row" data-row="5">
+                                <label for="loveLettersRow5Input">Row 5 letters:</label>
+                                <input type="text" id="loveLettersRow5Input" placeholder="e.g. MNO" maxlength="26" autocomplete="off">
+                            </div>
+                        </div>
+                        <button type="button" id="loveLettersResetDefaultBtn" class="small-button">Reset to Default</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1049,7 +1381,7 @@
         <div id="nameInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>NAME</h3>
-                <p><strong>NAME</strong><br>Enter a full name (first and surname). The feature extracts the initials and uses them like Short Word to filter words containing those consonants. Then select a vowel and position (START/MID/END) to further filter words containing that vowel in the specified position.</p>
+                <p><strong>NAME</strong><br>Enter a full name (first and surname). The feature extracts the initials and uses them as consonants (like Short Word) to filter words. Optionally select a vowel and position (START/MID/END) to further filter words containing that vowel in the specified position; if you don't need it, just click SUBMIT after entering the name.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
@@ -1060,10 +1392,24 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="oCurvesInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>O-CURVES</h3>
+                <p><strong>Two-part filter.</strong><br>Part 1: Is there an O in the word? (YES/NO). Part 2: Enter which positions (1–5) have curved letters, e.g. 123 or 0 for all straight. Same logic as O? then Curved Pos.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
         <div id="lexiconInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>Curved Pos.</h3>
                 <p><strong>Curved Positions</strong><br>In which positions are there curved letters (as caps)- example. 135</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="zeroCurvesInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>ZERO CURVES</h3>
+                <p><strong>Curved positions 1–6.</strong><br>Enter positions 1–6 where the letters are curved (e.g. 135, or 0 for no curved letters in 1–6). APPROX (Settings) relaxes the assumption that other positions are straight.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
@@ -1078,6 +1424,13 @@
             <div class="feature-info-content">
                 <h3>EEEFIRST</h3>
                 <p><strong>E?</strong><br>Input an "E", an "E" sound, or no E in the first position of the chosen word.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="e21Info" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>E21</h3>
+                <p><strong>Three-part E filter.</strong><br>Part 1: EEE? (second letter) – E, E-sound, or No E. Part 2: EEEFIRST (first letter) – again E, E-sound, or No E. Part 3 (optional, if enabled in Settings): ask if there is an E anywhere in the word (YES/NO). All three parts filter the same wordlist step.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
@@ -1109,6 +1462,20 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="letterLyingInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>Letter Lying</h3>
+                <p><strong>Multi-part filter: is this letter in your word?</strong><br>Configure in Settings (Static: fixed letter string, or Dynamic: most frequent letter each step). For each letter you get YES / NO (filter by presence) or skip that letter (→) or SKIP the whole filter.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="loveLettersInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>Love Letters</h3>
+                <p><strong>Number string from letter groups.</strong><br>Spectator writes letter groups on a card (default: ABC DEF GHI JKL MNO), then for each row writes how many distinct letters from that row appear in the word. You enter that number string (e.g. 11112). Configure groups in Settings.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
         <div id="lengthInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>LENGTH</h3>
@@ -1132,8 +1499,43 @@
         </div>
         <div id="notInInfo" class="feature-info-modal">
             <div class="feature-info-content">
-                <h3>NOT IN</h3>
-                <p><strong>Letters Not In Word</strong><br>Type in a string of letters. If all these letters are in the word, it will be removed from the wordlist.</p>
+                <h3>ABSENT</h3>
+                <p><strong>Letters NOT in the word.</strong><br>Type in a string of letters. Any word containing at least one of these letters will be removed from the wordlist.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="presentInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>PRESENT</h3>
+                <p><strong>Letters that ARE in the word.</strong><br>Type in a string of letters. Only words that contain all of these letters (in any positions) will be kept.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="consonantsInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>CONSONANTS</h3>
+                <p><strong>Two consonants filter</strong><br>Enter exactly two consonants (e.g. RP), then choose: <strong>TOGETHER</strong> (both letters adjacent, RP or PR), <strong>MIDDLE</strong> (both in the word, neither first nor last letter), or <strong>ANYWHERE</strong> (both in the word, any position).</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="anywhereInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>ANYWHERE</h3>
+                <p><strong>Anywhere</strong><br>Enter exactly two consonants (e.g. RP). Only words that contain both letters are kept; position and order do not matter.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="togetherInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>TOGETHER</h3>
+                <p><strong>Together</strong><br>Enter exactly two consonants (e.g. RP). Only words where those two letters appear adjacent (RP or PR) are kept.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="middleInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>MIDDLE</h3>
+                <p><strong>Middle</strong><br>Enter exactly two consonants (e.g. RP). Only words that contain both letters and neither letter is the first or last character are kept.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
@@ -1230,8 +1632,8 @@
         </div>
         <div id="scrambleInfo" class="feature-info-modal">
             <div class="feature-info-content">
-                <h3>SCRAMBLE</h3>
-                <p><strong>SCRAMBLE</strong><br>Enter a string of letters. The word length must match the input string length. By default (TRUTH ON ONE? OFF), all letters are incorrect at their positions and the word cannot contain any of these letters. When TRUTH ON ONE? is ON, any one of the letters is correct at its position, while others are wrong at their positions.</p>
+                <h3>DECODE</h3>
+                <p><strong>DECODE</strong><br>Enter a string of letters. Word length must match. One character in the string is correct at its position in the word; the rest are wrong. By default (Settings Position OFF) any one of them can be the correct one. In Settings you can turn Position ON and set which position (1-based) is the correct one.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
@@ -1333,10 +1735,24 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="alphaInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>ALPHA</h3>
+                <p><strong>Directional alphabet filter</strong><br>The spectator imagines the alphabet in front of them and mentally spells the word by pointing to each letter. You enter directional movements: Left (toward A), Right (toward Z), or Repeat (same letter as previous). The first letter’s range comes from Dictionary (Alpha) if that step ran earlier. Set “Number of directions” in Settings to auto-submit after N entries, or 0 to submit manually.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
         <div id="smlLengthInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>S/M/L (Length)</h3>
                 <p><strong>Word Length Categories</strong><br>Filters words by length: Small (1-6 characters), Medium (5-9 characters), Long (7+ characters). Select a category and click SUBMIT.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="omegaInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>OMEGA</h3>
+                <p><strong>Positional shape filter</strong><br>Tap shapes in order to build a sequence (each shape has a set of allowed letters). Only words that match the sequence at every position are kept. Use Backspace to remove the last shape, then SUBMIT when done. Mode (ESP, Pocket, Restaurant) is set in Settings.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
@@ -1351,6 +1767,13 @@
             <div class="feature-info-content">
                 <h3>Alpha-Numeric</h3>
                 <p><strong>Alpha-Numeric Features Category</strong><br>Click this button to view and access Alpha-Numeric filtering features. These features filter words based on relationships between letters and their positions in the alphabet.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="chainReactionModeInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>CHAIN REACTION</h3>
+                <p><strong>CHAIN REACTION Features</strong><br>Click this button to view 1-CHAIN REACTION, 2-CHAIN REACTION, 3-CHAIN REACTION, and L-CHAIN REACTION filtering features.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
@@ -1453,6 +1876,8 @@
         // Settings Modal Functions
         function showSettings() {
             document.getElementById('settingsModal').style.display = 'block';
+            if (typeof updateOmegaEfficiencySubtitle === 'function') updateOmegaEfficiencySubtitle();
+            if (typeof updateAlphaEfficiencySubtitle === 'function') updateAlphaEfficiencySubtitle();
         }
 
         function hideSettings() {
@@ -1469,6 +1894,8 @@
 
         // Settings button click handler
         document.getElementById('settingsButton').addEventListener('click', showSettings);
+        const settingsModalCloseEl = document.getElementById('settingsModalClose');
+        if (settingsModalCloseEl) settingsModalCloseEl.addEventListener('click', hideSettings);
 
         // Test if pako is loaded
         window.addEventListener('load', function() {

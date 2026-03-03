@@ -57,11 +57,25 @@
       "analyzeFunction": "const hasO = wordlist.filter(w => w.toUpperCase().includes('O')); const noO = wordlist.filter(w => !w.toUpperCase().includes('O')); return [{ param: 'YES', wordsLeft: hasO.length, percentFiltered: 100 * (1 - hasO.length / totalWords) }, { param: 'NO', wordsLeft: noO.length, percentFiltered: 100 * (1 - noO.length / totalWords) }];"
     },
     {
+      "id": "oCurves",
+      "name": "O-CURVES",
+      "displayName": "O-CURVES",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'O? then curved positions', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "lexicon",
       "name": "Curved Pos.",
       "displayName": "Curved Pos.",
       "requiresParam": true,
       "analyzeFunction": "return [{ param: 'Requires position input', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "zeroCurves",
+      "name": "ZERO CURVES",
+      "displayName": "ZERO CURVES",
+      "requiresParam": true,
+      "analyzeFunction": "return [{ param: 'Positions 1-6 curved (e.g. 135 or 0). APPROX in Settings.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
     {
       "id": "eee",
@@ -78,6 +92,13 @@
       "analyzeFunction": "const e = wordlist.filter(w => w.length >= 1 && w[0].toUpperCase() === 'E'); const yesLetters = new Set(['B', 'C', 'D', 'G', 'P', 'T', 'V', 'Z']); const yes = wordlist.filter(w => w.length >= 1 && yesLetters.has(w[0].toUpperCase())); const no = wordlist.filter(w => w.length >= 1 && !yesLetters.has(w[0].toUpperCase()) && w[0].toUpperCase() !== 'E'); return [{ param: 'E', wordsLeft: e.length, percentFiltered: 100 * (1 - e.length / totalWords) }, { param: 'YES', wordsLeft: yes.length, percentFiltered: 100 * (1 - yes.length / totalWords) }, { param: 'NO', wordsLeft: no.length, percentFiltered: 100 * (1 - no.length / totalWords) }];"
     },
     {
+      "id": "e21",
+      "name": "E21",
+      "displayName": "E21",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'EEE? then EEEFIRST (and optional E anywhere)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "originalLex",
       "name": "Lexicon",
       "displayName": "Lexicon",
@@ -92,6 +113,13 @@
       "analyzeFunction": "const vowels = new Set('aeiou'); const hasConsTogether = wordlist.filter(w => { for (let i = 0; i < w.length - 1; i++) { if (!vowels.has(w[i].toLowerCase()) && !vowels.has(w[i+1].toLowerCase())) return true; } return false; }); const noConsTogether = wordlist.filter(w => { for (let i = 0; i < w.length - 1; i++) { if (!vowels.has(w[i].toLowerCase()) && !vowels.has(w[i+1].toLowerCase())) return false; } return true; }); return [{ param: 'YES', wordsLeft: hasConsTogether.length, percentFiltered: 100 * (1 - hasConsTogether.length / totalWords) }, { param: 'NO', wordsLeft: noConsTogether.length, percentFiltered: 100 * (1 - noConsTogether.length / totalWords) }];"
     },
     {
+      "id": "consonants",
+      "name": "CONSONANTS",
+      "displayName": "CONSONANTS",
+      "requiresParam": true,
+      "analyzeFunction": "return [{ param: 'Two consonants then TOGETHER / MIDDLE / ANYWHERE', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "colour3",
       "name": "Colour3",
       "displayName": "Colour3",
@@ -104,6 +132,20 @@
       "displayName": "ATLAS",
       "requiresParam": true,
       "analyzeFunction": "const letters = new Set(['A','B','C','E','G','I','L','N','M','O','P','R','S','T','V','W','Y']); const byCount = {}; for (let n = 0; n <= 6; n++) { byCount[n] = wordlist.filter(w => { const s = w.slice(0,6).toUpperCase(); let c = 0; for (let i = 0; i < s.length; i++) { if (letters.has(s[i])) c++; } return c === n; }); } return [0,1,2,3,4,5,6].map(n => ({ param: n + '', wordsLeft: byCount[n].length, percentFiltered: 100 * (1 - byCount[n].length / totalWords) }));"
+    },
+    {
+      "id": "letterLying",
+      "name": "Letter Lying",
+      "displayName": "Letter Lying",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Multi-part: letter in word YES/NO per step (Settings: Static or Dynamic)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "loveLetters",
+      "name": "Love Letters",
+      "displayName": "Love Letters",
+      "requiresParam": true,
+      "analyzeFunction": "return [{ param: 'Number string per row (distinct letters from each group). Configure groups in Settings.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
     {
       "id": "length",
@@ -128,10 +170,17 @@
     },
     {
       "id": "notIn",
-      "name": "NOT IN",
-      "displayName": "NOT IN",
+      "name": "ABSENT",
+      "displayName": "ABSENT",
       "requiresParam": true,
-      "analyzeFunction": "return [{ param: 'Requires letters input', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+      "analyzeFunction": "return [{ param: 'Requires letters input (all must be absent)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "present",
+      "name": "PRESENT",
+      "displayName": "PRESENT",
+      "requiresParam": true,
+      "analyzeFunction": \"return [{ param: 'Requires letters input (all must be present)', wordsLeft: wordlist.length, percentFiltered: 0 }];\"
     },
     {
       "id": "whatItsNot1",
@@ -226,10 +275,10 @@
     },
     {
       "id": "scramble",
-      "name": "SCRAMBLE",
-      "displayName": "SCRAMBLE",
+      "name": "DECODE",
+      "displayName": "DECODE",
       "requiresParam": true,
-      "analyzeFunction": "return [{ param: 'Requires letter string input', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+      "analyzeFunction": "return [{ param: 'Letter string; one correct at position (Settings: Position)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
     {
       "id": "pianoForte",
@@ -328,6 +377,13 @@
       "displayName": "Dictionary (Alpha)",
       "requiresParam": false,
       "analyzeFunction": "const begin = wordlist.filter(w => { const first = w[0].toUpperCase().charCodeAt(0); return first >= 65 && first <= 77; }); const mid = wordlist.filter(w => { const first = w[0].toUpperCase().charCodeAt(0); return first >= 73 && first <= 84; }); const end = wordlist.filter(w => { const first = w[0].toUpperCase().charCodeAt(0); return first >= 78 && first <= 90; }); return [{ param: 'Beginning (A-M)', wordsLeft: begin.length, percentFiltered: 100 * (1 - begin.length / totalWords) }, { param: 'Middle (I-T)', wordsLeft: mid.length, percentFiltered: 100 * (1 - mid.length / totalWords) }, { param: 'End (N-Z)', wordsLeft: end.length, percentFiltered: 100 * (1 - end.length / totalWords) }];"
+    },
+    {
+      "id": "alpha",
+      "name": "ALPHA",
+      "displayName": "ALPHA",
+      "requiresParam": true,
+      "analyzeFunction": "return [{ param: 'Directional filter (Left/Right/Repeat). First letter from Dictionary (Alpha).', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
     {
       "id": "smlLength",
