@@ -7460,7 +7460,13 @@ function setupFeatureListeners(feature, callback, options) {
         }
         case 't9OneLie': {
             let selectedDigits = [];
-            const lastActualLen = (options.previousStepFeature === 't9Last' && t9LastActual) ? t9LastActual.length : 0;
+            // When 1 LIE follows LAST: use last 4 minus ACTUAL length (1 or 2). When it follows LAST TWO: use last 4 minus 2.
+            let lastActualLen = 0;
+            if (options.previousStepFeature === 't9Last' && t9LastActual) {
+                lastActualLen = t9LastActual.length;
+            } else if (options.previousStepFeature === 't9LastTwo') {
+                lastActualLen = 2; // LAST TWO = last 2 digits, so 1 LIE uses the 4 digits before those
+            }
             const t9OneLieButtons = document.querySelectorAll('.t9-one-lie-btn');
             const t9OneLieDisplay = document.getElementById('t9OneLieString');
             const t9OneLiePossibleDigitsList = document.getElementById('t9OneLiePossibleDigitsList');
