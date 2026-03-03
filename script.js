@@ -389,7 +389,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Register service worker for PWA functionality
     if ('serviceWorker' in navigator) {
         try {
-            const registration = await navigator.serviceWorker.register('/coretest/service-worker.js', {
+            // Register from current path so PWA works at any URL (e.g. /coretest/, /coretest-new/)
+            const swPath = new URL('service-worker.js', document.baseURI).href;
+            const registration = await navigator.serviceWorker.register(swPath, {
                 updateViaCache: 'none' // Never use cached service worker
             });
             console.log('Service Worker registered successfully:', registration);

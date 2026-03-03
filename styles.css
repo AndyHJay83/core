@@ -4015,6 +4015,34 @@ input:checked + .slider:before {
     }
 }
 
+/* PWA standalone: enforce 100% width so layout matches browser */
+@media (display-mode: standalone) {
+    html, body {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden;
+    }
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    #homepage,
+    .homepage-content {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .home-action-buttons {
+        width: 100% !important;
+    }
+    .home-action-buttons > button,
+    #performButton,
+    #createWorkflowButton,
+    .settings-home-button {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
 .available-features {
     position: relative;
 }

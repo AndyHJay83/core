@@ -1,5 +1,5 @@
-const CACHE_NAME = 'word-filter-v12';
-const VERSION = 'v12';
+const CACHE_NAME = 'word-filter-v13';
+const VERSION = 'v13';
 
 // Install event - skip waiting immediately, don't pre-cache
 self.addEventListener('install', (event) => {
@@ -71,13 +71,13 @@ self.addEventListener('message', (event) => {
 // Fetch event - network first, never serve stale cache for app files
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  const isAppFile = url.pathname.includes('/coretest/') && 
-                    (url.pathname.endsWith('.html') || 
-                     url.pathname.endsWith('.css') || 
+  // Match app shell from any path (e.g. /coretest/, /coretest-new/, or root)
+  const isAppFile = (url.pathname.endsWith('.html') ||
+                     url.pathname.endsWith('.css') ||
                      url.pathname.endsWith('.js') ||
-                     url.pathname.endsWith('/') ||
-                     url.pathname === '/coretest/');
-  
+                     url.pathname === '/' ||
+                     url.pathname.endsWith('/'));
+
   if (isAppFile) {
     // Network first - NEVER use cache for app files, always fetch fresh
     event.respondWith(
