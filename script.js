@@ -2779,7 +2779,7 @@ function startOmega(callback) {
     const shapeFeature = document.getElementById('shapeFeature');
     if (!shapeFeature) return;
     const titleEl = shapeFeature.querySelector('.feature-title');
-    if (titleEl) titleEl.textContent = 'OMEGA';
+    if (titleEl) titleEl.textContent = 'OMEGA: Short';
     const positionDisplay = shapeFeature.querySelector('.position-display');
     const categoryButtons = shapeFeature.querySelector('.category-buttons');
     if (!categoryButtons) return;
@@ -3579,7 +3579,7 @@ function createAlphaFeature() {
     div.id = 'alphaFeature';
     div.className = 'feature-section';
     div.innerHTML = `
-        <h2 class="feature-title">ALPHA</h2>
+        <h2 class="feature-title">ALPHA (ORIGIN)</h2>
         <p class="alpha-sequence-display" id="alphaSequenceDisplay">—</p>
         <div class="alpha-direction-buttons">
             <button type="button" class="alpha-btn alpha-left" id="alphaLeftBtn" aria-label="Left (toward A)">← Left</button>
@@ -7343,9 +7343,10 @@ function setupFeatureListeners(feature, callback, options) {
                     document.getElementById('t9LastFeature').classList.add('completed');
                     document.getElementById('t9LastFeature').dispatchEvent(new Event('completed'));
                     // Show SEND TO HYDRA label (sum of GUESS + ACTUAL) for rest of workflow
-                    const guessNum = parseInt(t9LastGuessDigits.join('') || '0', 10);
-                    const actualNum = parseInt(actual || '0', 10);
-                    const hydraSum = guessNum + actualNum;
+                    // Use raw digit parse for sum - GUESS filter strips to 2-9, but HYDRA sum needs all digits (e.g. 11)
+                    const guessForSum = (t9LastGuessInput?.value || '').trim().replace(/\D/g, '').slice(0, 2) || '0';
+                    const actualForSum = (t9LastActualInput?.value || '').trim().replace(/\D/g, '').slice(0, 2) || '0';
+                    const hydraSum = parseInt(guessForSum, 10) + parseInt(actualForSum, 10);
                     const hydraLabelContainer = document.getElementById('hydraLabelContainer');
                     const hydraLabelValue = document.getElementById('hydraLabelValue');
                     if (hydraLabelContainer && hydraLabelValue) {

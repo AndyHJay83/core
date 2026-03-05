@@ -381,7 +381,7 @@
     {
       "id": "alpha",
       "name": "ALPHA",
-      "displayName": "ALPHA",
+      "displayName": "ALPHA (ORIGIN)",
       "requiresParam": true,
       "analyzeFunction": "return [{ param: 'Directional filter (Left/Right/Repeat). First letter from Dictionary (Alpha).', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
