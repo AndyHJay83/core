@@ -7569,7 +7569,7 @@ function setupFeatureListeners(feature, callback, options) {
             } else if (options.previousStepFeature === 't9LastTwo') {
                 lastActualLen = 2; // LAST TWO = last 2 digits, so 1 LIE uses the 4 digits before those
             }
-            const t9OneLieButtons = document.querySelectorAll('.t9-one-lie-btn');
+            const t9OneLieButtons = document.querySelectorAll('.t9-one-lie-btn:not(.t9-backspace-btn)');
             const t9OneLieDisplay = document.getElementById('t9OneLieString');
             const t9OneLiePossibleDigitsList = document.getElementById('t9OneLiePossibleDigitsList');
             const t9OneLieSubmitButton = document.getElementById('t9OneLieSubmitButton');
