@@ -4737,6 +4737,35 @@ input:checked + .slider:before {
     max-width: 100%;
 }
 
+/* Dark dropdown styling */
+.homepage-dropdowns-section .custom-select,
+.homepage-dropdown .custom-select {
+    background-color: var(--bg-panel);
+    color: var(--text-primary);
+    border: 2px solid var(--border-subtle);
+}
+
+.homepage-dropdowns-section .options-list,
+.homepage-dropdown .options-list,
+.dropdown .options-list,
+.dropdown .options-list.show {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-subtle) !important;
+}
+
+.dropdown .option {
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-subtle) !important;
+}
+
+.dropdown .option:hover {
+    background-color: var(--bg-panel) !important;
+}
+
+.dropdown .selected-text {
+    color: var(--text-primary);
+}
+
 .homepage-buttons-section {
     flex: 1 1 50%;
     display: flex;
@@ -4776,7 +4805,9 @@ input:checked + .slider:before {
 #workflowCreation:not([style*="display: none"]) {
     display: flex !important;
     flex-direction: column;
-    height: 100%;
+    height: 100% !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
     overflow: hidden;
 }
 
@@ -4786,6 +4817,12 @@ input:checked + .slider:before {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+}
+
+#workflowCreation .workflow-creation {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
 }
 
 .workflow-content-new {
@@ -4821,9 +4858,19 @@ input:checked + .slider:before {
 }
 
 .workflow-filters-bottom {
-    flex: 0 0 50%;
-    min-height: 0;
+    flex: 1 1 50%;
+    min-height: 200px;
     overflow-y: auto;
+}
+
+.workflow-filters-bottom .available-features {
+    min-height: 200px;
+    max-height: none;
+}
+
+.workflow-filters-bottom #availableFeatures {
+    height: auto !important;
+    min-height: 150px;
 }
 
 .workflow-filters-area .feature-button,
