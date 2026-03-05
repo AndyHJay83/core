@@ -2103,6 +2103,9 @@ async function executeWorkflow(steps) {
                 case 't9Last':
                     featureElement = createT9LastFeature();
                     break;
+                case 't9Position5':
+                    featureElement = createT9Position5Feature();
+                    break;
                 case 't9Guess':
                     featureElement = createT9GuessFeature();
                     break;
@@ -2175,7 +2178,7 @@ async function executeWorkflow(steps) {
                 setupFeatureListeners(step.feature, (filteredWords) => {
                     currentFilteredWords = filteredWords;
                     displayResults(currentFilteredWords);
-                }, { previousStepFeature });
+                }, { previousStepFeature, steps, stepIndex });
             }, 0);
             
             // Wait for user interaction
@@ -3371,7 +3374,33 @@ function createT9LastFeature() {
     return div;
 }
 
-// --- T9 GUESS Feature Logic (uses GUESS digits from LAST; only works after LAST in workflow) ---
+// --- T9 POSITION 5 Feature Logic (filter by digit at position 5 of T9 string; GUESS/ACTUAL 1 digit each) ---
+function createT9Position5Feature() {
+    const div = document.createElement('div');
+    div.id = 't9Position5Feature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">POSITION 5</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Digit at position 5 of T9 string. GUESS optional; ACTUAL required (1 digit, 2-9).</p>
+        <div class="length-input" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="t9Position5GuessInput">GUESS</label>
+                <input type="text" id="t9Position5GuessInput" placeholder="Optional" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="1" style="width: 80px;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="t9Position5ActualInput">ACTUAL</label>
+                <input type="text" id="t9Position5ActualInput" placeholder="1 digit (2-9)" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="1" style="width: 80px;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="t9Position5Button">SUBMIT</button>
+                <button id="t9Position5SkipButton" class="skip-button">SKIP</button>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+// --- T9 GUESS Feature Logic (uses GUESS digits from LAST or POSITION 5; works if either appears anywhere before in workflow) ---
 function createT9GuessFeature() {
     const div = document.createElement('div');
     div.id = 't9GuessFeature';
@@ -4084,6 +4113,18 @@ function filterWordsByT9Last(words, actualString) {
         const t9 = t9StringsMap.get(word) || wordToT9(word);
         if (t9.length < n) return false;
         return t9.slice(-n) === actual;
+    });
+}
+
+// Filtering logic for T9 POSITION 5: filter by digit at position 5 (0-indexed 4) of T9 string (1 digit 2-9)
+function filterWordsByT9Position5(words, actualString) {
+    const actual = (actualString || '').trim();
+    if (!/^[2-9]$/.test(actual)) return words;
+    calculateT9Strings(words);
+    const pos = 4; // 1-based position 5 = 0-indexed 4
+    return words.filter(word => {
+        const t9 = t9StringsMap.get(word) || wordToT9(word);
+        return t9.length > pos && t9[pos] === actual;
     });
 }
 
@@ -7381,13 +7422,64 @@ function setupFeatureListeners(feature, callback, options) {
             }
             break;
         }
+        case 't9Position5': {
+            const t9Position5Button = document.getElementById('t9Position5Button');
+            const t9Position5GuessInput = document.getElementById('t9Position5GuessInput');
+            const t9Position5ActualInput = document.getElementById('t9Position5ActualInput');
+            const t9Position5SkipButton = document.getElementById('t9Position5SkipButton');
+            if (t9Position5Button && t9Position5ActualInput) {
+                t9Position5Button.onclick = () => {
+                    const actualRaw = (t9Position5ActualInput?.value || '').trim();
+                    const actual = actualRaw.replace(/[^2-9]/g, '').slice(0, 1);
+                    if (!actual) {
+                        alert('Enter ACTUAL: 1 digit (2-9).');
+                        return;
+                    }
+                    if (!/^[2-9]$/.test(actual)) {
+                        alert('ACTUAL must be 1 digit 2-9.');
+                        return;
+                    }
+                    const guessRaw = (t9Position5GuessInput?.value || '').trim();
+                    t9LastGuessDigits = guessRaw.replace(/[^2-9]/g, '').slice(0, 1).split('');
+                    const filteredWords = filterWordsByT9Position5(currentFilteredWords, actual);
+                    callback(filteredWords);
+                    document.getElementById('t9Position5Feature').classList.add('completed');
+                    document.getElementById('t9Position5Feature').dispatchEvent(new Event('completed'));
+                    const guessForSum = (t9Position5GuessInput?.value || '').trim().replace(/\D/g, '').slice(0, 1) || '0';
+                    const actualForSum = (t9Position5ActualInput?.value || '').trim().replace(/\D/g, '').slice(0, 1) || '0';
+                    const hydraSum = parseInt(guessForSum, 10) + parseInt(actualForSum, 10);
+                    const hydraLabelContainer = document.getElementById('hydraLabelContainer');
+                    const hydraLabelValue = document.getElementById('hydraLabelValue');
+                    if (hydraLabelContainer && hydraLabelValue) {
+                        hydraLabelValue.textContent = String(hydraSum);
+                        hydraLabelContainer.style.display = 'block';
+                    }
+                };
+                t9Position5Button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    t9Position5Button.onclick();
+                }, { passive: false });
+            }
+            if (t9Position5SkipButton) {
+                t9Position5SkipButton.onclick = () => {
+                    callback(currentFilteredWords);
+                    document.getElementById('t9Position5Feature').classList.add('completed');
+                    document.getElementById('t9Position5Feature').dispatchEvent(new Event('completed'));
+                };
+                t9Position5SkipButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    t9Position5SkipButton.onclick();
+                }, { passive: false });
+            }
+            break;
+        }
         case 't9Guess': {
             const t9GuessQuestions = document.getElementById('t9GuessQuestions');
             const t9GuessSubmitButton = document.getElementById('t9GuessSubmitButton');
             const t9GuessSkipButton = document.getElementById('t9GuessSkipButton');
             if (t9LastGuessDigits.length === 0) {
                 if (t9GuessQuestions) {
-                    t9GuessQuestions.innerHTML = '<p style="color: #666; text-align: center;">GUESS only works after LAST when a GUESS value was entered. Use SKIP to continue.</p>';
+                    t9GuessQuestions.innerHTML = '<p style="color: #666; text-align: center;">GUESS only works after LAST or POSITION 5 when a GUESS value was entered. Use SKIP to continue.</p>';
                 }
                 if (t9GuessSubmitButton) t9GuessSubmitButton.style.display = 'none';
             } else {
@@ -10445,6 +10537,10 @@ function showT9Features() {
             <button class="info-button" data-feature="t9Last"><i class="fas fa-info-circle"></i></button>
         </div>
         <div class="feature-group">
+            <button class="feature-button t9-feature-button" data-feature="t9Position5" draggable="true">POSITION 5</button>
+            <button class="info-button" data-feature="t9Position5"><i class="fas fa-info-circle"></i></button>
+        </div>
+        <div class="feature-group">
             <button class="feature-button t9-feature-button" data-feature="t9Guess" draggable="true">GUESS</button>
             <button class="info-button" data-feature="t9Guess"><i class="fas fa-info-circle"></i></button>
         </div>
@@ -10521,6 +10617,9 @@ function showNormalFeatures() {
     
     // Reinitialize feature selection
     initializeFeatureSelection();
+    
+    // Re-attach mode folder button handlers (lost when innerHTML was restored)
+    initializeModeButtons();
     
     // Reinitialize info buttons for dynamically added features
     initializeInfoButtons();
@@ -10631,8 +10730,12 @@ function showAlphaNumericFeatures() {
 // Initialize feature selection when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeFeatureSelection();
-    
-    // Initialize T9 mode button
+    initializeModeButtons();
+});
+
+// Initialize mode folder buttons (PIN-NACLE, CHAIN REACTION, Alpha-Numeric)
+// Must be called after initializeFeatureSelection when content is restored (e.g. after BACK)
+function initializeModeButtons() {
     const t9Button = document.getElementById('t9ModeButton');
     if (t9Button) {
         t9Button.addEventListener('click', showT9Features);
@@ -10641,8 +10744,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showT9Features();
         }, { passive: false });
     }
-    
-    // Initialize Alpha-Numeric mode button
     const alphanumericButton = document.getElementById('alphanumericModeButton');
     if (alphanumericButton) {
         alphanumericButton.addEventListener('click', showAlphaNumericFeatures);
@@ -10651,7 +10752,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlphaNumericFeatures();
         }, { passive: false });
     }
-    // Initialize CHAIN REACTION mode button
     const chainReactionButton = document.getElementById('chainReactionModeButton');
     if (chainReactionButton) {
         chainReactionButton.addEventListener('click', showChainReactionFeatures);
@@ -10660,7 +10760,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showChainReactionFeatures();
         }, { passive: false });
     }
-});
+}
 
 // Re-initialize feature selection when new content is added
 function reinitializeFeatureSelection() {

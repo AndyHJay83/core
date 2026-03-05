@@ -2168,6 +2168,14 @@ input:checked + .slider:before {
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
+/* Filter mode (PIN-NACLE, CHAIN REACTION, Alpha-Numeric): pack buttons top-left with consistent spacing */
+#availableFeatures:has(.t9-feature-button),
+#availableFeatures:has(.alphanumeric-feature-button),
+#availableFeatures:has([data-feature^="whatItsNot"]) {
+    align-content: start !important;
+    justify-content: start !important;
+}
+
 #selectedFeaturesList {
     display: flex;
     flex-direction: column;

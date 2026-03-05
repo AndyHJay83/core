@@ -1676,10 +1676,17 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="t9Position5Info" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>POSITION 5</h3>
+                <p><strong>T9 POSITION 5</strong><br>GUESS (optional) and ACTUAL (required). Enter ACTUAL as 1 digit (2-9). Words are filtered so the digit at position 5 of their T9 string matches ACTUAL. SEND TO HYDRA uses GUESS + ACTUAL sum. GUESS filter works after POSITION 5.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
         <div id="t9GuessInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>GUESS</h3>
-                <p><strong>T9 GUESS</strong><br>Only works after LAST in a workflow when a GUESS value was entered. For each GUESS digit (1 or 2 digits from LAST), you answer YES or NO: &ldquo;Is this digit in the first 4 digits of your T9 string?&rdquo; Words are filtered accordingly.</p>
+                <p><strong>T9 GUESS</strong><br>Only works after LAST or POSITION 5 in a workflow when a GUESS value was entered. For each GUESS digit, you answer YES or NO: &ldquo;Is this digit in the first 4 digits of your T9 string?&rdquo; Words are filtered accordingly.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>

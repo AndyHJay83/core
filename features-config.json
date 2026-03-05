@@ -316,11 +316,18 @@
       "analyzeFunction": "return [{ param: 'Requires ACTUAL (1-2 digits 2-9)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
     {
+      "id": "t9Position5",
+      "name": "POSITION 5",
+      "displayName": "POSITION 5",
+      "requiresParam": true,
+      "analyzeFunction": "return [{ param: 'Requires ACTUAL (1 digit 2-9)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "t9Guess",
       "name": "GUESS",
       "displayName": "GUESS",
       "requiresParam": false,
-      "analyzeFunction": "return [{ param: 'Requires LAST with GUESS value first', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+      "analyzeFunction": "return [{ param: 'Requires LAST or POSITION 5 with GUESS value first', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
     {
       "id": "t9OneLie",
