@@ -126,6 +126,7 @@ const DEFAULT_SETTINGS = {
     omegaMode: 'esp',
     omegaCustomGroupName: '',
     omegaCustomShapes: [], // [{ name: "Shape", letters: "ABC" }, ...]
+    omegaShapesCount: 0,    // 0 = until SUBMIT; N = auto-submit after N shapes
     skipWorkflowDeleteConfirm: false,
     alphaDirectionsCount: 0,  // 0 = enter until SUBMIT; N = auto-submit after N directions
     alphaSwapPov: false,       // OFF: Left=toward A, Right=toward Z; ON: swap
@@ -2786,6 +2787,13 @@ function startOmega(callback) {
 
     updateOmegaSequenceDisplay();
 
+    const omegaShapesCount = Math.max(0, parseInt((appSettings && appSettings.omegaShapesCount) || 0, 10));
+    const omegaAutoSubmit = () => {
+        const filtered = applyOmegaFilter(currentFilteredWords, omegaSelections);
+        callback(filtered);
+        shapeFeature.classList.add('completed');
+        shapeFeature.dispatchEvent(new Event('completed'));
+    };
     categoryButtons.innerHTML = '';
     Object.keys(omegaActiveMapping).forEach(shape => {
         const btn = document.createElement('button');
@@ -2795,6 +2803,7 @@ function startOmega(callback) {
         btn.onclick = () => {
             omegaSelections.push(shape);
             updateOmegaSequenceDisplay();
+            if (omegaShapesCount > 0 && omegaSelections.length >= omegaShapesCount) omegaAutoSubmit();
         };
         btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.click(); }, { passive: false });
         categoryButtons.appendChild(btn);
@@ -11274,6 +11283,17 @@ function initSettingsUI() {
             saveAppSettings();
             syncOmegaCustomUI();
             updateOmegaEfficiencySubtitle();
+        });
+    }
+    const omegaShapesCountInput = document.getElementById('omegaShapesCountInput');
+    if (omegaShapesCountInput) {
+        omegaShapesCountInput.value = String(Math.max(0, parseInt((appSettings && appSettings.omegaShapesCount) || 0, 10)));
+        omegaShapesCountInput.addEventListener('input', () => {
+            const n = parseInt(omegaShapesCountInput.value, 10);
+            if (!isNaN(n) && n >= 0 && n <= 99) {
+                appSettings.omegaShapesCount = n;
+                saveAppSettings();
+            }
         });
     }
     if (omegaCustomGroupName) {
