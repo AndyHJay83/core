@@ -5,8 +5,8 @@
   "start_url": "/coretest-new/?v=2",
   "scope": "/coretest-new/",
   "display": "standalone",
-  "background_color": "#f0f0f0",
-  "theme_color": "#f0f0f0",
+  "background_color": "#121212",
+  "theme_color": "#121212",
   "orientation": "portrait",
   "icons": [
     {
