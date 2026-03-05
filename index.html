@@ -17,7 +17,7 @@
     <meta http-equiv="Expires" content="0">
     <title>The Core</title>
     <link rel="manifest" href="manifest.json?v=2">
-    <link rel="stylesheet" href="styles.css?v=15">
+    <link rel="stylesheet" href="styles.css?v=16">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 </head>
@@ -31,9 +31,12 @@
         
         <!-- Homepage Content -->
         <div id="homepage" class="homepage-content">
-            <div class="selection-container">
-                <div class="dropdown-group">
-                    <label for="workflowSelect">Select Workflow:</label>
+            <div class="homepage-title-section">
+                <h1 class="app-title-line1">THE CORE</h1>
+                <h2 class="app-title-line2">TESTING APP</h2>
+            </div>
+            <div class="homepage-dropdowns-section">
+                <div class="dropdown-group homepage-dropdown">
                     <div class="dropdown">
                         <select id="workflowSelect">
                             <option value="">Select a workflow...</option>
@@ -45,9 +48,7 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="dropdown-group">
-                    <label for="wordlistSelect">Select Wordlist:</label>
+                <div class="dropdown-group homepage-dropdown">
                     <div class="dropdown">
                         <select id="wordlistSelect" class="wordlist-select">
                             <option value="4000" selected>4000 Wordlist</option>
@@ -68,36 +69,38 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="home-action-buttons">
-                <button id="performButton" class="perform-button">PERFORM</button>
-                <button id="createWorkflowButton" class="create-button">New Workflow</button>
-                <button id="settingsButton" class="settings-home-button">Settings</button>
+            <div class="homepage-buttons-section">
+                <button id="performButton" class="home-perform-button">PERFORM</button>
+                <button id="createWorkflowButton" class="home-workflows-button">WORKFLOWS</button>
+                <button id="settingsButton" class="home-settings-button">SETTINGS</button>
             </div>
         </div>
 
         <!-- Workflow Creation Page -->
         <div id="workflowCreation" style="display: none;">
             <div class="workflow-creation">
-                <!-- Header with Create/Cancel buttons -->
+                <!-- Header with Cancel and SAVED buttons -->
                 <div class="workflow-header">
-                    <h2>Create Workflow</h2>
                     <button id="cancelWorkflowButton" class="cancel-button">Cancel</button>
+                    <h2 class="workflow-header-title">Create Workflow</h2>
+                    <button id="toggleSavedWorkflows" class="workflow-saved-button">SAVED</button>
                 </div>
 
-                <!-- Workflow name input section -->
-                <div class="workflow-name-section">
-                    <input type="text" id="workflowName" class="workflow-name-input" placeholder="Enter workflow name">
-                    <button id="saveWorkflowButton" class="save-workflow-button">Save Workflow</button>
-                    <button id="toggleSavedWorkflows" class="toggle-saved-workflows">View Saved Workflows</button>
-                </div>
-
-                <!-- Features section -->
-                <div class="workflow-content">
-                    <!-- Available Features -->
-                    <div class="available-features">
-                        <h3>Available Features</h3>
-                        <div id="availableFeatures">
+                <!-- Features section: Top 50% builder, Bottom 50% filters -->
+                <div class="workflow-content-new">
+                    <!-- Top 50%: Builder area (selected features appear here) -->
+                    <div class="workflow-builder-top">
+                        <div class="selected-features workflow-builder-selected">
+                            <h3>Selected</h3>
+                            <div id="selectedFeaturesList"></div>
+                        </div>
+                        <button id="saveWorkflowButton" class="workflow-save-float-button">Save Workflow</button>
+                    </div>
+                    <!-- Bottom 50%: Filter buttons -->
+                    <div class="workflow-filters-bottom">
+                        <div class="available-features workflow-filters-area">
+                            <h3>Filters</h3>
+                            <div id="availableFeatures">
                             <div class="feature-group">
                                 <button class="feature-button t9-mode-button" id="t9ModeButton" draggable="false">PIN-NACLE</button>
                                 <button class="info-button" data-feature="t9Mode"><i class="fas fa-info-circle"></i></button>
@@ -292,18 +295,26 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Selected Features -->
-                    <div class="selected-features">
-                        <h3>Selected</h3>
-                        <div id="selectedFeaturesList"></div>
                     </div>
                 </div>
-
-                <!-- Saved Workflows Section -->
-                <div id="savedWorkflows" class="saved-workflows">
+                <div id="savedWorkflows" class="saved-workflows" style="display: none;">
                     <h3>Saved Workflows</h3>
                     <div class="saved-workflow-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden workflow name (used when saving via popup) -->
+        <input type="hidden" id="workflowName" value="">
+
+        <!-- Save Workflow Title Popup -->
+        <div id="saveWorkflowPopup" class="modal save-workflow-popup" style="display: none;">
+            <div class="save-workflow-popup-content">
+                <h3>Save Workflow</h3>
+                <input type="text" id="saveWorkflowTitleInput" placeholder="Enter workflow name" maxlength="100">
+                <div class="save-workflow-popup-buttons">
+                    <button id="saveWorkflowPopupCancel" class="save-workflow-cancel-btn">CANCEL</button>
+                    <button id="saveWorkflowPopupSave" class="save-workflow-save-btn">SAVE</button>
                 </div>
             </div>
         </div>
@@ -1090,11 +1101,13 @@
             </div>
         </div>
 
-        <!-- Settings Modal -->
-        <div id="settingsModal" class="modal">
-            <div class="modal-content settings-modal-content">
-                <span class="close-button" id="settingsModalClose">&times;</span>
-                <h2 class="settings-modal-title">Settings</h2>
+        <!-- Settings Page (full page) -->
+        <div id="settingsPage" class="settings-page-content" style="display: none;">
+            <div class="settings-page-header">
+                <button id="settingsBackButton" class="settings-back-button">← Home</button>
+                <h2 class="settings-page-title">SETTINGS</h2>
+            </div>
+            <div class="settings-page-body">
                 <div class="settings-sections">
                     <div class="settings-section">
                         <h3 class="settings-section-title">LENGTH</h3>
@@ -1794,7 +1807,7 @@
     <script>
         // Prevent double-tap zoom, but do NOT interfere with Settings or info modals
         document.addEventListener('touchend', function(e) {
-            const inSettingsModal = e.target.closest('#settingsModal') !== null;
+            const inSettingsModal = e.target.closest('#settingsPage') !== null;
             const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
             if (inSettingsModal || inFeatureInfoModal) {
                 return;
@@ -1807,8 +1820,8 @@
         // Prevent double-tap zoom on specific elements
         document.querySelectorAll('button, .results-container').forEach(element => {
             element.addEventListener('touchend', function(e) {
-                const inSettingsModal = e.target.closest('#settingsModal') !== null;
-                const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
+            const inSettingsModal = e.target.closest('#settingsPage') !== null;
+            const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
                 if (inSettingsModal || inFeatureInfoModal) {
                     return;
                 }
@@ -1826,14 +1839,15 @@
         // Prevent bounce effect on iOS, but allow scrolling inside Settings and info modals
         document.body.addEventListener('touchmove', function(e) {
             // Allow touchmove on inputs and their containers, and scrollable containers
-            if (e.target.closest('.results-container') !== null || 
+            if (e.target.closest('.results-container') !== null ||
+                e.target.closest('#saveWorkflowPopup') !== null ||
                 e.target.closest('input') !== null ||
                 e.target.closest('.position-cons-input-group') !== null ||
                 e.target.closest('.position-cons-form') !== null ||
                 e.target.closest('#availableFeatures') !== null ||
                 e.target.closest('.available-features') !== null ||
-                e.target.closest('#settingsModal') !== null ||
-                e.target.closest('.modal-content') !== null ||
+                e.target.closest('#settingsPage') !== null ||
+                e.target.closest('.settings-page-content') !== null ||
                 e.target.closest('.feature-info-modal') !== null) {
                 return;
             }
@@ -1897,32 +1911,27 @@
             });
         });
 
-        // Settings Modal Functions
+        // Settings Page Functions
         function showSettings() {
-            document.getElementById('settingsModal').style.display = 'block';
+            document.getElementById('homepage').style.display = 'none';
+            document.getElementById('workflowCreation').style.display = 'none';
+            document.getElementById('workflowExecution').style.display = 'none';
+            document.getElementById('settingsPage').style.display = 'block';
             if (typeof updateOmegaEfficiencySubtitle === 'function') updateOmegaEfficiencySubtitle();
             if (typeof updateAlphaEfficiencySubtitle === 'function') updateAlphaEfficiencySubtitle();
         }
 
         function hideSettings() {
-            document.getElementById('settingsModal').style.display = 'none';
-        }
-
-        // Close settings when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('settingsModal');
-            if (event.target === modal) {
-                hideSettings();
-            }
+            document.getElementById('settingsPage').style.display = 'none';
+            document.getElementById('homepage').style.display = 'block';
         }
 
         // Settings button click handler
         document.getElementById('settingsButton').addEventListener('click', showSettings);
-        const settingsModalCloseEl = document.getElementById('settingsModalClose');
-        if (settingsModalCloseEl) {
-            settingsModalCloseEl.addEventListener('click', hideSettings);
-            // Ensure close works on touch devices even with global touch handlers
-            settingsModalCloseEl.addEventListener('touchstart', function(e) {
+        const settingsBackBtn = document.getElementById('settingsBackButton');
+        if (settingsBackBtn) {
+            settingsBackBtn.addEventListener('click', hideSettings);
+            settingsBackBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 hideSettings();

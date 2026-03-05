@@ -803,23 +803,41 @@ function setupButtonListeners() {
     if (cancelWorkflowButton) {
         cancelWorkflowButton.replaceWith(cancelWorkflowButton.cloneNode(true));
         const newCancelWorkflowButton = document.getElementById('cancelWorkflowButton');
-        newCancelWorkflowButton.addEventListener('click', hideWorkflowCreation);
+        const doCancelWorkflow = () => {
+            const wn = document.getElementById('workflowName');
+            if (wn) wn.value = '';
+            const list = document.getElementById('selectedFeaturesList');
+            if (list) list.innerHTML = '';
+            hideSaveWorkflowPopup();
+            hideWorkflowCreation();
+        };
+        newCancelWorkflowButton.addEventListener('click', doCancelWorkflow);
         newCancelWorkflowButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            hideWorkflowCreation();
+            doCancelWorkflow();
         }, { passive: false });
     }
     
-    // Save Workflow button
+    // Save Workflow button - shows popup for title input
     const saveWorkflowButton = document.getElementById('saveWorkflowButton');
     if (saveWorkflowButton) {
         saveWorkflowButton.replaceWith(saveWorkflowButton.cloneNode(true));
         const newSaveWorkflowButton = document.getElementById('saveWorkflowButton');
-        newSaveWorkflowButton.addEventListener('click', saveWorkflow);
+        newSaveWorkflowButton.addEventListener('click', showSaveWorkflowPopup);
         newSaveWorkflowButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            saveWorkflow();
+            showSaveWorkflowPopup();
         }, { passive: false });
+    }
+
+    // Save Workflow Popup handlers
+    const popupCancel = document.getElementById('saveWorkflowPopupCancel');
+    if (popupCancel) {
+        popupCancel.addEventListener('click', hideSaveWorkflowPopup);
+    }
+    const popupSave = document.getElementById('saveWorkflowPopupSave');
+    if (popupSave) {
+        popupSave.addEventListener('click', confirmSaveWorkflowFromPopup);
     }
     
     // Perform button
@@ -840,6 +858,7 @@ function setupButtonListeners() {
                 }
                 document.getElementById('homepage').style.display = 'none';
                 document.getElementById('workflowCreation').style.display = 'none';
+                document.getElementById('settingsPage').style.display = 'none';
                 const workflowExecution = document.getElementById('workflowExecution');
                 workflowExecution.style.display = 'block';
                 await executeWorkflow(workflow.steps);
@@ -1342,8 +1361,40 @@ function showWordGroupOverlay(words) {
 // Handle workflow creation
 document.getElementById('createWorkflowButton').addEventListener('click', () => {
     document.getElementById('homepage').style.display = 'none';
-    document.getElementById('workflowCreation').style.display = 'block';
+    document.getElementById('workflowCreation').style.display = 'flex';
 });
+
+function showSaveWorkflowPopup() {
+    const popup = document.getElementById('saveWorkflowPopup');
+    const input = document.getElementById('saveWorkflowTitleInput');
+    if (popup && input) {
+        input.value = '';
+        popup.style.display = 'block';
+        setTimeout(() => input.focus(), 100);
+    }
+}
+
+function hideSaveWorkflowPopup() {
+    const popup = document.getElementById('saveWorkflowPopup');
+    if (popup) popup.style.display = 'none';
+}
+
+function confirmSaveWorkflowFromPopup() {
+    const input = document.getElementById('saveWorkflowTitleInput');
+    const nameInput = document.getElementById('workflowName');
+    if (!input || !nameInput) return;
+    const title = input.value.trim();
+    if (!title) {
+        alert('Please enter a workflow name');
+        input.focus();
+        return;
+    }
+    nameInput.value = title;
+    saveWorkflow();
+    hideSaveWorkflowPopup();
+    input.value = '';
+    nameInput.value = '';
+}
 
 // Function to save workflow
 function saveWorkflow() {
@@ -1777,6 +1828,9 @@ async function executeWorkflow(steps) {
                 if (workflowExecution) {
                     workflowExecution.style.display = 'none';
                 }
+                // Hide settings page if visible
+                const settingsPage = document.getElementById('settingsPage');
+                if (settingsPage) settingsPage.style.display = 'none';
                 // Show homepage
                 if (homepage) {
                     homepage.style.display = 'block';
@@ -11121,7 +11175,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function showWorkflowCreation() {
     document.getElementById('homepage').style.display = 'none';
     document.getElementById('workflowExecution').style.display = 'none';
-    document.getElementById('workflowCreation').style.display = 'block';
+    document.getElementById('settingsPage').style.display = 'none';
+    document.getElementById('workflowCreation').style.display = 'flex';
+    if (typeof hideSaveWorkflowPopup === 'function') hideSaveWorkflowPopup();
     
     // Hide saved workflows initially
     const savedWorkflows = document.getElementById('savedWorkflows');
@@ -11138,6 +11194,7 @@ function hideWorkflowCreation() {
     document.getElementById('homepage').style.display = 'block';
     document.getElementById('workflowCreation').style.display = 'none';
     document.getElementById('workflowExecution').style.display = 'none';
+    document.getElementById('settingsPage').style.display = 'none';
 }
 
 // Hide native select elements to prevent overlap with custom dropdowns (aggressive)
