@@ -166,6 +166,41 @@ const omegaForbiddenPairs = [['Q', 'Z'], ['J', 'Q'], ['V', 'Q']];
 let omegaSelections = [];
 let omegaActiveMapping = {};
 
+// CALCULUS: positional digit filter (like OMEGA Short but digits 0-9 → fixed letter sets). Word length >= digit string length + 1. Same forbidden pairs as OMEGA.
+const calculusMapping = {
+    '1': 'ADEFHIJKLMNPRTUVWXYZ',
+    '2': 'BCDJLMNOPQRSUVWXYZ',
+    '3': 'BCDEGJKMNOPQRSUVWZ',
+    '4': 'ACDEFGHIJKLMNPQRTVWXYZ',
+    '5': 'BCDEFGJMNOPSUVZ',
+    '6': 'BCDEFGJMOPQRSUY',
+    '7': 'ADHIJKLMNPRTVWXYZ',
+    '8': 'BCDEGHJMOPQRSUWXYZ',
+    '9': 'BCDEGJMOPQRSYZ',
+    '0': 'BCDGOPQRS'
+};
+
+function applyCalculusFilter(words, digitString) {
+    if (!digitString || digitString.length === 0) return words;
+    const len = digitString.length;
+    const minWordLen = len + 1;  // word length >= digit string length + 1
+    return words.filter(word => {
+        const w = word.toUpperCase();
+        if (w.length < minWordLen) return false;
+        for (let i = 0; i < len; i++) {
+            const d = digitString[i];
+            const allowed = calculusMapping[d];
+            if (!allowed || !allowed.includes(w[i])) return false;
+        }
+        for (let i = 1; i < w.length; i++) {
+            if (omegaForbiddenPairs.some(pair =>
+                pair[0] === w[i - 1] && pair[1] === w[i]
+            )) return false;
+        }
+        return true;
+    });
+}
+
 function applyOmegaFilter(words, selections) {
     if (!selections || selections.length === 0) return words;
     return words.filter(word => {
@@ -2055,6 +2090,9 @@ async function executeWorkflow(steps) {
                 case 'omega':
                     featureElement = createShapeFeature();
                     break;
+                case 'calculus':
+                    featureElement = createCalculusFeature();
+                    break;
                 case 'curved':
                     featureElement = createCurvedFeature();
                     break;
@@ -2117,6 +2155,9 @@ async function executeWorkflow(steps) {
                     break;
                 case 't9Higher':
                     featureElement = createT9HigherFeature();
+                    break;
+                case 't9Singing':
+                    featureElement = createT9SingingFeature();
                     break;
                 case 't9OneTruth':
                     featureElement = createT9OneTruthFeature();
@@ -2872,6 +2913,105 @@ function startOmega(callback) {
     actionsRow.appendChild(skipBtn);
 }
 
+// CALCULUS: OMEGA-style filter with digits 0-9 (word length >= digit string length + 1, same forbidden pairs)
+function createCalculusFeature() {
+    const div = document.createElement('div');
+    div.id = 'calculusFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">CALCULUS</h2>
+        <div class="calculus-display">
+            <div class="calculus-sequence-display"></div>
+            <div class="calculus-digit-buttons"></div>
+        </div>
+    `;
+    return div;
+}
+
+function startCalculus(callback) {
+    const calculusFeature = document.getElementById('calculusFeature');
+    if (!calculusFeature) return;
+    let calculusSelections = [];  // array of digit chars '0'-'9'
+
+    const sequenceDisplay = calculusFeature.querySelector('.calculus-sequence-display');
+    const digitButtonsContainer = calculusFeature.querySelector('.calculus-digit-buttons');
+    if (!sequenceDisplay || !digitButtonsContainer) return;
+
+    function updateCalculusDisplay() {
+        sequenceDisplay.textContent = calculusSelections.length === 0
+            ? 'Tap digits to build sequence, then SUBMIT'
+            : calculusSelections.join('');
+    }
+    updateCalculusDisplay();
+
+    digitButtonsContainer.innerHTML = '';
+    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].forEach(digit => {
+        const btn = document.createElement('button');
+        btn.className = 'calculus-digit-btn';
+        btn.textContent = digit;
+        btn.type = 'button';
+        btn.onclick = () => {
+            calculusSelections.push(digit);
+            updateCalculusDisplay();
+        };
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.click(); }, { passive: false });
+        digitButtonsContainer.appendChild(btn);
+    });
+
+    let actionsRow = calculusFeature.querySelector('.calculus-actions');
+    if (!actionsRow) {
+        actionsRow = document.createElement('div');
+        actionsRow.className = 'calculus-actions';
+        actionsRow.style.marginTop = '16px';
+        actionsRow.style.display = 'flex';
+        actionsRow.style.gap = '10px';
+        actionsRow.style.flexWrap = 'wrap';
+        actionsRow.style.justifyContent = 'center';
+        calculusFeature.querySelector('.calculus-display').appendChild(actionsRow);
+    }
+    actionsRow.innerHTML = '';
+    const backspaceBtn = document.createElement('button');
+    backspaceBtn.className = 'omega-backspace-btn';
+    backspaceBtn.textContent = 'Backspace';
+    backspaceBtn.type = 'button';
+    backspaceBtn.onclick = () => {
+        if (calculusSelections.length) {
+            calculusSelections.pop();
+            updateCalculusDisplay();
+        }
+    };
+    backspaceBtn.addEventListener('touchstart', (e) => { e.preventDefault(); backspaceBtn.click(); }, { passive: false });
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'omega-submit-btn';
+    submitBtn.textContent = 'SUBMIT';
+    submitBtn.type = 'button';
+    submitBtn.onclick = () => {
+        if (calculusSelections.length === 0) {
+            alert('Add at least one digit to the sequence, then SUBMIT.');
+            return;
+        }
+        const digitString = calculusSelections.join('');
+        const filtered = applyCalculusFilter(currentFilteredWords, digitString);
+        callback(filtered);
+        calculusFeature.classList.add('completed');
+        calculusFeature.dispatchEvent(new Event('completed'));
+    };
+    submitBtn.addEventListener('touchstart', (e) => { e.preventDefault(); submitBtn.click(); }, { passive: false });
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'skip-button';
+    skipBtn.textContent = 'SKIP';
+    skipBtn.type = 'button';
+    skipBtn.onclick = () => {
+        callback(currentFilteredWords);
+        calculusFeature.classList.add('completed');
+        calculusFeature.dispatchEvent(new Event('completed'));
+    };
+    skipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipBtn.click(); }, { passive: false });
+    actionsRow.appendChild(backspaceBtn);
+    actionsRow.appendChild(submitBtn);
+    actionsRow.appendChild(skipBtn);
+}
+
 function createCurvedFeature() {
     const div = document.createElement('div');
     div.id = 'curvedFeature';
@@ -3490,6 +3630,46 @@ function createT9HigherFeature() {
     return div;
 }
 
+// --- T9 SINGING Feature Logic (directional UP/DOWN on T9 digits) ---
+function createT9SingingFeature() {
+    const div = document.createElement('div');
+    div.id = 't9SingingFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">SINGING</h2>
+        <p class="alpha-sequence-display" id="t9SingingSequenceDisplay">—</p>
+        <div class="alpha-direction-buttons">
+            <button type="button" class="alpha-btn" id="t9SingingUpBtn" aria-label="Up (higher digit)">↑ UP</button>
+            <button type="button" class="alpha-btn" id="t9SingingDownBtn" aria-label="Down (lower digit)">DOWN ↓</button>
+        </div>
+        <div class="alpha-actions">
+            <button type="button" id="t9SingingSubmitBtn" class="alpha-submit-btn">SUBMIT</button>
+            <button type="button" id="t9SingingSkipBtn" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+// --- T9 SINGING Feature Logic (directional UP/DOWN on T9 digits) ---
+function createT9SingingFeature() {
+    const div = document.createElement('div');
+    div.id = 't9SingingFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">SINGING</h2>
+        <p class="alpha-sequence-display" id="t9SingingSequenceDisplay">—</p>
+        <div class="alpha-direction-buttons">
+            <button type="button" class="alpha-btn t9-singing-up" id="t9SingingUpBtn" aria-label="UP (higher digit)">UP ↑</button>
+            <button type="button" class="alpha-btn t9-singing-down" id="t9SingingDownBtn" aria-label="DOWN (lower digit)">DOWN ↓</button>
+        </div>
+        <div class="alpha-actions">
+            <button type="button" id="t9SingingSubmitBtn" class="alpha-submit-btn">SUBMIT</button>
+            <button type="button" id="t9SingingSkipBtn" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
 // --- T9 1 TRUTH (F4) Feature Logic ---
 function createT9OneTruthFeature() {
     const div = document.createElement('div');
@@ -3915,6 +4095,77 @@ function filterWordsByT9Higher(words, option) {
         }
         
         return false;
+    });
+}
+
+// Filtering logic for T9 SINGING feature (directional UP/DOWN over consecutive T9 digits).
+// Same length logic as ALPHA: word (T9) length >= directions.length + 1 (minimum length, not exact).
+function filterWordsByT9Singing(words, directions) {
+    if (!directions || directions.length === 0) return words;
+
+    // Calculate T9 strings if not already done
+    calculateT9Strings(words);
+
+    const neededLen = directions.length + 1;  // minimum T9 length (same as ALPHA: needLen = 1 + directions.length)
+
+    return words.filter(word => {
+        const t9String = t9StringsMap.get(word) || wordToT9(word);
+        if (!t9String || t9String.length < neededLen) return false;  // keep when length >= neededLen
+
+        for (let i = 0; i < directions.length; i++) {
+            const dir = directions[i];
+            const prevDigit = parseInt(t9String[i], 10);
+            const curDigit = parseInt(t9String[i + 1], 10);
+
+            if (Number.isNaN(prevDigit) || Number.isNaN(curDigit)) return false;
+
+            if (dir === 'U') {
+                // UP: next digit must be strictly higher
+                if (!(curDigit > prevDigit)) return false;
+            } else if (dir === 'D') {
+                // DOWN: next digit must be strictly lower
+                if (!(curDigit < prevDigit)) return false;
+            } else {
+                // Unknown direction token; fail safe
+                return false;
+            }
+        }
+
+        return true;
+    });
+}
+
+// Filtering logic for T9 SINGING feature (directional UP/DOWN on consecutive T9 digits)
+function filterWordsBySinging(words, directions) {
+    if (!directions || directions.length === 0) return words;
+
+    // Calculate T9 strings if not already done
+    calculateT9Strings(words);
+
+    const needLen = directions.length + 1;
+
+    return words.filter(word => {
+        const t9String = t9StringsMap.get(word) || wordToT9(word);
+        if (!t9String || t9String.length < needLen) return false;
+
+        for (let i = 0; i < directions.length; i++) {
+            const dir = directions[i]; // 'U' or 'D'
+            const prev = t9String.charCodeAt(i);
+            const cur = t9String.charCodeAt(i + 1);
+
+            if (dir === 'U') {
+                // UP = next digit strictly higher than previous
+                if (cur <= prev) return false;
+            } else if (dir === 'D') {
+                // DOWN = next digit strictly lower than previous
+                if (cur >= prev) return false;
+            } else {
+                // Unknown direction token
+                return false;
+            }
+        }
+
+        return true;
     });
 }
 
@@ -6647,6 +6898,11 @@ function setupFeatureListeners(feature, callback, options) {
             break;
         }
 
+        case 'calculus': {
+            startCalculus(callback);
+            break;
+        }
+
         case 'whatItsNot1': {
             const whatItsNot1Button = document.getElementById('whatItsNot1Button');
             const whatItsNot1SkipButton = document.getElementById('whatItsNot1SkipButton');
@@ -7856,6 +8112,89 @@ function setupFeatureListeners(feature, callback, options) {
                     t9HigherSkipBtn.onclick();
                 }, { passive: false });
             }
+            break;
+        }
+
+        case 't9Singing': {
+            const upBtn = document.getElementById('t9SingingUpBtn');
+            const downBtn = document.getElementById('t9SingingDownBtn');
+            const submitBtn = document.getElementById('t9SingingSubmitBtn');
+            const skipBtn = document.getElementById('t9SingingSkipBtn');
+            const sequenceDisplay = document.getElementById('t9SingingSequenceDisplay');
+            let singingDirections = [];
+
+            function singingUpdateDisplay() {
+                if (!sequenceDisplay) return;
+                if (!singingDirections.length) {
+                    sequenceDisplay.textContent = '—';
+                } else {
+                    sequenceDisplay.textContent = singingDirections
+                        .map(d => d === 'U' ? 'UP' : 'DOWN')
+                        .join(', ');
+                }
+            }
+
+            function singingSubmit() {
+                if (!singingDirections.length) {
+                    alert('Add at least one direction (UP or DOWN), then SUBMIT.');
+                    return;
+                }
+                const filtered = filterWordsByT9Singing(currentFilteredWords, singingDirections);
+                callback(filtered);
+                const featureEl = document.getElementById('t9SingingFeature');
+                if (featureEl) {
+                    featureEl.classList.add('completed');
+                    featureEl.dispatchEvent(new Event('completed'));
+                }
+            }
+
+            if (upBtn) {
+                upBtn.onclick = () => {
+                    singingDirections.push('U');
+                    singingUpdateDisplay();
+                };
+                upBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    upBtn.click();
+                }, { passive: false });
+            }
+
+            if (downBtn) {
+                downBtn.onclick = () => {
+                    singingDirections.push('D');
+                    singingUpdateDisplay();
+                };
+                downBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    downBtn.click();
+                }, { passive: false });
+            }
+
+            if (submitBtn) {
+                submitBtn.onclick = () => {
+                    singingSubmit();
+                };
+                submitBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    submitBtn.click();
+                }, { passive: false });
+            }
+
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    const featureEl = document.getElementById('t9SingingFeature');
+                    if (featureEl) {
+                        featureEl.classList.add('completed');
+                        featureEl.dispatchEvent(new Event('completed'));
+                    }
+                };
+                skipBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    skipBtn.click();
+                }, { passive: false });
+            }
+
             break;
         }
         case 't9OneTruth': {
@@ -10574,6 +10913,9 @@ function showT9Features() {
         <div class="feature-group">
             <button class="feature-button t9-feature-button" data-feature="t9Higher" draggable="true">Higher?</button>
             <button class="info-button" data-feature="t9Higher"><i class="fas fa-info-circle"></i></button>
+        </div>
+        <div class="feature-group">
+            <button class="feature-button t9-feature-button" data-feature="t9Singing" draggable="true">SINGING</button>
         </div>
         <div class="feature-group">
             <button class="feature-button t9-feature-button" data-feature="t9OneTruth" draggable="true">1 TRUTH (F4)</button>

@@ -351,6 +351,13 @@
       "analyzeFunction": "const results = []; const t9Map = new Map(); const t9Mapping = {'A':'2','B':'2','C':'2','D':'3','E':'3','F':'3','G':'4','H':'4','I':'4','J':'5','K':'5','L':'5','M':'6','N':'6','O':'6','P':'7','Q':'7','R':'7','S':'7','T':'8','U':'8','V':'8','W':'9','X':'9','Y':'9','Z':'9'}; wordlist.forEach(w => { const t9 = w.toUpperCase().split('').map(c => t9Mapping[c] || '').join(''); t9Map.set(w, t9); }); const yes = wordlist.filter(w => { const t9 = t9Map.get(w); return t9.length >= 2 && parseInt(t9[1]) > parseInt(t9[0]); }); const no = wordlist.filter(w => { const t9 = t9Map.get(w); return t9.length >= 2 && parseInt(t9[1]) < parseInt(t9[0]); }); const same = wordlist.filter(w => { const t9 = t9Map.get(w); return t9.length >= 2 && parseInt(t9[1]) === parseInt(t9[0]); }); return [{ param: 'Yes', wordsLeft: yes.length, percentFiltered: 100 * (1 - yes.length / totalWords) }, { param: 'No', wordsLeft: no.length, percentFiltered: 100 * (1 - no.length / totalWords) }, { param: 'Same', wordsLeft: same.length, percentFiltered: 100 * (1 - same.length / totalWords) }];"
     },
     {
+      "id": "t9Singing",
+      "name": "SINGING",
+      "displayName": "SINGING",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Directional T9 filter (UP/DOWN). Compares consecutive T9 digits (2-9): UP=higher, DOWN=lower.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "t9OneTruth",
       "name": "1 TRUTH (F4)",
       "displayName": "1 TRUTH (F4)",
@@ -398,6 +405,13 @@
       "displayName": "S/M/L (Length)",
       "requiresParam": false,
       "analyzeFunction": "const small = wordlist.filter(w => w.length >= 1 && w.length <= 6); const medium = wordlist.filter(w => w.length >= 5 && w.length <= 9); const long = wordlist.filter(w => w.length >= 7); return [{ param: 'Small (1-6)', wordsLeft: small.length, percentFiltered: 100 * (1 - small.length / totalWords) }, { param: 'Medium (5-9)', wordsLeft: medium.length, percentFiltered: 100 * (1 - medium.length / totalWords) }, { param: 'Long (7+)', wordsLeft: long.length, percentFiltered: 100 * (1 - long.length / totalWords) }];"
+    },
+    {
+      "id": "calculus",
+      "name": "CALCULUS",
+      "displayName": "CALCULUS",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Digit sequence (0-9). Word length >= sequence length + 1; each position matches digit letter set. Forbidden pairs as OMEGA.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     }
   ]
 }

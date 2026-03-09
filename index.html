@@ -292,6 +292,10 @@
                                 <button class="feature-button" data-feature="omega" draggable="true">OMEGA: Short</button>
                                 <button class="info-button" data-feature="omega"><i class="fas fa-info-circle"></i></button>
                             </div>
+                            <div class="feature-group">
+                                <button class="feature-button" data-feature="calculus" draggable="true">CALCULUS</button>
+                                <button class="info-button" data-feature="calculus"><i class="fas fa-info-circle"></i></button>
+                            </div>
                         </div>
                     </div>
 
@@ -1766,6 +1770,13 @@
             <div class="feature-info-content">
                 <h3>OMEGA</h3>
                 <p><strong>Positional shape filter</strong><br>Tap shapes in order to build a sequence (each shape has a set of allowed letters). Only words that match the sequence at every position are kept. Use Backspace to remove the last shape, then SUBMIT when done. Mode (ESP, Pocket, Restaurant) is set in Settings.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="calculusInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>CALCULUS</h3>
+                <p><strong>Positional digit filter</strong><br>Like OMEGA Short but with digits 0–9. Each digit maps to a fixed set of letters. Tap digits to build a sequence; only words with length ≥ (sequence length + 1) whose letters at each position match that digit's set are kept. Same forbidden pairs as OMEGA. Leading zero allowed. Use Backspace, then SUBMIT.</p>
                 <button class="close-info-button">&times;</button>
             </div>
         </div>

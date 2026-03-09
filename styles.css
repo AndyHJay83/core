@@ -600,6 +600,38 @@ body {
     background: #4CAF50;
 }
 
+/* CALCULUS feature (digit buttons) */
+.calculus-digit-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.calculus-digit-btn {
+    padding: 10px 14px;
+    margin: 4px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #333;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    min-width: 44px;
+}
+.calculus-digit-btn:hover {
+    background: #f0f0f0;
+    border-color: #999;
+}
+.calculus-sequence-display {
+    margin: 12px 0;
+    font-size: 1em;
+    color: #555;
+    min-height: 1.4em;
+    text-align: center;
+}
+
 /* ALPHA feature */
 .alpha-sequence-display {
     margin: 12px 0;
