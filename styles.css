@@ -60,13 +60,22 @@ body {
     flex-shrink: 0;
 }
 
-/* Mobile or PWA: show spacer so content clears status bar on all pages */
+/* Mobile or PWA: show permanent banner so content clears status bar on all pages (homepage, workflow builder, perform) */
 @media (max-width: 768px), (display-mode: standalone) {
     .pwa-header-spacer {
-        display: block !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
         min-height: calc(env(safe-area-inset-top) + 44px);
+        padding-top: env(safe-area-inset-top);
         background: #f0f0f0;
         flex-shrink: 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .pwa-header-spacer-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
     }
 }
 
