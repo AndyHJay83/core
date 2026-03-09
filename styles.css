@@ -2963,18 +2963,17 @@ input:checked + .slider:before {
 /* Mobile styles */
 @media (max-width: 768px) {
     .workflow-creation {
-        height: 200vh;
-        min-height: 200vh;
-        max-height: none;
+        height: auto;
+        min-height: 0;
         padding: 15px;
         padding-top: 60px;
         gap: 15px;
     }
     
     .workflow-content {
-        flex: 1;
+        flex: 1 1 auto;
         min-height: 0;
-        height: 1500px;
+        height: auto;
     }
     
     .available-features {
@@ -3013,8 +3012,7 @@ input:checked + .slider:before {
     
     .workflow-content {
         grid-template-columns: 40% 60%;
-        height: 1500px;
-        min-height: 600px;
+        min-height: 400px;
     }
     
     .workflow-name-section {
