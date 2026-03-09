@@ -10128,8 +10128,25 @@ function showDeleteWorkflowConfirm(workflow, onConfirmed) {
             }
             deleteWorkflowConfirmCallback = null;
         }
-        cancelBtn.addEventListener('click', () => close(false));
-        deleteBtn.addEventListener('click', () => close(true));
+        // Support both mouse and touch for Cancel/Delete buttons
+        cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            close(false);
+        });
+        deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            close(true);
+        });
+        cancelBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            close(false);
+        }, { passive: false });
+        deleteBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            close(true);
+        }, { passive: false });
         modal.addEventListener('click', (e) => { if (e.target === modal) close(false); });
         modal.addEventListener('touchstart', (e) => { if (e.target === modal) close(false); }, { passive: false });
         document.body.appendChild(modal);
