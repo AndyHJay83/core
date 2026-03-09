@@ -10128,27 +10128,29 @@ function showDeleteWorkflowConfirm(workflow, onConfirmed) {
             }
             deleteWorkflowConfirmCallback = null;
         }
-        // Support both mouse and touch for Cancel/Delete buttons
-        cancelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            close(false);
-        });
-        deleteBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            close(true);
-        });
-        cancelBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            close(false);
-        }, { passive: false });
-        deleteBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            close(true);
-        }, { passive: false });
-        modal.addEventListener('click', (e) => { if (e.target === modal) close(false); });
-        modal.addEventListener('touchstart', (e) => { if (e.target === modal) close(false); }, { passive: false });
+        // Single handler for both click and touch; use delegation so we always see the event (mobile-friendly)
+        function handleModalPointer(e) {
+            var t = e.target;
+            if (!t || !t.closest) return;
+            if (t.closest('.delete-workflow-confirm-cancel')) {
+                e.preventDefault();
+                e.stopPropagation();
+                close(false);
+                return;
+            }
+            if (t.closest('.delete-workflow-confirm-delete')) {
+                e.preventDefault();
+                e.stopPropagation();
+                close(true);
+                return;
+            }
+            if (t === modal) {
+                e.preventDefault();
+                close(false);
+            }
+        }
+        modal.addEventListener('click', handleModalPointer);
+        modal.addEventListener('touchstart', handleModalPointer, { passive: false });
         document.body.appendChild(modal);
     }
     deleteWorkflowConfirmCallback = onConfirmed;

@@ -753,6 +753,9 @@ input:checked + .slider:before {
 }
 
 /* Delete workflow confirm modal */
+.delete-workflow-confirm-modal {
+    z-index: 10001;
+}
 .delete-workflow-confirm-modal .delete-workflow-confirm-content {
     max-width: 360px;
     margin: 20vh auto;
@@ -782,13 +785,16 @@ input:checked + .slider:before {
 }
 .delete-workflow-confirm-cancel,
 .delete-workflow-confirm-delete {
-    padding: 8px 16px;
+    padding: 12px 20px;
+    min-height: 44px;
     border-radius: 6px;
     font-size: 0.95em;
     cursor: pointer;
     border: 1px solid #ccc;
     background: #fff;
     color: #333;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 .delete-workflow-confirm-cancel:hover,
 .delete-workflow-confirm-delete:hover {
