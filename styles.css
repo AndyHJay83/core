@@ -14,7 +14,8 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     min-height: 100dvh;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* Top safe-area is handled by the dedicated header spacer on mobile/PWA */
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .container {
@@ -60,8 +61,11 @@ body {
     flex-shrink: 0;
 }
 
-/* Mobile or PWA: show permanent banner so content clears status bar on all pages (homepage, workflow builder, perform) */
+/* Mobile or PWA: single top inset so header isn't double; show permanent banner on homepage/perform */
 @media (max-width: 768px), (display-mode: standalone) {
+    body {
+        padding-top: 0;
+    }
     .pwa-header-spacer {
         display: flex !important;
         align-items: center;
@@ -76,6 +80,28 @@ body {
         font-size: 18px;
         font-weight: 600;
         color: #333;
+    }
+    /* Workflow builder is position:fixed so it needs its own in-panel header */
+    .workflow-builder-mobile-header {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(env(safe-area-inset-top) + 44px);
+        padding-top: env(safe-area-inset-top);
+        background: #f0f0f0;
+        border-bottom: 1px solid #e0e0e0;
+        flex-shrink: 0;
+    }
+    #workflowCreation {
+        display: flex;
+        flex-direction: column;
+    }
+    #workflowCreation .workflow-creation {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        height: auto;
     }
 }
 
@@ -3035,11 +3061,8 @@ input:checked + .slider:before {
     }
 }
 
-/* Ensure the workflow builder is scrollable */
+/* Ensure the workflow builder is scrollable (full-screen overlay) */
 #workflowCreation {
-    height: 200vh;
-    min-height: 200vh;
-    max-height: none;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     position: fixed;
@@ -3049,6 +3072,18 @@ input:checked + .slider:before {
     bottom: 0;
     background: #fff;
     z-index: 1000;
+}
+
+/* On mobile and in PWA, keep the workflow builder below the Core header/status bar */
+@media (max-width: 768px), (display-mode: standalone) {
+    #workflowCreation {
+        top: calc(env(safe-area-inset-top) + 44px);
+    }
+}
+
+/* Workflow builder in-panel header: hidden on desktop */
+.workflow-builder-mobile-header {
+    display: none;
 }
 
 /* Cancel button styles */
