@@ -31,6 +31,9 @@ let scrabble1ExactMatchSet = new Set();  // Words with exact SCRABBLE1 score (hi
 let lastSologramYnString = null;
 let workflowHasSologram = false;
 
+// ATLAS Colours: when user enters 0–6, store count so we can show applicable colours at end of workflow (null = not used or skipped)
+let lastAtlasColoursCount = null;
+
 // Version constant - increment .1 for each push update, major version when specified
 const APP_VERSION = '12.0';
 
@@ -2160,7 +2163,8 @@ async function executeWorkflow(steps) {
         // Clear any existing content
         featureArea.innerHTML = '';
         resultsContainer.innerHTML = '';
-        
+        lastAtlasColoursCount = null;
+
         // Hide and clear Hydra label (shown when T9 LAST submits GUESS+ACTUAL sum)
         const hydraLabelContainer = document.getElementById('hydraLabelContainer');
         if (hydraLabelContainer) {
@@ -2457,6 +2461,21 @@ async function executeWorkflow(steps) {
         
         // Show final results
         displayResults(currentFilteredWords);
+        if (lastAtlasColoursCount != null) {
+            const names = getApplicableAtlasColourNames(currentFilteredWords);
+            if (names.length > 0) {
+                const resultsContainer = document.getElementById('results');
+                if (resultsContainer) {
+                    const p = document.createElement('p');
+                    p.className = 'atlas-applicable-colours';
+                    p.style.color = 'red';
+                    p.style.marginTop = '16px';
+                    p.style.fontWeight = 'bold';
+                    p.textContent = 'Applicable colours: ' + names.join(', ');
+                    resultsContainer.appendChild(p);
+                }
+            }
+        }
     } catch (error) {
         console.error('Error executing workflow:', error);
         throw error;
@@ -6053,6 +6072,8 @@ function setupFeatureListeners(feature, callback, options) {
                     if (num >= 0 && num <= 6) {
                         const filtered = filterWordsByAtlas(currentFilteredWords, num);
                         currentFilteredWords = filtered;
+                        const source = (appSettings && appSettings.atlasLetterSource) || 'default';
+                        if (source === 'default') lastAtlasColoursCount = num;
                         displayResults(currentFilteredWords);
                         callback(currentFilteredWords);
                         document.getElementById('atlasFeature').classList.add('completed');
@@ -10240,6 +10261,13 @@ function filterWordsByO(words, includeO) {
 // Default ATLAS/Colours letters (locked; COLOUR3 always uses this set)
 const ATLAS_DEFAULT_LETTERS = new Set(['A', 'B', 'C', 'E', 'G', 'I', 'L', 'N', 'M', 'O', 'P', 'R', 'S', 'T', 'V', 'W', 'Y']);
 
+// Letter → colour name for ATLAS "applicable colours" display at end of workflow
+const ATLAS_COLOUR_NAMES = {
+    A: 'Amber', B: 'Blue', C: 'Cyan', E: 'Emerald', G: 'Green', I: 'Indigo', L: 'Lime',
+    M: 'Magenta', N: 'Navy', O: 'Orange', P: 'Pink', R: 'Red', S: 'Silver', T: 'Teal',
+    V: 'Violet', W: 'White', Y: 'Yellow'
+};
+
 // Months preset: first letters of month names, deduplicated → J F M A S O N D
 const ATLAS_MONTHS_LETTERS = new Set(['J', 'F', 'M', 'A', 'S', 'O', 'N', 'D']);
 
@@ -10284,6 +10312,21 @@ function filterWordsByAtlas(words, count) {
         }
         return c === n;
     });
+}
+
+/** Get applicable colour names from words' first 6 positions (for ATLAS Colours end-of-workflow display). */
+function getApplicableAtlasColourNames(words) {
+    if (!Array.isArray(words) || words.length === 0) return [];
+    const letterSet = ATLAS_DEFAULT_LETTERS;
+    const seen = new Set();
+    for (const word of words) {
+        const slice = (word || '').toString().toUpperCase().slice(0, 6);
+        for (let i = 0; i < slice.length; i++) {
+            const ch = slice[i];
+            if (letterSet.has(ch)) seen.add(ch);
+        }
+    }
+    return Array.from(seen).sort().map(ch => ATLAS_COLOUR_NAMES[ch]).filter(Boolean);
 }
 
 // --- Letter Lying: letter presence in word (any position) ---
