@@ -4287,7 +4287,19 @@ function createEyeTestFeature() {
     `;
 
     try {
-        const groups = buildEyeTestGroups(currentFilteredWords || []);
+        let groups;
+        if (appSettings && appSettings.eyeTestUseFixedGroups) {
+            groups = [
+                (appSettings.eyeTestFixedGroup1 || '').toUpperCase().replace(/[^A-Z]/g, ''),
+                (appSettings.eyeTestFixedGroup2 || '').toUpperCase().replace(/[^A-Z]/g, ''),
+                (appSettings.eyeTestFixedGroup3 || '').toUpperCase().replace(/[^A-Z]/g, ''),
+                (appSettings.eyeTestFixedGroup4 || '').toUpperCase().replace(/[^A-Z]/g, ''),
+                (appSettings.eyeTestFixedGroup5 || '').toUpperCase().replace(/[^A-Z]/g, ''),
+                (appSettings.eyeTestFixedGroup6 || '').toUpperCase().replace(/[^A-Z]/g, '')
+            ];
+        } else {
+            groups = buildEyeTestGroups(currentFilteredWords || []);
+        }
         const inputs = [
             div.querySelector('#eyeTestWord1'),
             div.querySelector('#eyeTestWord2'),
@@ -12427,6 +12439,35 @@ function initSettingsUI() {
             }
         });
     }
+
+    const eyeTestUseFixedGroupsToggle = document.getElementById('eyeTestUseFixedGroupsToggle');
+    if (eyeTestUseFixedGroupsToggle) {
+        eyeTestUseFixedGroupsToggle.checked = !!(appSettings && appSettings.eyeTestUseFixedGroups);
+        eyeTestUseFixedGroupsToggle.addEventListener('change', () => {
+            appSettings.eyeTestUseFixedGroups = eyeTestUseFixedGroupsToggle.checked;
+            saveAppSettings();
+        });
+    }
+    const eyeTestFixedInputs = [
+        { id: 'eyeTestFixedGroup1Input', key: 'eyeTestFixedGroup1' },
+        { id: 'eyeTestFixedGroup2Input', key: 'eyeTestFixedGroup2' },
+        { id: 'eyeTestFixedGroup3Input', key: 'eyeTestFixedGroup3' },
+        { id: 'eyeTestFixedGroup4Input', key: 'eyeTestFixedGroup4' },
+        { id: 'eyeTestFixedGroup5Input', key: 'eyeTestFixedGroup5' },
+        { id: 'eyeTestFixedGroup6Input', key: 'eyeTestFixedGroup6' }
+    ];
+    eyeTestFixedInputs.forEach(({ id, key }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const current = appSettings && typeof appSettings[key] === 'string' ? appSettings[key] : '';
+        el.value = (current || '').toUpperCase().replace(/[^A-Z]/g, '');
+        el.addEventListener('input', () => {
+            let v = (el.value || '').toUpperCase().replace(/[^A-Z]/g, '');
+            el.value = v;
+            appSettings[key] = v;
+            saveAppSettings();
+        });
+    });
 
     const dictionaryAlphaUseCustomRangeToggle = document.getElementById('dictionaryAlphaUseCustomRangeToggle');
     const dictionaryAlphaCustomRangeFields = document.getElementById('dictionaryAlphaCustomRangeFields');
