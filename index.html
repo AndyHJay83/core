@@ -169,6 +169,10 @@
                                 <button class="info-button" data-feature="e21"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
+                                <button class="feature-button" data-feature="advLex" draggable="true">ADV-LEX</button>
+                                <button class="info-button" data-feature="advLex"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group">
                                 <button class="feature-button" data-feature="originalLex" draggable="true">Lexicon</button>
                                 <button class="info-button" data-feature="originalLex"><i class="fas fa-info-circle"></i></button>
                             </div>
@@ -247,6 +251,10 @@
                             <div class="feature-group">
                                 <button class="feature-button" data-feature="firstCurved" draggable="true">FIRST CURVED</button>
                                 <button class="info-button" data-feature="firstCurved"><i class="fas fa-info-circle"></i></button>
+                            </div>
+                            <div class="feature-group">
+                                <button class="feature-button" data-feature="eyeTest" draggable="true">EYE TEST</button>
+                                <button class="info-button" data-feature="eyeTest"><i class="fas fa-info-circle"></i></button>
                             </div>
                             <div class="feature-group">
                                 <button class="feature-button" data-feature="pin" draggable="true">PIN</button>
@@ -1444,6 +1452,13 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="advLexInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>ADV-LEX</h3>
+                <p><strong>Advanced Lexicon helper.</strong><br>Uses the dynamic Lexicon position and its possible letters. For each letter, ADV-LEX picks one long example word from the 19127 list that contains that letter but none of the other Lexicon letters. You choose which word matches your puzzle, and the wordlist is filtered to that letter at the chosen position. SKIP leaves the list unchanged.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
         <div id="originalLexInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>Lexicon</h3>
@@ -1612,6 +1627,13 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="eyeTestInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>EYE TEST</h3>
+                <p><strong>EYE TEST</strong><br>Automatically builds 6 PIN-style letter groups (sizes 2, 3, 4, 5, 6, and 7) from the current wordlist, chosen for high information gain. Each box is pre-filled with its group; you enter a 6-digit code where each digit is how many letters from that group appear in the target word. It uses the same matching logic as PIN but with dynamic groups, acting like an \"eye test\" for the wordlist.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
         <div id="pinInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>PIN</h3>
@@ -1717,6 +1739,13 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="t9NumberStartInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>NUMBER START</h3>
+                <p><strong>First T9 digit range</strong><br>Like Dictionary (Alpha) but for the first T9 digit. Choose Low (2–4), Mid (4–6), or High (6–9). Use before SINGING to narrow by first-digit range, then apply directions for exact length.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
         <div id="t9OneTruthInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>1 TRUTH (F4)</h3>
@@ -1804,6 +1833,11 @@
     </div>
 
     <script src="script.js?v=14"></script>
+    <div id="eyeTestChartOverlay" class="eye-test-chart-overlay" style="display:none;">
+        <canvas id="eyeTestChartCanvas" width="600" height="820"></canvas>
+        <div class="eye-test-chart-hint">Triple tap anywhere to close</div>
+    </div>
+
     <script>
         // Prevent double-tap zoom, but do NOT interfere with Settings or info modals
         document.addEventListener('touchend', function(e) {

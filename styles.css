@@ -1983,6 +1983,57 @@ input:checked + .slider:before {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
+/* ADV-LEX list */
+.advlex-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.advlex-row label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.advlex-word {
+    font-family: monospace;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+/* EYE TEST full-screen chart overlay */
+.eye-test-chart-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #111;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 1100;
+}
+
+.eye-test-chart-overlay canvas {
+    max-width: 90vw;
+    max-height: 80vh;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8);
+    background: #FDFCF7;
+}
+
+.eye-test-chart-hint {
+    margin-top: 12px;
+    color: #ccc;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
 .word-group-item {
     padding: 10px;
     font-size: 1.2em;

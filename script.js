@@ -166,27 +166,152 @@ const omegaForbiddenPairs = [['Q', 'Z'], ['J', 'Q'], ['V', 'Q']];
 let omegaSelections = [];
 let omegaActiveMapping = {};
 
-// CALCULUS: positional digit filter (like OMEGA Short but digits 0-9 → fixed letter sets). Word length >= digit string length + 1. Same forbidden pairs as OMEGA.
+// CALCULUS: positional digit filter (like OMEGA Short but digits 0-9 → fixed letter sets). Same forbidden pairs as OMEGA.
 const calculusMapping = {
     '1': 'ADEFHIJKLMNPRTUVWXYZ',
     '2': 'BCDJLMNOPQRSUVWXYZ',
     '3': 'BCDEGJKMNOPQRSUVWZ',
     '4': 'ACDEFGHIJKLMNPQRTVWXYZ',
-    '5': 'BCDEFGJMNOPSUVZ',
+    '5': 'BCDEFGHJMOPSUVZ',
     '6': 'BCDEFGJMOPQRSUY',
     '7': 'ADHIJKLMNPRTVWXYZ',
-    '8': 'BCDEGHJMOPQRSUWXYZ',
+    '8': 'BCDEFGHJMOPQRSUWXYZ',
     '9': 'BCDEGJMOPQRSYZ',
     '0': 'BCDGOPQRS'
 };
 
+// EYE TEST Snellen-style chart configuration
+const EYE_ROW_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const EYE_RANDOM_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const EYE_CHART_W = 600;
+const EYE_CHART_H = 820;
+
+function buildEyeTestChartLetters() {
+    const g1 = (document.getElementById('eyeTestWord1')?.value || '').toUpperCase();
+    const g2 = (document.getElementById('eyeTestWord2')?.value || '').toUpperCase();
+    const g3 = (document.getElementById('eyeTestWord3')?.value || '').toUpperCase();
+    const g4 = (document.getElementById('eyeTestWord4')?.value || '').toUpperCase();
+    const g5 = (document.getElementById('eyeTestWord5')?.value || '').toUpperCase();
+    const g6 = (document.getElementById('eyeTestWord6')?.value || '').toUpperCase();
+
+    const rows = [];
+
+    // Row 1: single E
+    rows.push('E');
+
+    // Rows 2–7: derived from EYE TEST groups (pad with E if short)
+    rows.push(g1.slice(0, 2).padEnd(2, 'E')); // row 2
+    rows.push(g2.slice(0, 3).padEnd(3, 'E')); // row 3
+    rows.push(g3.slice(0, 4).padEnd(4, 'E')); // row 4
+    rows.push(g4.slice(0, 5).padEnd(5, 'E')); // row 5
+    rows.push(g5.slice(0, 6).padEnd(6, 'E')); // row 6
+    rows.push(g6.slice(0, 7).padEnd(7, 'E')); // row 7
+
+    // Rows 8–11: random letters
+    for (let row = 7; row < EYE_ROW_COUNTS.length; row++) {
+        let s = '';
+        const count = EYE_ROW_COUNTS[row];
+        for (let i = 0; i < count; i++) {
+            s += EYE_RANDOM_LETTERS[Math.floor(Math.random() * 26)];
+        }
+        rows.push(s);
+    }
+
+    return rows.join('');
+}
+
+function drawEyeTestChart(canvas, letters) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, EYE_CHART_W, EYE_CHART_H);
+
+    // Background
+    ctx.fillStyle = '#FDFCF7';
+    ctx.fillRect(0, 0, EYE_CHART_W, EYE_CHART_H);
+
+    // Red top bar
+    ctx.fillStyle = '#C0392B';
+    ctx.fillRect(0, 0, EYE_CHART_W, 6);
+
+    // Title
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('SNELLEN CHART', EYE_CHART_W / 2, 28);
+
+    // Thin rule
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(40, 36);
+    ctx.lineTo(EYE_CHART_W - 40, 36);
+    ctx.stroke();
+
+    const maxFontSize = 90;
+    const minFontSize = 10;
+    let letterIndex = 0;
+    let y = 50;
+
+    const acuityLabels = ['20/200', '20/160', '20/125', '20/100', '20/80', '20/63', '20/50', '20/40', '20/32', '20/25', '20/20'];
+
+    for (let row = 0; row < EYE_ROW_COUNTS.length; row++) {
+        const count = EYE_ROW_COUNTS[row];
+        const t = row / (EYE_ROW_COUNTS.length - 1);
+        const fontSize = Math.round(maxFontSize - t * (maxFontSize - minFontSize));
+        const spacing = fontSize * 1.3;
+        const rowWidth = count * spacing;
+        const startX = (EYE_CHART_W - rowWidth) / 2 + spacing / 2;
+
+        ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
+        ctx.fillStyle = '#1a1a1a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        for (let i = 0; i < count; i++) {
+            const letter = letters[letterIndex++] || 'E';
+            ctx.fillText(letter, startX + i * spacing, y);
+        }
+
+        // Acuity label on right
+        ctx.font = `${Math.max(7, fontSize * 0.25)}px 'Courier New', monospace`;
+        ctx.fillStyle = '#C0392B';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(acuityLabels[row], EYE_CHART_W - 56, y + fontSize * 0.3);
+        ctx.fillStyle = '#1a1a1a';
+
+        y += fontSize * 1.55 + 4;
+    }
+
+    // Bottom rule
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(40, EYE_CHART_H - 22);
+    ctx.lineTo(EYE_CHART_W - 40, EYE_CHART_H - 22);
+    ctx.stroke();
+
+    ctx.font = "10px 'Courier New', monospace";
+    ctx.fillStyle = '#999';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('TEST DISTANCE: 6 METRES / 20 FEET', EYE_CHART_W / 2, EYE_CHART_H - 8);
+
+    // Red bottom bar
+    ctx.fillStyle = '#C0392B';
+    ctx.fillRect(0, EYE_CHART_H - 3, EYE_CHART_W, 3);
+}
+
 function applyCalculusFilter(words, digitString) {
     if (!digitString || digitString.length === 0) return words;
     const len = digitString.length;
-    const minWordLen = len + 1;  // word length >= digit string length + 1
+    const exactWordLen = len;  // word length must equal digit string length
     return words.filter(word => {
         const w = word.toUpperCase();
-        if (w.length < minWordLen) return false;
+        if (w.length !== exactWordLen) return false;
         for (let i = 0; i < len; i++) {
             const d = digitString[i];
             const allowed = calculusMapping[d];
@@ -224,7 +349,10 @@ function getWordlistPathForEfficiency(value) {
         case '4000': return { wordlistPath: 'words/4000.txt', gzippedPath: 'words/4000.txt.gz' };
         case '19127': return { wordlistPath: 'words/19127.txt', gzippedPath: 'words/19127.txt.gz' };
         case 'emotions': return { wordlistPath: 'words/EmotionsJobsSpiritAnimals.txt', gzippedPath: 'words/EmotionsJobsSpiritAnimals.txt.gz' };
-        case '134k': return { wordlistPath: 'words/134K.txt', gzippedPath: 'words/134K.txt.gz' };
+        case '10000': return { wordlistPath: 'words/10000.txt', gzippedPath: 'words/10000.txt.gz' };
+        case '134k':
+        case '134K':
+            return { wordlistPath: 'words/134K.txt', gzippedPath: 'words/134K.txt.gz' };
         case 'boysnames': return { wordlistPath: 'words/BoysNames.txt', gzippedPath: 'words/BoysNames.txt.gz' };
         case 'girlsnames': return { wordlistPath: 'words/GirlsNames.txt', gzippedPath: 'words/GirlsNames.txt.gz' };
         case 'allnames': return { wordlistPath: 'words/AllNames.txt', gzippedPath: 'words/AllNames.txt.gz' };
@@ -1706,12 +1834,60 @@ async function loadWordsForEfficiency() {
     return Array.from(wordSet);
 }
 
+// ADV-LEX: dedicated 10000-word source (independent of performance wordlist)
+let advLexWordList = null;
+
+async function loadAdvLexWordList() {
+    if (advLexWordList && Array.isArray(advLexWordList) && advLexWordList.length > 0) {
+        return advLexWordList;
+    }
+
+    const { wordlistPath, gzippedPath } = getWordlistPathForEfficiency('10000');
+    let text;
+
+    if (gzippedPath && typeof pako !== 'undefined') {
+        try {
+            const res = await fetch(gzippedPath);
+            if (res.ok) {
+                const buf = await res.arrayBuffer();
+                text = pako.inflate(new Uint8Array(buf), { to: 'string' });
+            } else {
+                const res2 = await fetch(wordlistPath);
+                text = await res2.text();
+            }
+        } catch (_) {
+            const fallbackRes = await fetch(wordlistPath);
+            text = await fallbackRes.text();
+        }
+    } else {
+        const res = await fetch(wordlistPath);
+        text = await res.text();
+    }
+
+    const words = [];
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i].trim();
+        if (!raw) continue;
+        const upper = raw.toUpperCase();
+        // Only keep simple A–Z words with no spaces
+        if (/^[A-Z]+$/.test(upper)) {
+            words.push(upper);
+        }
+    }
+
+    advLexWordList = words;
+    return advLexWordList;
+}
+
 // Add lazy loading flag
 let wordListLoaded = false;
 let lastLoadedWordlist = '';
 
 // ALPHA: first-letter range comes from Dictionary (Alpha) when that step ran in this workflow
 let lastDictionaryAlphaSection = null;
+// NUMBER START: section (low/mid/high) when that step ran in this workflow
+let lastNumberStartSection = null;
 
 // Function to execute workflow
 async function executeWorkflow(steps) {
@@ -1778,7 +1954,8 @@ async function executeWorkflow(steps) {
         omegaActiveMapping = {};
         // ALPHA: reset so first-letter range is taken from Dictionary (Alpha) only if that step ran
         lastDictionaryAlphaSection = null;
-        
+        lastNumberStartSection = null;
+
         console.log('Starting workflow with steps:', steps);
         console.log('Using wordlist:', selectedWordlist);
         console.log('Current word count:', currentFilteredWords.length);
@@ -1879,6 +2056,7 @@ async function executeWorkflow(steps) {
             eeeFeature: createEeeFeature(),
             eeeFirstFeature: createEeeFirstFeature(),
             originalLexFeature: createOriginalLexFeature(),
+            advLexFeature: createAdvLexFeature(),
             consonantQuestion: createConsonantQuestion(),
             colour3Feature: createColour3Feature(),
             atlasFeature: createAtlasFeature(),
@@ -1904,6 +2082,7 @@ async function executeWorkflow(steps) {
             findEee: createFindEeeFeature(),
             positionConsFeature: createPositionConsFeature(),
             firstCurvedFeature: createFirstCurvedFeature(),
+            eyeTestFeature: createEyeTestFeature(),
             pinFeature: createPinFeature(),
             eeeFeature: createEeeFeature(),
             eeeFirstFeature: createEeeFirstFeature(),
@@ -2069,6 +2248,9 @@ async function executeWorkflow(steps) {
                 case 'originalLex':
                     featureElement = createOriginalLexFeature();
                     break;
+                case 'advLex':
+                    featureElement = createAdvLexFeature();
+                    break;
                 case 'consonant':
                     featureElement = createConsonantQuestion();
                     break;
@@ -2110,6 +2292,9 @@ async function executeWorkflow(steps) {
                     break;
                 case 'firstCurved':
                     featureElement = createFirstCurvedFeature();
+                    break;
+                case 'eyeTest':
+                    featureElement = createEyeTestFeature();
                     break;
                 case 'pin':
                     featureElement = createPinFeature();
@@ -2158,6 +2343,9 @@ async function executeWorkflow(steps) {
                     break;
                 case 't9Singing':
                     featureElement = createT9SingingFeature();
+                    break;
+                case 't9NumberStart':
+                    featureElement = createT9NumberStartFeature();
                     break;
                 case 't9OneTruth':
                     featureElement = createT9OneTruthFeature();
@@ -2633,6 +2821,25 @@ function createOriginalLexFeature() {
             <input type="text" id="originalLexInput" placeholder="Enter a word">
             <button id="originalLexButton">SUBMIT</button>
             <button id="originalLexSkipButton" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
+function createAdvLexFeature() {
+    const div = document.createElement('div');
+    div.id = 'advLexFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">ADV-LEX</h2>
+        <div class="position-info">
+            <div class="position-display">Position: <span class="position-number">-</span></div>
+            <div class="possible-letters">Possible letters: <span class="letters-list"></span></div>
+        </div>
+        <div id="advLexWordList" class="advlex-list"></div>
+        <div class="button-row">
+            <button id="advLexSubmitButton" class="submit-button">SUBMIT</button>
+            <button id="advLexSkipButton" class="skip-button">SKIP</button>
         </div>
     `;
     return div;
@@ -3670,6 +3877,26 @@ function createT9SingingFeature() {
     return div;
 }
 
+// --- T9 NUMBER START Feature Logic (first T9 digit: Low 2-4, Mid 4-6, High 6-9) ---
+function createT9NumberStartFeature() {
+    const div = document.createElement('div');
+    div.id = 't9NumberStartFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">NUMBER START</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">First T9 digit: Low (2-4), Mid (4-6), High (6-9).</p>
+        <div class="section-buttons" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="section-btn number-start-btn" data-section="low">Low (2-4)</button>
+            <button type="button" class="section-btn number-start-btn" data-section="mid">Mid (4-6)</button>
+            <button type="button" class="section-btn number-start-btn" data-section="high">High (6-9)</button>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; gap: 10px;">
+            <button type="button" id="t9NumberStartSkipBtn" class="skip-button">SKIP</button>
+        </div>
+    `;
+    return div;
+}
+
 // --- T9 1 TRUTH (F4) Feature Logic ---
 function createT9OneTruthFeature() {
     const div = document.createElement('div');
@@ -3918,6 +4145,159 @@ function createFirstCurvedFeature() {
     return div;
 }
 
+// Helper for EYE TEST: compute entropy of distinct-letter counts for a group
+function computeEyeTestGroupEntropy(upperWords, group) {
+    if (!group || group.length === 0 || !Array.isArray(upperWords) || upperWords.length === 0) return 0;
+    const groupLetters = group.split('');
+    const maxCount = groupLetters.length;
+    const counts = new Array(maxCount + 1).fill(0);
+
+    for (const upperWord of upperWords) {
+        let occurrenceCount = 0;
+        for (const letter of groupLetters) {
+            if (upperWord.includes(letter)) {
+                occurrenceCount++;
+            }
+        }
+        if (occurrenceCount < 0) occurrenceCount = 0;
+        if (occurrenceCount > maxCount) occurrenceCount = maxCount;
+        counts[occurrenceCount]++;
+    }
+
+    const total = upperWords.length;
+    if (total === 0) return 0;
+
+    let entropy = 0;
+    for (let c = 0; c <= maxCount; c++) {
+        const freq = counts[c];
+        if (!freq) continue;
+        const p = freq / total;
+        entropy -= p * Math.log2(p);
+    }
+    return entropy;
+}
+
+// Build dynamic letter groups for EYE TEST (sizes 2,3,4,5,6,7)
+function buildEyeTestGroups(words) {
+    if (!Array.isArray(words) || words.length === 0) {
+        return ['', '', '', '', '', ''];
+    }
+
+    const upperWords = words.map(w => (w || '').toString().toUpperCase());
+
+    // Count in how many words each letter appears (distinct presence per word)
+    const letterCounts = {};
+    for (const w of upperWords) {
+        const seen = new Set();
+        for (const ch of w) {
+            if (ch < 'A' || ch > 'Z') continue;
+            if (!seen.has(ch)) {
+                seen.add(ch);
+                letterCounts[ch] = (letterCounts[ch] || 0) + 1;
+            }
+        }
+    }
+
+    let letters = Object.keys(letterCounts);
+    if (letters.length === 0) {
+        return ['', '', '', '', '', ''];
+    }
+
+    // Sort by frequency (desc) and keep top N for performance
+    letters.sort((a, b) => letterCounts[b] - letterCounts[a]);
+    const MAX_LETTERS = 12;
+    letters = letters.slice(0, MAX_LETTERS);
+
+    const boxSizes = [2, 3, 4, 5, 6, 7];
+    const groups = [];
+    let availableLetters = [...letters];
+
+    for (const size of boxSizes) {
+        let group = '';
+
+        for (let i = 0; i < size; i++) {
+            let bestLetter = null;
+            let bestEntropy = -1;
+
+            for (const L of availableLetters) {
+                if (group.includes(L)) continue;
+                const testGroup = group + L;
+                const entropy = computeEyeTestGroupEntropy(upperWords, testGroup);
+                if (entropy > bestEntropy) {
+                    bestEntropy = entropy;
+                    bestLetter = L;
+                }
+            }
+
+            if (!bestLetter) break;
+
+            group += bestLetter;
+            // Remove from current pool to encourage variety within a group
+            availableLetters = availableLetters.filter(ch => ch !== bestLetter);
+
+            // If we run out of candidates, allow reuse from the full letter set
+            if (availableLetters.length === 0) {
+                availableLetters = [...letters];
+            }
+        }
+
+        groups.push(group);
+    }
+
+    while (groups.length < 6) {
+        groups.push('');
+    }
+
+    return groups;
+}
+
+function createEyeTestFeature() {
+    const div = document.createElement('div');
+    div.id = 'eyeTestFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <div class="feature-title">EYE TEST</div>
+        <div class="position-cons-form">
+            <div class="pin-inputs-grid">
+                <input type="text" id="eyeTestWord1" class="pin-word-input" placeholder="Group 1 (2 letters)" readonly>
+                <input type="text" id="eyeTestWord4" class="pin-word-input" placeholder="Group 4 (5 letters)" readonly>
+                <input type="text" id="eyeTestWord2" class="pin-word-input" placeholder="Group 2 (3 letters)" readonly>
+                <input type="text" id="eyeTestWord5" class="pin-word-input" placeholder="Group 5 (6 letters)" readonly>
+                <input type="text" id="eyeTestWord3" class="pin-word-input" placeholder="Group 3 (4 letters)" readonly>
+                <input type="text" id="eyeTestWord6" class="pin-word-input" placeholder="Group 6 (7 letters)" readonly>
+                <input type="text" id="eyeTestCode" class="pin-code-input" placeholder="CODE" maxlength="6">
+                <button id="eyeTestSubmit" class="primary-btn pin-submit-btn">SUBMIT</button>
+                <button id="eyeTestChartButton" class="secondary-btn eye-test-chart-btn">CHART</button>
+            </div>
+            <div id="eyeTestMessage" class="position-cons-message"></div>
+        </div>
+    `;
+
+    try {
+        const groups = buildEyeTestGroups(currentFilteredWords || []);
+        const inputs = [
+            div.querySelector('#eyeTestWord1'),
+            div.querySelector('#eyeTestWord2'),
+            div.querySelector('#eyeTestWord3'),
+            div.querySelector('#eyeTestWord4'),
+            div.querySelector('#eyeTestWord5'),
+            div.querySelector('#eyeTestWord6')
+        ];
+        // Fill boxes 1–6 with groups 1–6 directly:
+        // Box 1 → 2 letters, Box 2 → 3 letters, Box 3 → 4 letters,
+        // Box 4 → 5 letters, Box 5 → 6 letters, Box 6 → 7 letters.
+        inputs.forEach((input, i) => {
+            if (input && groups[i]) {
+                input.value = groups[i];
+            }
+        });
+    } catch (e) {
+        console.error('Error building EYE TEST groups', e);
+    }
+
+    return div;
+}
+
 function createPinFeature() {
     const div = document.createElement('div');
     div.id = 'pinFeature';
@@ -4099,18 +4479,18 @@ function filterWordsByT9Higher(words, option) {
 }
 
 // Filtering logic for T9 SINGING feature (directional UP/DOWN over consecutive T9 digits).
-// Same length logic as ALPHA: word (T9) length >= directions.length + 1 (minimum length, not exact).
+// Exact length: word (T9) length must equal directions.length + 1.
 function filterWordsByT9Singing(words, directions) {
     if (!directions || directions.length === 0) return words;
 
     // Calculate T9 strings if not already done
     calculateT9Strings(words);
 
-    const neededLen = directions.length + 1;  // minimum T9 length (same as ALPHA: needLen = 1 + directions.length)
+    const neededLen = directions.length + 1;  // exact T9 length
 
     return words.filter(word => {
         const t9String = t9StringsMap.get(word) || wordToT9(word);
-        if (!t9String || t9String.length < neededLen) return false;  // keep when length >= neededLen
+        if (!t9String || t9String.length !== neededLen) return false;
 
         for (let i = 0; i < directions.length; i++) {
             const dir = directions[i];
@@ -4132,6 +4512,25 @@ function filterWordsByT9Singing(words, directions) {
         }
 
         return true;
+    });
+}
+
+// NUMBER START: filter by first T9 digit in Low (2-4), Mid (4-6), or High (6-9). Like Dictionary (Alpha) for digits.
+function filterWordsByNumberStart(words, section) {
+    if (!section) return words;
+    calculateT9Strings(words);
+    const low = new Set(['2', '3', '4']);
+    const mid = new Set(['4', '5', '6']);
+    const high = new Set(['6', '7', '8', '9']);
+    let allowed = null;
+    if (section === 'low') allowed = low;
+    else if (section === 'mid') allowed = mid;
+    else if (section === 'high') allowed = high;
+    if (!allowed) return words;
+    return words.filter(word => {
+        const t9 = t9StringsMap.get(word) || wordToT9(word);
+        if (!t9 || t9.length < 1) return false;
+        return allowed.has(t9[0]);
     });
 }
 
@@ -6201,6 +6600,162 @@ function setupFeatureListeners(feature, callback, options) {
             break;
         }
 
+        case 'advLex': {
+            const positionNumberEl = document.querySelector('#advLexFeature .position-number');
+            const lettersListEl = document.querySelector('#advLexFeature .letters-list');
+            const listContainer = document.getElementById('advLexWordList');
+            const submitBtn = document.getElementById('advLexSubmitButton');
+            const skipBtn = document.getElementById('advLexSkipButton');
+
+            if (!listContainer || !submitBtn || !skipBtn) {
+                callback(currentFilteredWords);
+                const featureDiv = document.getElementById('advLexFeature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+                break;
+            }
+
+            // Find position with most variance and update display
+            const { position, letters } = findPositionWithMostVariance(currentFilteredWords);
+            const advLexPosition = position;
+
+            if (positionNumberEl) {
+                positionNumberEl.textContent = advLexPosition >= 0 ? (advLexPosition + 1).toString() : '-';
+            }
+            if (lettersListEl) {
+                lettersListEl.textContent = letters.join(', ');
+            }
+
+            // If we couldn't find a valid position or letters, just allow SKIP
+            if (advLexPosition < 0 || !letters || letters.length === 0) {
+                listContainer.textContent = 'ADV-LEX unavailable for this wordlist step.';
+
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    const featureDiv = document.getElementById('advLexFeature');
+                    if (featureDiv) {
+                        featureDiv.classList.add('completed');
+                        featureDiv.dispatchEvent(new Event('completed'));
+                    }
+                };
+                skipBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    skipBtn.click();
+                }, { passive: false });
+
+                submitBtn.onclick = () => {
+                    // No-op; require SKIP
+                    alert('ADV-LEX is not available for this step. Please SKIP.');
+                };
+                submitBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    submitBtn.click();
+                }, { passive: false });
+
+                break;
+            }
+
+            // Build ADV-LEX words asynchronously from 19127 wordlist
+            (async () => {
+                try {
+                    const sourceWords = await loadAdvLexWordList();
+                    const lexSet = new Set(letters);
+                    listContainer.innerHTML = '';
+
+                    letters.forEach((letter, index) => {
+                        const upperLetter = letter.toUpperCase();
+                        const otherLetters = letters.filter(l => l !== letter)
+                            .map(l => l.toUpperCase());
+
+                        const candidates = [];
+                        for (let i = 0; i < sourceWords.length; i++) {
+                            const w = sourceWords[i];
+                            if (!w.includes(upperLetter)) continue;
+                            let bad = false;
+                            for (let j = 0; j < otherLetters.length; j++) {
+                                if (w.includes(otherLetters[j])) {
+                                    bad = true;
+                                    break;
+                                }
+                            }
+                            if (bad) continue;
+                            candidates.push(w);
+                        }
+
+                        let displayWord;
+                        if (candidates.length === 0) {
+                            displayWord = `ERROR (${upperLetter})`;
+                        } else {
+                            let maxLen = 0;
+                            for (let i = 0; i < candidates.length; i++) {
+                                if (candidates[i].length > maxLen) {
+                                    maxLen = candidates[i].length;
+                                }
+                            }
+                            const longest = candidates.filter(w => w.length === maxLen);
+                            displayWord = longest[Math.floor(Math.random() * longest.length)];
+                        }
+
+                        const row = document.createElement('div');
+                        row.className = 'advlex-row';
+                        row.innerHTML = `
+                            <label>
+                                <input type="radio" name="advLexChoice" value="${index}" data-letter="${upperLetter}">
+                                <span class="advlex-word">${displayWord}</span>
+                            </label>
+                        `;
+                        listContainer.appendChild(row);
+                    });
+                } catch (e) {
+                    console.error('Error building ADV-LEX word list:', e);
+                    listContainer.textContent = 'Error building ADV-LEX words.';
+                }
+            })();
+
+            submitBtn.onclick = () => {
+                const choice = document.querySelector('input[name="advLexChoice"]:checked');
+                if (!choice) {
+                    alert('Select a word or use SKIP.');
+                    return;
+                }
+                const letter = choice.getAttribute('data-letter');
+                if (!letter) {
+                    alert('Unexpected error: missing letter. Please SKIP.');
+                    return;
+                }
+
+                const filteredWords = filterWordsByOriginalLex(currentFilteredWords, advLexPosition, letter);
+                callback(filteredWords);
+
+                const featureDiv = document.getElementById('advLexFeature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+            };
+            submitBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                submitBtn.click();
+            }, { passive: false });
+
+            skipBtn.onclick = () => {
+                callback(currentFilteredWords);
+                const featureDiv = document.getElementById('advLexFeature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+            };
+            skipBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                skipBtn.click();
+            }, { passive: false });
+
+            break;
+        }
+
         case 'length': {
             const lengthButton = document.getElementById('lengthButton');
             const lengthSkipButton = document.getElementById('lengthSkipButton');
@@ -8197,6 +8752,46 @@ function setupFeatureListeners(feature, callback, options) {
 
             break;
         }
+
+        case 't9NumberStart': {
+            const sectionBtns = document.querySelectorAll('#t9NumberStartFeature .number-start-btn');
+            const skipBtn = document.getElementById('t9NumberStartSkipBtn');
+            sectionBtns.forEach(btn => {
+                btn.onclick = () => {
+                    const section = btn.dataset.section;
+                    lastNumberStartSection = section;
+                    sectionBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filtered = filterWordsByNumberStart(currentFilteredWords, section);
+                    callback(filtered);
+                    const el = document.getElementById('t9NumberStartFeature');
+                    if (el) {
+                        el.classList.add('completed');
+                        el.dispatchEvent(new Event('completed'));
+                    }
+                };
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    btn.click();
+                }, { passive: false });
+            });
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    const el = document.getElementById('t9NumberStartFeature');
+                    if (el) {
+                        el.classList.add('completed');
+                        el.dispatchEvent(new Event('completed'));
+                    }
+                };
+                skipBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    skipBtn.click();
+                }, { passive: false });
+            }
+            break;
+        }
+
         case 't9OneTruth': {
             let selectedDigits = [];
             const t9OneTruthButtons = document.querySelectorAll('.t9-one-truth-btn');
@@ -9017,6 +9612,153 @@ function setupFeatureListeners(feature, callback, options) {
             break;
         }
         
+        case 'eyeTest': {
+            const wordInputs = [
+                document.getElementById('eyeTestWord1'),
+                document.getElementById('eyeTestWord2'),
+                document.getElementById('eyeTestWord3'),
+                document.getElementById('eyeTestWord4'),
+                document.getElementById('eyeTestWord5'),
+                document.getElementById('eyeTestWord6')
+            ];
+            const codeInput = document.getElementById('eyeTestCode');
+            const submitButton = document.getElementById('eyeTestSubmit');
+            const chartButton = document.getElementById('eyeTestChartButton');
+            const messageElement = document.getElementById('eyeTestMessage');
+
+            const setMessage = (text = '', isError = false) => {
+                if (messageElement) {
+                    messageElement.textContent = text;
+                    messageElement.style.color = isError ? '#f44336' : '#4CAF50';
+                }
+            };
+
+            const handleSubmit = () => {
+                setMessage('');
+
+                // Get and validate code
+                const codeValue = (codeInput?.value || '').trim();
+                if (!codeValue) {
+                    setMessage('Enter a code.', true);
+                    return;
+                }
+
+                // Extract digits only, max 6
+                const digitsOnly = codeValue.replace(/[^0-9]/g, '').slice(0, 6);
+                if (!digitsOnly) {
+                    setMessage('Code must contain at least one digit.', true);
+                    return;
+                }
+
+                // Use as many groups as digits supplied; later boxes are ignored
+                const activeCount = Math.min(digitsOnly.length, wordInputs.length);
+                const effectiveWordInputs = wordInputs.map((input, index) =>
+                    index < activeCount ? (input?.value || '') : ''
+                );
+
+                // Filter words using PIN logic
+                const filteredWords = filterWordsByPin(currentFilteredWords, effectiveWordInputs, digitsOnly);
+
+                if (filteredWords.length === 0) {
+                    setMessage('No matches found.', true);
+                } else {
+                    setMessage(`${filteredWords.length} matches found.`);
+                }
+
+                callback(filteredWords);
+
+                // Complete feature
+                const featureDiv = document.getElementById('eyeTestFeature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+            };
+
+            if (submitButton) {
+                submitButton.addEventListener('click', handleSubmit);
+                submitButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    handleSubmit();
+                }, { passive: false });
+            }
+
+            if (codeInput) {
+                codeInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        handleSubmit();
+                    }
+                });
+
+                codeInput.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                    codeInput.focus();
+                }, { passive: true });
+
+                codeInput.addEventListener('touchend', (e) => {
+                    e.stopPropagation();
+                    codeInput.focus();
+                }, { passive: true });
+            }
+
+            if (chartButton) {
+                const overlay = document.getElementById('eyeTestChartOverlay');
+                const canvas = document.getElementById('eyeTestChartCanvas');
+                if (overlay && canvas) {
+                    const TAP_WINDOW_MS = 600;
+                    let tapCount = 0;
+                    let lastTapTime = 0;
+
+                    const showChart = () => {
+                        const letters = buildEyeTestChartLetters();
+                        drawEyeTestChart(canvas, letters);
+                        overlay.style.display = 'flex';
+                        tapCount = 0;
+                        lastTapTime = 0;
+                    };
+
+                    const hideChart = () => {
+                        overlay.style.display = 'none';
+                        tapCount = 0;
+                        lastTapTime = 0;
+                    };
+
+                    const handleTap = () => {
+                        const now = Date.now();
+                        if (now - lastTapTime > TAP_WINDOW_MS) {
+                            tapCount = 0;
+                        }
+                        tapCount += 1;
+                        lastTapTime = now;
+                        if (tapCount >= 3) {
+                            hideChart();
+                        }
+                    };
+
+                    chartButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        showChart();
+                    });
+                    chartButton.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        showChart();
+                    }, { passive: false });
+
+                    overlay.addEventListener('touchstart', (e) => {
+                        e.stopPropagation();
+                        handleTap();
+                    }, { passive: true });
+
+                    overlay.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleTap();
+                    });
+                }
+            }
+
+            break;
+        }
+
         case 'pin': {
             const wordInputs = [
                 document.getElementById('pinWord1'),
@@ -10915,7 +11657,12 @@ function showT9Features() {
             <button class="info-button" data-feature="t9Higher"><i class="fas fa-info-circle"></i></button>
         </div>
         <div class="feature-group">
+            <button class="feature-button t9-feature-button" data-feature="t9NumberStart" draggable="true">NUMBER START</button>
+            <button class="info-button" data-feature="t9NumberStart"><i class="fas fa-info-circle"></i></button>
+        </div>
+        <div class="feature-group">
             <button class="feature-button t9-feature-button" data-feature="t9Singing" draggable="true">SINGING</button>
+            <button class="info-button" data-feature="t9Singing"><i class="fas fa-info-circle"></i></button>
         </div>
         <div class="feature-group">
             <button class="feature-button t9-feature-button" data-feature="t9OneTruth" draggable="true">1 TRUTH (F4)</button>
