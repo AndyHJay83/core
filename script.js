@@ -131,6 +131,7 @@ const DEFAULT_SETTINGS = {
     alphaDirectionsCount: 0,  // 0 = enter until SUBMIT; N = auto-submit after N directions
     alphaSwapPov: false,       // OFF: Left=toward A, Right=toward Z; ON: swap
     eyeTestFirstLetter: 'E',
+    calculusMode: 'abstract',  // 'abstract' (digits 0–9) or 'curvesStraight' (C/S)
 };
 
 const DEFAULT_LETTER_LYING_STRING = 'NTRLCSAIEUO';
@@ -179,6 +180,11 @@ const calculusMapping = {
     '8': 'BCDEFGHJMOPQRSUWXYZ',
     '9': 'BCDEGJMOPQRSYZ',
     '0': 'BCDGOPQRS'
+};
+// CALCULUS Curves/Straight mode: C = curved letters, S = straight letters
+const calculusCurvesStraightMapping = {
+    'C': 'BCDGJOPQRSUWY',
+    'S': 'AEFHIKLMNTVWXYZ'
 };
 
 // EYE TEST Snellen-style chart configuration
@@ -321,13 +327,19 @@ function drawEyeTestChart(canvas, letters) {
 function applyCalculusFilter(words, digitString) {
     if (!digitString || digitString.length === 0) return words;
     const len = digitString.length;
-    const exactWordLen = len;  // word length must equal digit string length
+    const exactWordLen = len;  // word length must equal sequence length
+    const mode = (appSettings && appSettings.calculusMode) || 'abstract';
     return words.filter(word => {
         const w = word.toUpperCase();
         if (w.length !== exactWordLen) return false;
         for (let i = 0; i < len; i++) {
             const d = digitString[i];
-            const allowed = calculusMapping[d];
+            let allowed;
+            if (mode === 'curvesStraight') {
+                allowed = calculusCurvesStraightMapping[d];
+            } else {
+                allowed = calculusMapping[d];
+            }
             if (!allowed || !allowed.includes(w[i])) return false;
         }
         for (let i = 1; i < w.length; i++) {
@@ -3151,27 +3163,33 @@ function createCalculusFeature() {
 function startCalculus(callback) {
     const calculusFeature = document.getElementById('calculusFeature');
     if (!calculusFeature) return;
-    let calculusSelections = [];  // array of digit chars '0'-'9'
+    const calculusMode = (appSettings && appSettings.calculusMode) || 'abstract';
+    const isCurvesStraight = calculusMode === 'curvesStraight';
+    let calculusSelections = [];  // array of '0'-'9' or 'C'/'S'
 
     const sequenceDisplay = calculusFeature.querySelector('.calculus-sequence-display');
     const digitButtonsContainer = calculusFeature.querySelector('.calculus-digit-buttons');
     if (!sequenceDisplay || !digitButtonsContainer) return;
 
     function updateCalculusDisplay() {
-        sequenceDisplay.textContent = calculusSelections.length === 0
-            ? 'Tap digits to build sequence, then SUBMIT'
-            : calculusSelections.join('');
+        const prompt = isCurvesStraight
+            ? 'Tap C (Curves) or S (Straight) to build sequence, then SUBMIT'
+            : 'Tap digits to build sequence, then SUBMIT';
+        sequenceDisplay.textContent = calculusSelections.length === 0 ? prompt : calculusSelections.join('');
     }
     updateCalculusDisplay();
 
     digitButtonsContainer.innerHTML = '';
-    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].forEach(digit => {
+    const buttons = isCurvesStraight
+        ? [{ key: 'C', label: 'C (Curves)' }, { key: 'S', label: 'S (Straight)' }]
+        : ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => ({ key: d, label: d }));
+    buttons.forEach(({ key, label }) => {
         const btn = document.createElement('button');
         btn.className = 'calculus-digit-btn';
-        btn.textContent = digit;
+        btn.textContent = label;
         btn.type = 'button';
         btn.onclick = () => {
-            calculusSelections.push(digit);
+            calculusSelections.push(key);
             updateCalculusDisplay();
         };
         btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.click(); }, { passive: false });
@@ -3207,7 +3225,7 @@ function startCalculus(callback) {
     submitBtn.type = 'button';
     submitBtn.onclick = () => {
         if (calculusSelections.length === 0) {
-            alert('Add at least one digit to the sequence, then SUBMIT.');
+            alert(isCurvesStraight ? 'Add at least one C or S to the sequence, then SUBMIT.' : 'Add at least one digit to the sequence, then SUBMIT.');
             return;
         }
         const digitString = calculusSelections.join('');
@@ -12389,6 +12407,16 @@ function initSettingsUI() {
         sologramBookSelect.value = book;
         sologramBookSelect.addEventListener('change', () => {
             appSettings.sologramBook = sologramBookSelect.value;
+            saveAppSettings();
+        });
+    }
+
+    const calculusModeSelect = document.getElementById('calculusModeSelect');
+    if (calculusModeSelect) {
+        const mode = (appSettings && appSettings.calculusMode) || 'abstract';
+        calculusModeSelect.value = (mode === 'curvesStraight' ? 'curvesStraight' : 'abstract');
+        calculusModeSelect.addEventListener('change', () => {
+            appSettings.calculusMode = calculusModeSelect.value;
             saveAppSettings();
         });
     }
