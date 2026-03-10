@@ -130,6 +130,7 @@ const DEFAULT_SETTINGS = {
     skipWorkflowDeleteConfirm: false,
     alphaDirectionsCount: 0,  // 0 = enter until SUBMIT; N = auto-submit after N directions
     alphaSwapPov: false,       // OFF: Left=toward A, Right=toward Z; ON: swap
+    eyeTestFirstLetter: 'E',
 };
 
 const DEFAULT_LETTER_LYING_STRING = 'NTRLCSAIEUO';
@@ -196,8 +197,20 @@ function buildEyeTestChartLetters() {
 
     const rows = [];
 
-    // Row 1: single E
-    rows.push('E');
+    // Row 1: single configurable letter (default E)
+    let firstLetter = 'E';
+    try {
+        const raw = appSettings && typeof appSettings.eyeTestFirstLetter === 'string'
+            ? appSettings.eyeTestFirstLetter
+            : 'E';
+        const cleaned = raw.toUpperCase().replace(/[^A-Z]/g, '');
+        if (cleaned.length === 1) {
+            firstLetter = cleaned;
+        }
+    } catch (e) {
+        firstLetter = 'E';
+    }
+    rows.push(firstLetter);
 
     // Rows 2–7: derived from EYE TEST groups (pad with E if short)
     rows.push(g1.slice(0, 2).padEnd(2, 'E')); // row 2
@@ -12395,6 +12408,23 @@ function initSettingsUI() {
             const v = pianoForteEndLetterInput.value.toUpperCase().replace(/[^A-Z]/g, '');
             pianoForteEndLetterInput.value = v;
             if (v.length) { appSettings.pianoForteEndLetter = v; saveAppSettings(); }
+        });
+    }
+
+    const eyeTestFirstLetterInput = document.getElementById('eyeTestFirstLetterInput');
+    if (eyeTestFirstLetterInput) {
+        const current = (appSettings && typeof appSettings.eyeTestFirstLetter === 'string'
+            ? appSettings.eyeTestFirstLetter
+            : 'E');
+        eyeTestFirstLetterInput.value = (current || 'E').toUpperCase().slice(0, 1).replace(/[^A-Z]/g, '') || 'E';
+        eyeTestFirstLetterInput.addEventListener('input', () => {
+            let v = (eyeTestFirstLetterInput.value || '').toUpperCase().replace(/[^A-Z]/g, '');
+            if (v.length > 1) v = v.slice(0, 1);
+            eyeTestFirstLetterInput.value = v;
+            if (v.length === 1) {
+                appSettings.eyeTestFirstLetter = v;
+                saveAppSettings();
+            }
         });
     }
 
