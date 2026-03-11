@@ -103,7 +103,7 @@ body {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         height: 100%;
-        padding-bottom: min(50vh, 420px);
+        padding-bottom: min(60vh, 520px);
     }
     /* Prevent Available Features + chain from collapsing; allow flex so full list is visible */
     #workflowCreation .workflow-content {
@@ -3372,7 +3372,7 @@ input:checked + .slider:before {
         height: 100%;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: min(50vh, 420px);
+        padding-bottom: min(60vh, 520px);
     }
 }
 
