@@ -307,24 +307,27 @@ function drawEyeTestChart(canvas, letters) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const W = canvas.width || EYE_CHART_W;
+    const H = canvas.height || EYE_CHART_H;
+    const scaleX = W / EYE_CHART_W;
+    const scaleY = H / EYE_CHART_H;
+
+    ctx.save();
+    ctx.scale(scaleX, scaleY);
     ctx.clearRect(0, 0, EYE_CHART_W, EYE_CHART_H);
 
-    // Background
     ctx.fillStyle = '#FDFCF7';
     ctx.fillRect(0, 0, EYE_CHART_W, EYE_CHART_H);
 
-    // Red top bar
     ctx.fillStyle = '#C0392B';
     ctx.fillRect(0, 0, EYE_CHART_W, 6);
 
-    // Title
     ctx.fillStyle = '#1a1a1a';
     ctx.font = "bold 13px 'Courier New', monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
     ctx.fillText('SNELLEN CHART', EYE_CHART_W / 2, 28);
 
-    // Thin rule
     ctx.strokeStyle = '#ccc';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
@@ -357,7 +360,6 @@ function drawEyeTestChart(canvas, letters) {
             ctx.fillText(letter, startX + i * spacing, y);
         }
 
-        // Acuity label on right
         ctx.font = `${Math.max(7, fontSize * 0.25)}px 'Courier New', monospace`;
         ctx.fillStyle = '#C0392B';
         ctx.textAlign = 'left';
@@ -368,7 +370,6 @@ function drawEyeTestChart(canvas, letters) {
         y += fontSize * 1.55 + 4;
     }
 
-    // Bottom rule
     ctx.strokeStyle = '#ccc';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
@@ -382,9 +383,10 @@ function drawEyeTestChart(canvas, letters) {
     ctx.textBaseline = 'alphabetic';
     ctx.fillText('TEST DISTANCE: 6 METRES / 20 FEET', EYE_CHART_W / 2, EYE_CHART_H - 8);
 
-    // Red bottom bar
     ctx.fillStyle = '#C0392B';
     ctx.fillRect(0, EYE_CHART_H - 3, EYE_CHART_W, 3);
+
+    ctx.restore();
 }
 
 function applyCalculusFilter(words, digitString) {
@@ -10094,17 +10096,37 @@ function setupFeatureListeners(feature, callback, options) {
                     let lastTapTime = 0;
 
                     const showChart = () => {
+                        overlay.style.display = 'flex';
+                        const w = overlay.clientWidth || window.innerWidth;
+                        const h = overlay.clientHeight || window.innerHeight;
+                        canvas.width = w;
+                        canvas.height = h;
                         const letters = buildEyeTestChartLetters();
                         drawEyeTestChart(canvas, letters);
-                        overlay.style.display = 'flex';
                         tapCount = 0;
                         lastTapTime = 0;
+                        const versionDisplay = document.getElementById('versionDisplay');
+                        if (versionDisplay) versionDisplay.style.display = 'none';
+                        const homeButton = document.getElementById('homeButton');
+                        if (homeButton) homeButton.style.display = 'none';
+                        const wordCountDisplay = document.getElementById('wordCountDisplay');
+                        if (wordCountDisplay) wordCountDisplay.style.display = 'none';
+                        const resetBtn = document.getElementById('resetWorkflowButton');
+                        if (resetBtn) resetBtn.style.display = 'none';
                     };
 
                     const hideChart = () => {
                         overlay.style.display = 'none';
                         tapCount = 0;
                         lastTapTime = 0;
+                        const versionDisplay = document.getElementById('versionDisplay');
+                        if (versionDisplay) versionDisplay.style.display = '';
+                        const homeButton = document.getElementById('homeButton');
+                        if (homeButton) homeButton.style.display = '';
+                        const wordCountDisplay = document.getElementById('wordCountDisplay');
+                        if (wordCountDisplay) wordCountDisplay.style.display = '';
+                        const resetBtn = document.getElementById('resetWorkflowButton');
+                        if (resetBtn) resetBtn.style.display = '';
                     };
 
                     const handleTap = () => {
