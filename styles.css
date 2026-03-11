@@ -134,6 +134,10 @@ body {
         margin: 0 !important;
         min-height: 0 !important;
     }
+    /* PWA Perform only: header 40% larger so HOME/SAVE buttons are not too high */
+    body.perform-view .pwa-header-spacer {
+        min-height: calc(env(safe-area-inset-top) + 36px);
+    }
 }
 
 .toggles-container {

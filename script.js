@@ -2092,6 +2092,7 @@ async function executeWorkflow(steps) {
             workflowExecution.style.display = 'flex';
             workflowExecution.style.flexDirection = 'column';
             workflowExecution.style.height = '100dvh';
+            document.body.classList.add('perform-view');
         }
         if (exportButton) exportButton.style.display = ''; /* Show export floppy only in PERFORM */
 
@@ -2108,6 +2109,7 @@ async function executeWorkflow(steps) {
                 if (workflowExecution) workflowExecution.style.display = 'none';
                 if (homepage) homepage.style.display = 'block';
                 if (exportButton) exportButton.style.display = 'none';
+                document.body.classList.remove('perform-view');
                 const resetButton = document.getElementById('resetWorkflowButton');
                 if (resetButton) resetButton.remove();
                 homeButton.remove();
@@ -12792,7 +12794,9 @@ function showWorkflowCreation() {
 function hideWorkflowCreation() {
     document.getElementById('homepage').style.display = 'block';
     document.getElementById('workflowCreation').style.display = 'none';
-    document.getElementById('workflowExecution').style.display = 'none';
+    const workflowExecution = document.getElementById('workflowExecution');
+    if (workflowExecution) workflowExecution.style.display = 'none';
+    document.body.classList.remove('perform-view');
     if (exportButton) exportButton.style.display = 'none';
 }
 
