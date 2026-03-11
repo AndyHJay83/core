@@ -1398,6 +1398,18 @@ button {
 .results-container {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    /* In PERFORM wordlist: disable text selection and tap highlight */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Also prevent text selection on individual word items */
+.results-container .word-list,
+.results-container .word-list li {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Better modal handling for mobile */
