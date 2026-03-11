@@ -203,7 +203,6 @@ function buildEyeTestChartLetters() {
     const g3 = (document.getElementById('eyeTestWord3')?.value || '').toUpperCase();
     const g4 = (document.getElementById('eyeTestWord4')?.value || '').toUpperCase();
     const g5 = (document.getElementById('eyeTestWord5')?.value || '').toUpperCase();
-    const g6 = (document.getElementById('eyeTestWord6')?.value || '').toUpperCase();
 
     const rows = [];
 
@@ -222,16 +221,15 @@ function buildEyeTestChartLetters() {
     }
     rows.push(firstLetter);
 
-    // Rows 2–7: derived from EYE TEST groups (pad with E if short)
+    // Rows 2–6: derived from EYE TEST groups (pad with E if short)
     rows.push(g1.slice(0, 2).padEnd(2, 'E')); // row 2
     rows.push(g2.slice(0, 3).padEnd(3, 'E')); // row 3
     rows.push(g3.slice(0, 4).padEnd(4, 'E')); // row 4
     rows.push(g4.slice(0, 5).padEnd(5, 'E')); // row 5
     rows.push(g5.slice(0, 6).padEnd(6, 'E')); // row 6
-    rows.push(g6.slice(0, 7).padEnd(7, 'E')); // row 7
 
-    // Rows 8–11: random letters
-    for (let row = 7; row < EYE_ROW_COUNTS.length; row++) {
+    // Rows 7–11: random letters
+    for (let row = 6; row < EYE_ROW_COUNTS.length; row++) {
         let s = '';
         const count = EYE_ROW_COUNTS[row];
         for (let i = 0; i < count; i++) {
@@ -4213,10 +4211,10 @@ function computeEyeTestGroupEntropy(upperWords, group) {
     return entropy;
 }
 
-// Build dynamic letter groups for EYE TEST (sizes 2,3,4,5,6,7)
+// Build dynamic letter groups for EYE TEST (sizes 2,3,4,5,6)
 function buildEyeTestGroups(words) {
     if (!Array.isArray(words) || words.length === 0) {
-        return ['', '', '', '', '', ''];
+        return ['', '', '', '', ''];
     }
 
     const upperWords = words.map(w => (w || '').toString().toUpperCase());
@@ -4236,17 +4234,16 @@ function buildEyeTestGroups(words) {
 
     let letters = Object.keys(letterCounts);
     if (letters.length === 0) {
-        return ['', '', '', '', '', ''];
+        return ['', '', '', '', ''];
     }
 
-    // Sort by frequency (desc) and keep top N for performance
+    // Sort by frequency (desc) so higher-frequency letters are considered first.
+    // We keep all distinct letters (up to 26), to allow up to 20 unique slots.
     letters.sort((a, b) => letterCounts[b] - letterCounts[a]);
-    const MAX_LETTERS = 12;
-    letters = letters.slice(0, MAX_LETTERS);
 
-    const boxSizes = [2, 3, 4, 5, 6, 7];
+    const boxSizes = [2, 3, 4, 5, 6];
     const groups = [];
-    let availableLetters = [...letters];
+    const usedAcrossGroups = new Set();
 
     for (const size of boxSizes) {
         let group = '';
@@ -4255,8 +4252,9 @@ function buildEyeTestGroups(words) {
             let bestLetter = null;
             let bestEntropy = -1;
 
-            for (const L of availableLetters) {
-                if (group.includes(L)) continue;
+            for (const L of letters) {
+                if (group.includes(L)) continue;          // no repeats within a group
+                if (usedAcrossGroups.has(L)) continue;    // strict uniqueness across groups
                 const testGroup = group + L;
                 const entropy = computeEyeTestGroupEntropy(upperWords, testGroup);
                 if (entropy > bestEntropy) {
@@ -4265,22 +4263,16 @@ function buildEyeTestGroups(words) {
                 }
             }
 
-            if (!bestLetter) break;
+            if (!bestLetter) break; // no more unused letters available
 
             group += bestLetter;
-            // Remove from current pool to encourage variety within a group
-            availableLetters = availableLetters.filter(ch => ch !== bestLetter);
-
-            // If we run out of candidates, allow reuse from the full letter set
-            if (availableLetters.length === 0) {
-                availableLetters = [...letters];
-            }
+            usedAcrossGroups.add(bestLetter);
         }
 
         groups.push(group);
     }
 
-    while (groups.length < 6) {
+    while (groups.length < 5) {
         groups.push('');
     }
 
@@ -4300,8 +4292,7 @@ function createEyeTestFeature() {
                 <input type="text" id="eyeTestWord2" class="pin-word-input" placeholder="Group 2 (3 letters)" readonly>
                 <input type="text" id="eyeTestWord5" class="pin-word-input" placeholder="Group 5 (6 letters)" readonly>
                 <input type="text" id="eyeTestWord3" class="pin-word-input" placeholder="Group 3 (4 letters)" readonly>
-                <input type="text" id="eyeTestWord6" class="pin-word-input" placeholder="Group 6 (7 letters)" readonly>
-                <input type="text" id="eyeTestCode" class="pin-code-input" placeholder="CODE" maxlength="6">
+                <input type="text" id="eyeTestCode" class="pin-code-input" placeholder="CODE" maxlength="5">
                 <button id="eyeTestSubmit" class="primary-btn pin-submit-btn">SUBMIT</button>
                 <button id="eyeTestChartButton" class="secondary-btn eye-test-chart-btn">CHART</button>
             </div>
@@ -4317,8 +4308,7 @@ function createEyeTestFeature() {
                 (appSettings.eyeTestFixedGroup2 || '').toUpperCase().replace(/[^A-Z]/g, ''),
                 (appSettings.eyeTestFixedGroup3 || '').toUpperCase().replace(/[^A-Z]/g, ''),
                 (appSettings.eyeTestFixedGroup4 || '').toUpperCase().replace(/[^A-Z]/g, ''),
-                (appSettings.eyeTestFixedGroup5 || '').toUpperCase().replace(/[^A-Z]/g, ''),
-                (appSettings.eyeTestFixedGroup6 || '').toUpperCase().replace(/[^A-Z]/g, '')
+                (appSettings.eyeTestFixedGroup5 || '').toUpperCase().replace(/[^A-Z]/g, '')
             ];
         } else {
             groups = buildEyeTestGroups(currentFilteredWords || []);
@@ -4328,8 +4318,7 @@ function createEyeTestFeature() {
             div.querySelector('#eyeTestWord2'),
             div.querySelector('#eyeTestWord3'),
             div.querySelector('#eyeTestWord4'),
-            div.querySelector('#eyeTestWord5'),
-            div.querySelector('#eyeTestWord6')
+            div.querySelector('#eyeTestWord5')
         ];
         // Fill boxes 1–6 with groups 1–6 directly:
         // Box 1 → 2 letters, Box 2 → 3 letters, Box 3 → 4 letters,
@@ -9668,8 +9657,7 @@ function setupFeatureListeners(feature, callback, options) {
                 document.getElementById('eyeTestWord2'),
                 document.getElementById('eyeTestWord3'),
                 document.getElementById('eyeTestWord4'),
-                document.getElementById('eyeTestWord5'),
-                document.getElementById('eyeTestWord6')
+                document.getElementById('eyeTestWord5')
             ];
             const codeInput = document.getElementById('eyeTestCode');
             const submitButton = document.getElementById('eyeTestSubmit');
@@ -9693,8 +9681,8 @@ function setupFeatureListeners(feature, callback, options) {
                     return;
                 }
 
-                // Extract digits only, max 6
-                const digitsOnly = codeValue.replace(/[^0-9]/g, '').slice(0, 6);
+                // Extract digits only, max 5 (one per EYE TEST box)
+                const digitsOnly = codeValue.replace(/[^0-9]/g, '').slice(0, 5);
                 if (!digitsOnly) {
                     setMessage('Code must contain at least one digit.', true);
                     return;
