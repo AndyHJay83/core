@@ -8869,6 +8869,7 @@ function setupFeatureListeners(feature, callback, options) {
                     btn.dataset.position = pos;
                     btn.onclick = () => {
                         phase2CurrentLiePosition = pos;
+                        phase2Title.textContent = 'CHOSEN LIE: ' + pos;
                         const possible = getPossibleDigitsAtPosition(currentFilteredWords, pos, phase2StoredDigits, lastActualLen);
                         renderTruthDigitButtons(possible, (digit) => {
                             const filtered = filterWordsByT9OneLieWithTruth(currentFilteredWords, phase2StoredDigits, pos, digit, lastActualLen);
