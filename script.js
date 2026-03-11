@@ -10287,7 +10287,7 @@ function filterWordsByColour3(words) {
     return filteredWords;
 }
 
-/** Pure filter: keep words where exactly `count` of positions 1–6 are in the ATLAS letter set. */
+/** Pure filter: keep words where at least `count` of positions 1–6 are in the ATLAS letter set. */
 function filterWordsByAtlas(words, count) {
     const n = typeof count === 'number' && count >= 0 && count <= 6 ? count : null;
     if (n === null) return words;
@@ -10298,7 +10298,7 @@ function filterWordsByAtlas(words, count) {
         for (let i = 0; i < slice.length; i++) {
             if (letterSet.has(slice[i])) c++;
         }
-        return c === n;
+        return c >= n;
     });
 }
 
