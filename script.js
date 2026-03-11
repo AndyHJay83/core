@@ -34,6 +34,44 @@ let workflowHasSologram = false;
 // ATLAS Colours: when user enters 0–6, store count so we can show applicable colours at end of workflow (null = not used or skipped)
 let lastAtlasColoursCount = null;
 
+// BIRTHDAY: NUMEROLOGY + CUPS. Store dates from NUMEROLOGY for CUPS to filter by month name length.
+const BIRTHDAY_MONTH_NAMES = { 1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December' };
+let lastNumerologyDates = []; // [{ day, monthNum, monthName }, ...]
+
+function numerologyDigitSum(n) {
+    n = Math.abs(parseInt(n, 10)) || 0;
+    while (n > 9) {
+        let s = 0;
+        while (n) { s += n % 10; n = Math.floor(n / 10); }
+        n = s;
+    }
+    return n;
+}
+
+function computeNumerologyDates(numerologyNum, difference) {
+    const N = Math.max(1, Math.min(9, parseInt(numerologyNum, 10)));
+    const D = Math.max(0, parseInt(difference, 10));
+    const m1 = N + D;
+    const m2 = N - D;
+    const monthNums = [];
+    if (m1 >= 1 && m1 <= 12) monthNums.push(m1);
+    if (m2 >= 1 && m2 <= 12 && m2 !== m1) monthNums.push(m2);
+    if (monthNums.length === 0) return { valid: false, dates: [] };
+    const daysForN = [];
+    for (let d = 1; d <= 31; d++) {
+        if (numerologyDigitSum(d) === N) daysForN.push(d);
+    }
+    const dates = [];
+    for (const monthNum of monthNums) {
+        const monthName = BIRTHDAY_MONTH_NAMES[monthNum] || '';
+        for (const day of daysForN) {
+            dates.push({ day, monthNum, monthName });
+        }
+    }
+    lastNumerologyDates = dates;
+    return { valid: true, dates };
+}
+
 // Version constant - increment .1 for each push update, major version when specified
 const APP_VERSION = '12.0';
 
@@ -2113,6 +2151,8 @@ async function executeWorkflow(steps) {
             pinFeature: createPinFeature(),
             eeeFeature: createEeeFeature(),
             eeeFirstFeature: createEeeFirstFeature(),
+            numerologyFeature: createNumerologyFeature(),
+            cupsFeature: createCupsFeature(),
         };
         
         // Add all feature elements to the document body
@@ -2287,6 +2327,12 @@ async function executeWorkflow(steps) {
                     break;
                 case 'atlas':
                     featureElement = createAtlasFeature();
+                    break;
+                case 'numerology':
+                    featureElement = createNumerologyFeature();
+                    break;
+                case 'cups':
+                    featureElement = createCupsFeature();
                     break;
                 case 'letterLying':
                     featureElement = createLetterLyingFeature();
@@ -3566,6 +3612,45 @@ function createWhatItsNotLFeature() {
             <button id="whatItsNotLButton">SUBMIT</button>
             <button id="whatItsNotLSkipButton" class="skip-button">SKIP</button>
         </div>
+    `;
+    return div;
+}
+
+// --- BIRTHDAY: NUMEROLOGY (date from numerology number + difference) ---
+function createNumerologyFeature() {
+    const div = document.createElement('div');
+    div.id = 'numerologyFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">NUMEROLOGY</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter numerology number (1–9) and difference. Finds dates in the year.</p>
+        <div class="input-group">
+            <label for="numerologyInput">Numerology number (1–9):</label>
+            <input type="number" id="numerologyInput" placeholder="1–9" min="1" max="9" value="">
+            <label for="numerologyDifferenceInput">Difference:</label>
+            <input type="number" id="numerologyDifferenceInput" placeholder="0–11" min="0" max="11" value="">
+            <button id="numerologySubmitButton">SUBMIT</button>
+            <button id="numerologySkipButton" class="skip-button">SKIP</button>
+        </div>
+        <div id="numerologyMessage" class="position-cons-message" style="margin-top: 8px;"></div>
+    `;
+    return div;
+}
+
+// --- BIRTHDAY: CUPS (SHORT = months 1–6 letters, LONG = 6+ letters) ---
+function createCupsFeature() {
+    const div = document.createElement('div');
+    div.id = 'cupsFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">CUPS</h2>
+        <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Filter NUMEROLOGY dates by month name length.</p>
+        <div class="button-container" style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+            <button id="cupsShortButton" class="primary-btn">SHORT</button>
+            <button id="cupsLongButton" class="primary-btn">LONG</button>
+            <button id="cupsSkipButton" class="skip-button">SKIP</button>
+        </div>
+        <p style="text-align: center; margin: 8px 0; font-size: 12px; color: #888;">SHORT: 1–6 letters. LONG: 6+ letters.</p>
     `;
     return div;
 }
@@ -6071,6 +6156,125 @@ function setupFeatureListeners(feature, callback, options) {
                     e.preventDefault();
                     newAtlasSkipButton.click();
                 }, { passive: false });
+            }
+            break;
+        }
+
+        case 'numerology': {
+            const submitBtn = document.getElementById('numerologySubmitButton');
+            const skipBtn = document.getElementById('numerologySkipButton');
+            const numInput = document.getElementById('numerologyInput');
+            const diffInput = document.getElementById('numerologyDifferenceInput');
+            const messageEl = document.getElementById('numerologyMessage');
+
+            const setMessage = (text = '', isError = false) => {
+                if (!messageEl) return;
+                messageEl.textContent = text;
+                messageEl.style.color = isError ? '#f44336' : '#4CAF50';
+            };
+
+            const handleSubmit = () => {
+                if (!numInput || !diffInput) return;
+                const nRaw = (numInput.value || '').trim();
+                const dRaw = (diffInput.value || '').trim();
+                if (!nRaw) {
+                    setMessage('Enter a numerology number (1–9).', true);
+                    return;
+                }
+                const N = parseInt(nRaw, 10);
+                const D = dRaw === '' ? 0 : parseInt(dRaw, 10);
+                if (isNaN(N) || N < 1 || N > 9) {
+                    setMessage('Numerology must be 1–9.', true);
+                    return;
+                }
+                if (isNaN(D) || D < 0) {
+                    setMessage('Difference must be 0 or higher.', true);
+                    return;
+                }
+                const { valid, dates } = computeNumerologyDates(N, D);
+                if (!valid || !dates || dates.length === 0) {
+                    setMessage('No valid month matches this numerology and difference. Please check your input.', true);
+                    return;
+                }
+                setMessage(`NUMEROLOGY stored ${dates.length} date(s).`, false);
+                callback(currentFilteredWords);
+                const featureDiv = document.getElementById('numerologyFeature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+            };
+
+            if (submitBtn) {
+                submitBtn.onclick = handleSubmit;
+                submitBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleSubmit(); }, { passive: false });
+            }
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    const featureDiv = document.getElementById('numerologyFeature');
+                    if (featureDiv) {
+                        featureDiv.classList.add('completed');
+                        featureDiv.dispatchEvent(new Event('completed'));
+                    }
+                };
+                skipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipBtn.click(); }, { passive: false });
+            }
+            if (numInput) {
+                numInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSubmit(); });
+            }
+            if (diffInput) {
+                diffInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSubmit(); });
+            }
+            break;
+        }
+
+        case 'cups': {
+            const shortBtn = document.getElementById('cupsShortButton');
+            const longBtn = document.getElementById('cupsLongButton');
+            const skipBtn = document.getElementById('cupsSkipButton');
+
+            const applyFilter = (mode) => {
+                if (!Array.isArray(lastNumerologyDates) || lastNumerologyDates.length === 0) {
+                    alert('Run NUMEROLOGY first to generate dates.');
+                    return;
+                }
+                let filtered = lastNumerologyDates;
+                if (mode === 'short') {
+                    filtered = lastNumerologyDates.filter(d => (d.monthName || '').length > 0 && (d.monthName || '').length <= 6);
+                } else if (mode === 'long') {
+                    filtered = lastNumerologyDates.filter(d => (d.monthName || '').length >= 6);
+                }
+                const msg = filtered.length
+                    ? filtered.map(d => `${d.day} ${d.monthName}`).join(', ')
+                    : 'No dates match this CUPS filter.';
+                alert(msg);
+                callback(currentFilteredWords);
+                const featureDiv = document.getElementById('cupsFeature');
+                if (featureDiv) {
+                    featureDiv.classList.add('completed');
+                    featureDiv.dispatchEvent(new Event('completed'));
+                }
+            };
+
+            if (shortBtn) {
+                shortBtn.onclick = () => applyFilter('short');
+                shortBtn.addEventListener('touchstart', (e) => { e.preventDefault(); shortBtn.click(); }, { passive: false });
+            }
+            if (longBtn) {
+                longBtn.onclick = () => applyFilter('long');
+                longBtn.addEventListener('touchstart', (e) => { e.preventDefault(); longBtn.click(); }, { passive: false });
+            }
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    callback(currentFilteredWords);
+                    const featureDiv = document.getElementById('cupsFeature');
+                    if (featureDiv) {
+                        featureDiv.classList.add('completed');
+                        featureDiv.dispatchEvent(new Event('completed'));
+                    }
+                };
+                skipBtn.addEventListener('touchstart', (e) => { e.preventDefault(); skipBtn.click(); }, { passive: false });
             }
             break;
         }
@@ -11900,6 +12104,45 @@ function showChainReactionFeatures() {
     initializeInfoButtons();
 }
 
+function showBirthdayFeatures() {
+    const availableFeatures = document.getElementById('availableFeatures');
+    if (!availableFeatures) return;
+    const normalFeatures = availableFeatures.innerHTML;
+    if (!availableFeatures.dataset.normalFeatures) {
+        availableFeatures.dataset.normalFeatures = normalFeatures;
+    }
+    availableFeatures.innerHTML = `
+        <div class="feature-group">
+            <button class="feature-button" data-feature="numerology" draggable="true">NUMEROLOGY</button>
+            <button class="info-button" data-feature="numerology"><i class="fas fa-info-circle"></i></button>
+        </div>
+        <div class="feature-group">
+            <button class="feature-button" data-feature="cups" draggable="true">CUPS</button>
+            <button class="info-button" data-feature="cups"><i class="fas fa-info-circle"></i></button>
+        </div>
+    `;
+    const backButton = document.querySelector('.available-features .back-button');
+    if (!backButton) {
+        const h3 = document.querySelector('.available-features h3');
+        if (h3 && h3.parentElement) {
+            const backBtn = document.createElement('button');
+            backBtn.className = 'back-button';
+            backBtn.textContent = 'BACK';
+            backBtn.onclick = showNormalFeatures;
+            backBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showNormalFeatures();
+            }, { passive: false });
+            backBtn.style.pointerEvents = 'auto';
+            backBtn.style.zIndex = '100';
+            h3.parentElement.style.position = 'relative';
+            h3.parentElement.insertBefore(backBtn, h3);
+        }
+    }
+    initializeFeatureSelection();
+    initializeInfoButtons();
+}
 function showAlphaNumericFeatures() {
     isAlphaNumericMode = true;
     const availableFeatures = document.getElementById('availableFeatures');
@@ -11986,6 +12229,14 @@ function initializeModeButtons() {
         chainReactionButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             showChainReactionFeatures();
+        }, { passive: false });
+    }
+    const birthdayButton = document.getElementById('birthdayModeButton');
+    if (birthdayButton) {
+        birthdayButton.addEventListener('click', showBirthdayFeatures);
+        birthdayButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            showBirthdayFeatures();
         }, { passive: false });
     }
 }

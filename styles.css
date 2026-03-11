@@ -70,7 +70,7 @@ body {
         display: flex !important;
         align-items: center;
         justify-content: center;
-        min-height: calc(env(safe-area-inset-top) + 44px);
+        min-height: max(calc(env(safe-area-inset-top) + 44px), 10vh);
         padding-top: env(safe-area-inset-top);
         background: #f0f0f0;
         flex-shrink: 0;

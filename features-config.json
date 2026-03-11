@@ -253,6 +253,20 @@
       "analyzeFunction": "const curvedLetters = new Set(['B','C','D','G','J','O','P','Q','R','S','U']); const results = []; for (let pos = 1; pos <= 8; pos++) { const filtered = wordlist.filter(w => { const upperWord = w.toUpperCase(); if (upperWord.length <= pos - 1) return false; for (let i = 0; i < pos - 1; i++) { if (curvedLetters.has(upperWord[i])) return false; } return curvedLetters.has(upperWord[pos - 1]); }); results.push({ param: 'Position ' + pos, wordsLeft: filtered.length, percentFiltered: 100 * (1 - filtered.length / totalWords) }); } return results;"
     },
     {
+      "id": "numerology",
+      "name": "NUMEROLOGY",
+      "displayName": "NUMEROLOGY",
+      "requiresParam": true,
+      "analyzeFunction": "return [{ param: 'Numerology + difference (dates only)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "cups",
+      "name": "CUPS",
+      "displayName": "CUPS",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Filter NUMEROLOGY dates (SHORT/LONG)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "eyeTest",
       "name": "EYE TEST",
       "displayName": "EYE TEST",

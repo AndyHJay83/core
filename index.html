@@ -90,8 +90,8 @@
                 <!-- Workflow name input section -->
                 <div class="workflow-name-section">
                     <input type="text" id="workflowName" class="workflow-name-input" placeholder="Enter workflow name">
-                    <button id="saveWorkflowButton" class="save-workflow-button">Save Workflow</button>
-                    <button id="toggleSavedWorkflows" class="toggle-saved-workflows">View Saved Workflows</button>
+                    <button id="saveWorkflowButton" class="save-workflow-button">Save</button>
+                    <button id="toggleSavedWorkflows" class="toggle-saved-workflows">Saved</button>
                 </div>
 
                 <!-- Features section -->
@@ -1877,16 +1877,18 @@
     </div>
 
     <script>
-        // Prevent double-tap zoom, but do NOT interfere with Settings or info modals
+        // Prevent double-tap zoom, but do NOT interfere with Settings, info modals, or interactive controls
         document.addEventListener('touchend', function(e) {
             const inSettingsModal = e.target.closest('#settingsModal') !== null;
             const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
             if (inSettingsModal || inFeatureInfoModal) {
                 return;
             }
-            if (!e.target.matches('input[type="text"]')) {
-                e.preventDefault();
+            // Allow default behaviour for form controls (inputs, buttons, labels, selects, textareas)
+            if (e.target.closest('input, textarea, select, button, label')) {
+                return;
             }
+            e.preventDefault();
         }, { passive: false });
 
         // Prevent double-tap zoom on specific elements
@@ -1908,7 +1910,7 @@
             }, 0);
         });
 
-        // Prevent bounce effect on iOS, but allow scrolling inside Settings and info modals
+        // Prevent bounce effect on iOS, but allow scrolling inside Settings, info modals, and scrollable app areas
         document.body.addEventListener('touchmove', function(e) {
             // Allow touchmove on inputs and their containers, and scrollable containers
             if (e.target.closest('.results-container') !== null || 
@@ -1917,6 +1919,8 @@
                 e.target.closest('.position-cons-form') !== null ||
                 e.target.closest('#availableFeatures') !== null ||
                 e.target.closest('.available-features') !== null ||
+                e.target.closest('.feature-section') !== null ||
+                e.target.closest('#advLexWordList') !== null ||
                 e.target.closest('#settingsModal') !== null ||
                 e.target.closest('.modal-content') !== null ||
                 e.target.closest('.feature-info-modal') !== null) {
