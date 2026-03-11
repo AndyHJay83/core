@@ -101,11 +101,25 @@ body {
         min-height: 0;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        height: auto;
+        height: 100%;
     }
-    /* Prevent Available Features + chain from collapsing to zero height */
+    /* Prevent Available Features + chain from collapsing; allow flex so full list is visible */
     #workflowCreation .workflow-content {
         min-height: 400px;
+        flex: 1 1 0;
+    }
+    #workflowCreation .available-features {
+        min-height: 0;
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    #workflowCreation #availableFeatures {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
@@ -2142,7 +2156,13 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    margin-bottom: 30px;
+    width: 75%;
+    max-width: 480px;
+    margin: 0 auto 30px auto;
+}
+.selection-container .dropdown {
+    width: 100%;
+    max-width: 100%;
 }
 
 .dropdown-group {
@@ -3335,10 +3355,21 @@ input:checked + .slider:before {
     z-index: 1000;
 }
 
-/* On mobile and in PWA, keep the workflow builder below the Core header/status bar */
+/* On mobile and in PWA, keep the workflow builder below the Core header/status bar and fix height so content is not cut off */
 @media (max-width: 768px), (display-mode: standalone) {
     #workflowCreation {
         top: calc(env(safe-area-inset-top) + 44px);
+        height: calc(100dvh - env(safe-area-inset-top) - 44px);
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    #workflowCreation .workflow-creation {
+        flex: 1 1 0;
+        min-height: 0;
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
@@ -4511,7 +4542,7 @@ input:checked + .slider:before {
     }
 }
 
-/* PWA standalone: enforce 100% width so layout matches browser */
+/* PWA standalone: enforce 100% width so layout matches browser; home dropdowns 75% */
 @media (display-mode: standalone) {
     html, body {
         width: 100% !important;
@@ -4524,6 +4555,16 @@ input:checked + .slider:before {
     }
     #homepage,
     .homepage-content {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    #homepage .selection-container {
+        width: 75% !important;
+        max-width: 480px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    #homepage .selection-container .dropdown {
         width: 100% !important;
         max-width: 100% !important;
     }
