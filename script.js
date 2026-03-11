@@ -3624,13 +3624,33 @@ function createNumerologyFeature() {
     div.innerHTML = `
         <h2 class="feature-title">NUMEROLOGY</h2>
         <p style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">Enter numerology number (1–9) and difference. Finds dates in the year.</p>
-        <div class="input-group">
-            <label for="numerologyInput">Numerology number (1–9):</label>
-            <input type="number" id="numerologyInput" placeholder="1–9" min="1" max="9" value="">
-            <label for="numerologyDifferenceInput">Difference:</label>
-            <input type="number" id="numerologyDifferenceInput" placeholder="0–11" min="0" max="11" value="">
-            <button id="numerologySubmitButton">SUBMIT</button>
-            <button id="numerologySkipButton" class="skip-button">SKIP</button>
+        <div class="numerology-form">
+            <div class="numerology-row">
+                <label for="numerologyInput">Numerology Number (1–9):</label>
+                <input
+                    type="number"
+                    id="numerologyInput"
+                    placeholder="1–9"
+                    min="1"
+                    max="9"
+                    value=""
+                >
+            </div>
+            <div class="numerology-row">
+                <label for="numerologyDifferenceInput">Difference:</label>
+                <input
+                    type="number"
+                    id="numerologyDifferenceInput"
+                    placeholder="0–11"
+                    min="0"
+                    max="11"
+                    value=""
+                >
+            </div>
+            <div class="numerology-actions">
+                <button id="numerologySubmitButton">SUBMIT</button>
+                <button id="numerologySkipButton" class="skip-button">SKIP</button>
+            </div>
         </div>
         <div id="numerologyMessage" class="position-cons-message" style="margin-top: 8px;"></div>
     `;
@@ -6197,6 +6217,13 @@ function setupFeatureListeners(feature, callback, options) {
                     return;
                 }
                 setMessage(`NUMEROLOGY stored ${dates.length} date(s).`, false);
+                const birthdayResultsEl = document.getElementById('birthdayResults');
+                if (birthdayResultsEl) {
+                    const summary = dates
+                        .map(d => `${d.day} ${d.monthName}`)
+                        .join(', ');
+                    birthdayResultsEl.textContent = summary || 'No dates found.';
+                }
                 callback(currentFilteredWords);
                 const featureDiv = document.getElementById('numerologyFeature');
                 if (featureDiv) {
@@ -6248,7 +6275,12 @@ function setupFeatureListeners(feature, callback, options) {
                 const msg = filtered.length
                     ? filtered.map(d => `${d.day} ${d.monthName}`).join(', ')
                     : 'No dates match this CUPS filter.';
-                alert(msg);
+                const birthdayResultsEl = document.getElementById('birthdayResults');
+                if (birthdayResultsEl) {
+                    birthdayResultsEl.textContent = msg;
+                } else {
+                    alert(msg);
+                }
                 callback(currentFilteredWords);
                 const featureDiv = document.getElementById('cupsFeature');
                 if (featureDiv) {
