@@ -69,6 +69,7 @@ const SOLOGRAM_WORD_GROUPS = {
     moabt: { label: 'MOABT', words: ['LOUDSPEAKER', 'KITCHENWARE', 'UNDERWEAR', 'ILLUSTRATION', 'RECEPTIONIST', 'FIRECRACKER', 'MOUNTAINSIDE', 'NEWSPAPER', 'EYEGLASSES', 'TELEVISION', 'BARTENDER', 'DRUGSTORE', 'OPTOMETRIST', 'VIDEOCASSETTE', 'WEIGHTLIFTER', 'HANDKERCHIEF', 'SNOWFLAKES', 'GRAVEYARD', 'APARTMENT', 'PHOTOGRAPHER', 'CANDLESTICK', 'JACKHAMMER'] },
     brushwood: { label: 'BRUSHWOOD', words: ['ABSENTMINDEDLY', 'BRILLIANTLY', 'CANDLELIGHT', 'DISQUIETING', 'EMBARRASSMENT', 'FLABBERGASTED', 'GRANDFATHERLY', 'HALFHEARTEDLY', 'JUDGMENTALLY', 'KNOWLEDGEABLE', 'LIGHTHEARTEDLY', 'PREDETERMINED', 'RECOMMENDATION', 'THUNDERSTRUCK', 'ZESTFULNESS'] },
     glance: { label: 'GLANCE', words: ['ECONOMISTS', 'GRANDCHILDREN', 'HEARTBREAKINGLY', 'INDEPENDENCE', 'POSSIBILITIES', 'SPORTSMANSHIP', 'THOUGHTLESSLY', 'UNCOMFORTABLY'] },
+    months: { label: 'MONTHS', words: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'] },
     other: { label: 'OTHER', words: ['CANDELABRA', 'WILLOWHERB', 'STRAIGHTFORWARD', 'TEMPERATURE', 'HEADSCARF', 'JOHANNESBURG', 'POTPOURRI', 'SCHOOLWORK', 'SCHOOLGIRL', 'THUNDERSTORM', 'PEPPERCORN', 'SUPERHERO', 'SUPERSHARP', 'TROUBLEMAKER', 'HEADQUARTERS', 'SWEETHEART', 'TOSHIHARU', 'ANNIVERSARY', 'FLATLINERZ'] }
 };
 function getSologramSecondaryWords() {
@@ -2461,21 +2462,6 @@ async function executeWorkflow(steps) {
         
         // Show final results
         displayResults(currentFilteredWords);
-        if (lastAtlasColoursCount != null) {
-            const names = getApplicableAtlasColourNames(currentFilteredWords);
-            if (names.length > 0) {
-                const resultsContainer = document.getElementById('results');
-                if (resultsContainer) {
-                    const p = document.createElement('p');
-                    p.className = 'atlas-applicable-colours';
-                    p.style.color = 'red';
-                    p.style.marginTop = '16px';
-                    p.style.fontWeight = 'bold';
-                    p.textContent = 'Applicable colours: ' + names.join(', ');
-                    resultsContainer.appendChild(p);
-                }
-            }
-        }
     } catch (error) {
         console.error('Error executing workflow:', error);
         throw error;
@@ -10041,6 +10027,7 @@ function displayResults(words) {
                 `;
                 updateSologramOverlay(words);
                 updateT9DefinitesOverlay(words);
+                attachAtlasColoursHandlers(words);
             });
         }
     } else {
@@ -10138,6 +10125,7 @@ function displayResults(words) {
                 });
             }
         }
+        attachAtlasColoursHandlers(words);
     }
     
     // Clear SCRABBLE1 highlight set so next display doesn't reuse it
@@ -10327,6 +10315,64 @@ function getApplicableAtlasColourNames(words) {
         }
     }
     return Array.from(seen).sort().map(ch => ATLAS_COLOUR_NAMES[ch]).filter(Boolean);
+}
+
+/** Attach click handlers / auto-display for ATLAS applicable colours in results. */
+function attachAtlasColoursHandlers(words) {
+    if (lastAtlasColoursCount == null) return; // ATLAS (Colours) not used
+    if (!Array.isArray(words) || words.length === 0) return;
+
+    const resultsContainer = document.getElementById('results');
+    if (!resultsContainer) return;
+
+    let info = document.getElementById('atlasApplicableColours');
+    if (!info) {
+        info = document.createElement('p');
+        info.id = 'atlasApplicableColours';
+        info.className = 'atlas-applicable-colours';
+        info.style.color = 'red';
+        info.style.marginTop = '16px';
+        info.style.fontWeight = 'bold';
+        resultsContainer.appendChild(info);
+    }
+    info.textContent = '';
+    info.style.display = 'none';
+
+    const list = resultsContainer.querySelector('ul.word-list');
+    if (!list) return;
+    const items = Array.from(list.querySelectorAll('li'));
+    if (!items.length) return;
+
+    const getWordFromLi = (li) => {
+        if (li.dataset && li.dataset.word) return li.dataset.word;
+        return (li.textContent || '').trim();
+    };
+
+    if (items.length === 1) {
+        const word = getWordFromLi(items[0]);
+        const names = getApplicableAtlasColourNames([word]);
+        if (names.length > 0) {
+            info.textContent = 'Applicable colours: ' + names.join(', ');
+            info.style.display = '';
+        }
+    } else {
+        items.forEach(li => {
+            const word = getWordFromLi(li);
+            const handler = (e) => {
+                // Don't interfere with other click handlers like T9 copy,
+                // just update the colours information.
+                const names = getApplicableAtlasColourNames([word]);
+                if (names.length > 0) {
+                    info.textContent = 'Applicable colours: ' + names.join(', ');
+                } else {
+                    info.textContent = 'Applicable colours: (none)';
+                }
+                info.style.display = '';
+            };
+            li.addEventListener('click', handler);
+            li.addEventListener('touchstart', handler, { passive: true });
+        });
+    }
 }
 
 // --- Letter Lying: letter presence in word (any position) ---
