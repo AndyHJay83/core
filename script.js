@@ -10443,61 +10443,83 @@ function displayResults(words) {
             if (shouldAutoShowT9 || userShowT9ByLongPress) {
                 // For 10 or fewer: clicking copies T9 string to clipboard
                 const wordElements = resultsContainer.querySelectorAll('.word-with-t9');
+                const TAP_MOVE_THRESHOLD = 10;
                 wordElements.forEach(li => {
+                    const doCopyT9 = () => {
+                        const word = li.dataset.word;
+                        const t9String = t9StringsMap.get(word) || wordToT9(word);
+                        navigator.clipboard.writeText(t9String).then(() => {
+                            li.style.backgroundColor = '#d4edda';
+                            setTimeout(() => { li.style.backgroundColor = ''; }, 300);
+                        }).catch(err => { console.error('Failed to copy to clipboard:', err); });
+                    };
                     const handleWordClick = (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const word = li.dataset.word;
-                        const t9String = t9StringsMap.get(word) || wordToT9(word);
-                        
-                        // Copy to clipboard
-                        navigator.clipboard.writeText(t9String).then(() => {
-                            // Show brief feedback
-                            li.style.backgroundColor = '#d4edda'; // Light green to indicate copied
-                            setTimeout(() => {
-                                li.style.backgroundColor = '';
-                            }, 300);
-                        }).catch(err => {
-                            console.error('Failed to copy to clipboard:', err);
-                        });
+                        doCopyT9();
                     };
-                    
-                    // Add both click and touch events for mobile/PWA support
+                    let touchStartX = 0, touchStartY = 0, touchMoved = false;
                     li.addEventListener('click', handleWordClick);
-                    li.addEventListener('touchstart', handleWordClick, { passive: false });
+                    li.addEventListener('touchstart', (e) => {
+                        touchMoved = false;
+                        touchStartX = e.touches[0].clientX;
+                        touchStartY = e.touches[0].clientY;
+                    }, { passive: true });
+                    li.addEventListener('touchmove', (e) => {
+                        if (!touchMoved && e.touches[0]) {
+                            const dx = Math.abs(e.touches[0].clientX - touchStartX);
+                            const dy = Math.abs(e.touches[0].clientY - touchStartY);
+                            if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) touchMoved = true;
+                        }
+                    }, { passive: true });
+                    li.addEventListener('touchend', (e) => {
+                        if (!touchMoved) {
+                            e.preventDefault();
+                            doCopyT9();
+                        }
+                    }, { passive: false });
                 });
             } else {
                 // For 11-20: clicking reveals T9 string (replaces word text)
                 const wordElements = resultsContainer.querySelectorAll('.word-clickable');
+                const TAP_MOVE_THRESHOLD = 10;
                 wordElements.forEach(li => {
+                    const doRevealAndCopyT9 = () => {
+                        const word = li.dataset.word;
+                        const t9String = t9StringsMap.get(word) || wordToT9(word);
+                        const firstFour = t9String.substring(0, 4);
+                        const rest = t9String.substring(4);
+                        li.innerHTML = `<span style="color: red; font-weight: bold;">${firstFour}</span>${rest}`;
+                        navigator.clipboard.writeText(t9String).then(() => {
+                            li.style.backgroundColor = '#d4edda';
+                            setTimeout(() => { li.style.backgroundColor = ''; }, 300);
+                        }).catch(err => { console.error('Failed to copy to clipboard:', err); });
+                    };
                     const handleWordClick = (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const word = li.dataset.word;
-                        const t9String = t9StringsMap.get(word) || wordToT9(word);
-                        
-                        // Highlight first 4 digits in red
-                        const firstFour = t9String.substring(0, 4);
-                        const rest = t9String.substring(4);
-                        
-                        // Replace text with T9 string, highlighting first 4 in red
-                        li.innerHTML = `<span style="color: red; font-weight: bold;">${firstFour}</span>${rest}`;
-                        
-                        // Copy to clipboard
-                        navigator.clipboard.writeText(t9String).then(() => {
-                            // Optional: Show brief feedback
-                            li.style.backgroundColor = '#d4edda'; // Light green to indicate copied
-                            setTimeout(() => {
-                                li.style.backgroundColor = '';
-                            }, 300);
-                        }).catch(err => {
-                            console.error('Failed to copy to clipboard:', err);
-                        });
+                        doRevealAndCopyT9();
                     };
-                    
-                    // Add both click and touch events for mobile/PWA support
+                    let touchStartX = 0, touchStartY = 0, touchMoved = false;
                     li.addEventListener('click', handleWordClick);
-                    li.addEventListener('touchstart', handleWordClick, { passive: false });
+                    li.addEventListener('touchstart', (e) => {
+                        touchMoved = false;
+                        touchStartX = e.touches[0].clientX;
+                        touchStartY = e.touches[0].clientY;
+                    }, { passive: true });
+                    li.addEventListener('touchmove', (e) => {
+                        if (!touchMoved && e.touches[0]) {
+                            const dx = Math.abs(e.touches[0].clientX - touchStartX);
+                            const dy = Math.abs(e.touches[0].clientY - touchStartY);
+                            if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) touchMoved = true;
+                        }
+                    }, { passive: true });
+                    li.addEventListener('touchend', (e) => {
+                        if (!touchMoved) {
+                            e.preventDefault();
+                            doRevealAndCopyT9();
+                        }
+                    }, { passive: false });
                 });
             }
         }
