@@ -105,6 +105,8 @@ let t9OneLieLastActualLength = 0; // When 1 LIE follows LAST: length of t9LastAc
 
 // Track if current workflow contains any T9 features
 let workflowHasT9Feature = false;
+// Tap-to-hold on wordlist to show T9 strings under each word (toggle)
+let userShowT9ByLongPress = false;
 // T9 B-IDENTITY definites overlay: only show after B-IDENTITY has been submitted
 let workflowHasT9B = false;
 let t9BSubmitted = false;
@@ -2063,6 +2065,7 @@ async function executeWorkflow(steps) {
         // T9 B-IDENTITY definites overlay: only after B-IDENTITY has been submitted
         workflowHasT9B = steps.some(step => step.feature === 't9B' || step.feature === 't9OneLie');
         t9BSubmitted = false;
+        userShowT9ByLongPress = false; // Reset tap-to-hold T9 when starting a run
         // SOLOGRAM: clear last Y/N and set flag if this workflow includes SOLOGRAM
         lastSologramYnString = null;
         workflowHasSologram = steps.some(step => step.feature === 'sologram');
@@ -10310,11 +10313,16 @@ function displayResults(words) {
     updateWordCount(words.length);
     updateExportButtonState(words);
     
-    // Calculate T9 strings if needed (only if workflow has T9 features)
+    // Calculate T9 strings if needed (workflow has T9 features, or user tapped to hold)
     const shouldShowT9 = workflowHasT9Feature && words.length <= 20;
     const shouldAutoShowT9 = workflowHasT9Feature && words.length <= 10; // Auto-display for 10 or fewer
     if (shouldShowT9) {
         calculateT9Strings(words);
+    }
+    if (userShowT9ByLongPress && words.length > 0) {
+        words.forEach(w => {
+            if (!t9StringsMap.has(w)) t9StringsMap.set(w, wordToT9(w));
+        });
     }
     
     // For large lists, use virtual scrolling approach
@@ -10323,8 +10331,15 @@ function displayResults(words) {
         const initialWords = words.slice(0, 1000);
         const remainingCount = words.length - 1000;
         
-        // Create HTML string for initial words (SCRABBLE1 exact-match highlight)
+        // Create HTML string for initial words (SCRABBLE1 exact-match highlight; T9 if tap-to-hold)
         const wordListHTML = initialWords.map(word => {
+            const scrabble1Cls = exactHighlightSet.has(word) ? ' scrabble1-exact' : '';
+            if (userShowT9ByLongPress) {
+                const t9String = t9StringsMap.get(word) || wordToT9(word);
+                const firstFour = t9String.substring(0, 4);
+                const rest = t9String.substring(4);
+                return `<li class="word-with-t9${scrabble1Cls}" data-word="${word}"><div style="font-weight: bold; margin-bottom: 8px;">${word}</div><div style="border-top: 1px solid #ddd; margin: 8px 0; padding-top: 8px;"><span style="color: red; font-weight: bold;">${firstFour}</span>${rest}</div></li>`;
+            }
             const cls = exactHighlightSet.has(word) ? ' class="scrabble1-exact"' : '';
             return `<li${cls}>${word}</li>`;
         }).join('');
@@ -10344,8 +10359,15 @@ function displayResults(words) {
         const loadMoreBtn = document.getElementById('loadMoreBtn');
         if (loadMoreBtn) {
             loadMoreBtn.addEventListener('click', () => {
-                // Show all words (preserve SCRABBLE1 highlight)
+                // Show all words (preserve SCRABBLE1 highlight; T9 if tap-to-hold)
                 const allWordsHTML = words.map(word => {
+                    const scrabble1Cls = exactHighlightSet.has(word) ? ' scrabble1-exact' : '';
+                    if (userShowT9ByLongPress) {
+                        const t9String = t9StringsMap.get(word) || wordToT9(word);
+                        const firstFour = t9String.substring(0, 4);
+                        const rest = t9String.substring(4);
+                        return `<li class="word-with-t9${scrabble1Cls}" data-word="${word}"><div style="font-weight: bold; margin-bottom: 8px;">${word}</div><div style="border-top: 1px solid #ddd; margin: 8px 0; padding-top: 8px;"><span style="color: red; font-weight: bold;">${firstFour}</span>${rest}</div></li>`;
+                    }
                     const cls = exactHighlightSet.has(word) ? ' class="scrabble1-exact"' : '';
                     return `<li${cls}>${word}</li>`;
                 }).join('');
@@ -10363,8 +10385,8 @@ function displayResults(words) {
         // For smaller lists, show all words at once using innerHTML
         const wordListHTML = words.map(word => {
             const scrabble1Cls = exactHighlightSet.has(word) ? ' scrabble1-exact' : '';
-            if (shouldAutoShowT9) {
-                // Auto-display both word and T9 string for 10 or fewer words
+            if (shouldAutoShowT9 || userShowT9ByLongPress) {
+                // Auto-display or tap-to-hold: word and T9 string (first 4 digits in red)
                 const t9String = t9StringsMap.get(word) || wordToT9(word);
                 const firstFour = t9String.substring(0, 4);
                 const rest = t9String.substring(4);
@@ -10391,9 +10413,9 @@ function displayResults(words) {
             </ul>
         `;
         
-        // Add click handlers for words if T9 features are enabled
-        if (shouldShowT9) {
-            if (shouldAutoShowT9) {
+        // Add click handlers for words if T9 features are enabled or tap-to-hold is on
+        if (shouldShowT9 || userShowT9ByLongPress) {
+            if (shouldAutoShowT9 || userShowT9ByLongPress) {
                 // For 10 or fewer: clicking copies T9 string to clipboard
                 const wordElements = resultsContainer.querySelectorAll('.word-with-t9');
                 wordElements.forEach(li => {
@@ -10459,6 +10481,42 @@ function displayResults(words) {
     
     // Clear SCRABBLE1 highlight set so next display doesn't reuse it
     scrabble1ExactMatchSet = new Set();
+    
+    // Tap-to-hold on wordlist (top section): hold 1s to toggle T9 strings under each word
+    if (!resultsContainer._t9LongPressAttached) {
+        resultsContainer._t9LongPressAttached = true;
+        const LONG_PRESS_MS = 1000;
+        const MOVE_THRESHOLD = 10;
+        let longPressTimer = null;
+        let startX = 0, startY = 0;
+        const clearTimer = () => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        };
+        const onPointerDown = (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            startX = e.clientX;
+            startY = e.clientY;
+            clearTimer();
+            longPressTimer = setTimeout(() => {
+                longPressTimer = null;
+                userShowT9ByLongPress = !userShowT9ByLongPress;
+                displayResults(currentFilteredWords);
+            }, LONG_PRESS_MS);
+        };
+        const onPointerMove = (e) => {
+            if (!longPressTimer) return;
+            if (Math.abs(e.clientX - startX) > MOVE_THRESHOLD || Math.abs(e.clientY - startY) > MOVE_THRESHOLD) clearTimer();
+        };
+        const onPointerUp = () => clearTimer();
+        const onPointerCancel = () => clearTimer();
+        resultsContainer.addEventListener('pointerdown', onPointerDown, { passive: true });
+        resultsContainer.addEventListener('pointermove', onPointerMove, { passive: true });
+        resultsContainer.addEventListener('pointerup', onPointerUp, { passive: true });
+        resultsContainer.addEventListener('pointercancel', onPointerCancel, { passive: true });
+    }
     
     // SOLOGRAM: show possible pointed-to words at bottom of results when workflow has SOLOGRAM
     updateSologramOverlay(words);
