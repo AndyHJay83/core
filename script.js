@@ -194,6 +194,7 @@ const DEFAULT_SETTINGS = {
     alphaSwapPov: false,       // OFF: Left=toward A, Right=toward Z; ON: swap
     eyeTestFirstLetter: 'E',
     calculusMode: 'abstract',  // 'abstract' (digits 0–9) or 'curvesStraight' (C/S)
+    advLexIgnorePosition1: false,  // ADV-LEX: when ON, do not suggest Position 1; use next best position
 };
 
 const DEFAULT_LETTER_LYING_STRING = 'NTRLCSAIEUO';
@@ -7024,8 +7025,9 @@ function setupFeatureListeners(feature, callback, options) {
                 break;
             }
 
-            // Find position with most variance and update display
-            const { position, letters } = findPositionWithMostVariance(currentFilteredWords);
+            // Find position with most variance and update display (optionally ignore Position 1 per Settings)
+            const ignorePos1 = !!(appSettings && appSettings.advLexIgnorePosition1);
+            const { position, letters } = findPositionWithMostVariance(currentFilteredWords, ignorePos1);
             const advLexPosition = position;
 
             if (positionNumberEl) {
@@ -11116,30 +11118,32 @@ function findLeastVariancePosition(words, startPos, endPos) {
 }
 
 // Function to find position with most variance
-function findPositionWithMostVariance(words) {
+// ignorePosition1: when true, do not pick position 0 (Position 1); use next best of positions 1–5
+function findPositionWithMostVariance(words, ignorePosition1) {
     // Initialize array to store unique letters for each position
     const positionLetters = Array(5).fill().map(() => new Set());
-    
+
     // Collect unique letters for each position
     words.forEach(word => {
         for (let i = 0; i < Math.min(5, word.length); i++) {
             positionLetters[i].add(word[i].toUpperCase());
         }
     });
-    
-    // Find position with most unique letters
+
+    // Find position with most unique letters (optionally skip position 0)
     let maxVariance = -1;
     let result = -1;
     let resultLetters = [];
-    
+
     positionLetters.forEach((letters, index) => {
+        if (ignorePosition1 && index === 0) return;
         if (letters.size > maxVariance) {
             maxVariance = letters.size;
             result = index;
             resultLetters = Array.from(letters).sort();
         }
     });
-    
+
     return {
         position: result,
         letters: resultLetters
@@ -13367,6 +13371,15 @@ function initSettingsUI() {
         zeroCurvesApproxToggle.checked = !!(appSettings && appSettings.zeroCurvesApprox);
         zeroCurvesApproxToggle.addEventListener('change', () => {
             appSettings.zeroCurvesApprox = zeroCurvesApproxToggle.checked;
+            saveAppSettings();
+        });
+    }
+
+    const advLexIgnorePosition1Toggle = document.getElementById('advLexIgnorePosition1Toggle');
+    if (advLexIgnorePosition1Toggle) {
+        advLexIgnorePosition1Toggle.checked = !!(appSettings && appSettings.advLexIgnorePosition1);
+        advLexIgnorePosition1Toggle.addEventListener('change', () => {
+            appSettings.advLexIgnorePosition1 = advLexIgnorePosition1Toggle.checked;
             saveAppSettings();
         });
     }

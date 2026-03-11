@@ -1805,6 +1805,32 @@ input[type="text"] {
     width: 100%;
 }
 
+/* Settings page: larger, clearer dropdowns (roughly double size) */
+#settingsPage select,
+.settings-page-inner select,
+.settings-sections select {
+    font-size: 20px;
+    padding: 14px 18px;
+    min-height: 48px;
+    border: 2px solid #555;
+    border-radius: 8px;
+    background-color: #fff;
+    color: #222;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+#settingsPage select:focus,
+.settings-page-inner select:focus,
+.settings-sections select:focus {
+    outline: none;
+    border-color: #1B5E20;
+    box-shadow: 0 0 0 2px rgba(27, 94, 32, 0.25);
+}
+
 .close-button {
     position: absolute;
     right: 20px;
