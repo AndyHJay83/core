@@ -11976,8 +11976,8 @@ function initializeFeatureSelection() {
                 if (!hasMoved) {
                     const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
                     const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
-                    // If moved more than 10px, consider it a scroll
-                    if (deltaX > 10 || deltaY > 10) {
+                    // If moved more than 18px, consider it a scroll (reduces accidental taps)
+                    if (deltaX > 18 || deltaY > 18) {
                         hasMoved = true;
                     }
                 }
@@ -12287,24 +12287,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize mode folder buttons (PIN-NACLE, CHAIN REACTION, Alpha-Numeric)
 // Must be called after initializeFeatureSelection when content is restored (e.g. after BACK)
+// Uses touch move threshold so scrolling doesn't trigger selection
 function initializeModeButtons() {
+    const TOUCH_MOVE_THRESHOLD = 18; // px - treat as scroll above this
+    const TAP_MAX_MS = 300;
+
+    function addModeButtonTouchHandlers(button, onTap) {
+        let touchStartX = 0, touchStartY = 0, touchStartTime = 0, hasMoved = false;
+        button.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            hasMoved = false;
+        }, { passive: true });
+        button.addEventListener('touchmove', (e) => {
+            if (!hasMoved) {
+                const dx = Math.abs(e.touches[0].clientX - touchStartX);
+                const dy = Math.abs(e.touches[0].clientY - touchStartY);
+                if (dx > TOUCH_MOVE_THRESHOLD || dy > TOUCH_MOVE_THRESHOLD) hasMoved = true;
+            }
+        }, { passive: true });
+        button.addEventListener('touchend', (e) => {
+            if (!hasMoved && (Date.now() - touchStartTime) < TAP_MAX_MS) {
+                e.preventDefault();
+                onTap();
+            }
+        }, { passive: false });
+    }
+
     const t9Button = document.getElementById('t9ModeButton');
     if (t9Button) {
         t9Button.addEventListener('click', showT9Features);
-        t9Button.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+        addModeButtonTouchHandlers(t9Button, () => {
             showT9Features();
             const headerBack = document.getElementById('workflowBuilderBackButton');
             if (headerBack) headerBack.style.display = 'inline-block';
-        }, { passive: false });
+        });
     }
     const alphanumericButton = document.getElementById('alphanumericModeButton');
     if (alphanumericButton) {
         alphanumericButton.addEventListener('click', showAlphaNumericFeatures);
-        alphanumericButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            showAlphaNumericFeatures();
-        }, { passive: false });
+        addModeButtonTouchHandlers(alphanumericButton, showAlphaNumericFeatures);
     }
     const chainReactionButton = document.getElementById('chainReactionModeButton');
     if (chainReactionButton) {
@@ -12313,12 +12336,11 @@ function initializeModeButtons() {
             const headerBack = document.getElementById('workflowBuilderBackButton');
             if (headerBack) headerBack.style.display = 'inline-block';
         });
-        chainReactionButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+        addModeButtonTouchHandlers(chainReactionButton, () => {
             showChainReactionFeatures();
             const headerBack = document.getElementById('workflowBuilderBackButton');
             if (headerBack) headerBack.style.display = 'inline-block';
-        }, { passive: false });
+        });
     }
     const birthdayButton = document.getElementById('birthdayModeButton');
     if (birthdayButton) {
@@ -12327,12 +12349,11 @@ function initializeModeButtons() {
             const headerBack = document.getElementById('workflowBuilderBackButton');
             if (headerBack) headerBack.style.display = 'inline-block';
         });
-        birthdayButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+        addModeButtonTouchHandlers(birthdayButton, () => {
             showBirthdayFeatures();
             const headerBack = document.getElementById('workflowBuilderBackButton');
             if (headerBack) headerBack.style.display = 'inline-block';
-        }, { passive: false });
+        });
     }
 }
 
@@ -12698,7 +12719,13 @@ function showWorkflowCreation() {
     document.getElementById('workflowCreation').style.display = 'block';
     if (exportButton) exportButton.style.display = 'none'; /* Export floppy only in PERFORM */
     var backBtn = document.getElementById('workflowBuilderBackButton');
-    if (backBtn) backBtn.style.display = 'none';
+    if (backBtn) {
+        backBtn.style.display = 'none';
+        var af = document.getElementById('availableFeatures');
+        if (af && af.dataset.normalFeatures && af.innerHTML !== af.dataset.normalFeatures) {
+            backBtn.style.display = 'inline-block';
+        }
+    }
     var savedWorkflows = document.getElementById('savedWorkflows');
     if (savedWorkflows) savedWorkflows.style.display = 'none';
     initializeInfoButtons();
@@ -13853,7 +13880,7 @@ function initializeFeatureSelection() {
                     const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
                     const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
                     // If moved more than 10px, consider it a scroll
-                    if (deltaX > 10 || deltaY > 10) {
+                    if (deltaX > 18 || deltaY > 18) {
                         hasMoved = true;
                     }
                 }

@@ -66,11 +66,12 @@ body {
     body {
         padding-top: 0;
     }
+    /* Same short header height as Workflow Builder on all pages */
     .pwa-header-spacer {
         display: flex !important;
         align-items: center;
         justify-content: center;
-        min-height: max(calc(env(safe-area-inset-top) + 26px), 6vh);
+        min-height: calc(env(safe-area-inset-top) + 26px);
         padding-top: env(safe-area-inset-top);
         background: #f0f0f0;
         flex-shrink: 0;
@@ -102,7 +103,7 @@ body {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         height: 100%;
-        padding-bottom: min(40vh, 320px);
+        padding-bottom: min(50vh, 420px);
     }
     /* Prevent Available Features + chain from collapsing; allow flex so full list is visible */
     #workflowCreation .workflow-content {
@@ -3371,7 +3372,7 @@ input:checked + .slider:before {
         height: 100%;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: min(40vh, 320px);
+        padding-bottom: min(50vh, 420px);
     }
 }
 
