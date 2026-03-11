@@ -28,14 +28,14 @@
         </div>
         <!-- PWA/mobile: permanent banner so content clears status bar (homepage, workflow builder, perform) -->
         <div class="pwa-header-spacer" aria-hidden="true">
-            <span class="pwa-header-spacer-title">The Core</span>
+            <span class="pwa-header-spacer-title"></span>
         </div>
         
         <!-- Homepage Content -->
         <div id="homepage" class="homepage-content">
             <div class="selection-container">
                 <div class="dropdown-group">
-                    <label for="workflowSelect">Select Workflow:</label>
+                    <label for="workflowSelect">WORKFLOW</label>
                     <div class="dropdown">
                         <select id="workflowSelect">
                             <option value="">Select a workflow...</option>
@@ -49,7 +49,7 @@
                 </div>
                 
                 <div class="dropdown-group">
-                    <label for="wordlistSelect">Select Wordlist:</label>
+                    <label for="wordlistSelect">WORDLIST</label>
                     <div class="dropdown">
                         <select id="wordlistSelect" class="wordlist-select">
                             <option value="4000" selected>4000 Wordlist</option>
@@ -81,17 +81,24 @@
         <!-- Workflow Creation Page -->
         <div id="workflowCreation" style="display: none;">
             <div class="workflow-creation">
-                <!-- Header with Create/Cancel buttons -->
-                <div class="workflow-header">
-                    <h2>Create Workflow</h2>
-                    <button id="cancelWorkflowButton" class="cancel-button">Cancel</button>
+                <!-- Action bar: Home (top left), BACK when in group (under Home), CANCEL (top right). Export floppy only in PERFORM. -->
+                <div class="workflow-builder-actions" id="workflowBuilderActions">
+                    <div class="workflow-builder-actions-left">
+                        <button type="button" id="workflowBuilderHomeButton" class="workflow-builder-home-btn" title="Home">HOME</button>
+                        <button type="button" id="workflowBuilderBackButton" class="workflow-builder-back-btn" title="Back to features" style="display: none;">BACK</button>
+                    </div>
+                    <div class="workflow-builder-actions-right">
+                        <button type="button" id="cancelWorkflowButton" class="cancel-button">CANCEL</button>
+                    </div>
                 </div>
-
-                <!-- Workflow name input section -->
-                <div class="workflow-name-section">
-                    <input type="text" id="workflowName" class="workflow-name-input" placeholder="Enter workflow name">
-                    <button id="saveWorkflowButton" class="save-workflow-button">Save</button>
-                    <button id="toggleSavedWorkflows" class="toggle-saved-workflows">Saved</button>
+                <!-- Centred title and form -->
+                <div class="workflow-builder-form-wrap">
+                    <h2 class="workflow-builder-title">WORKFLOW BUILDER</h2>
+                    <div class="workflow-name-section workflow-name-section-centred">
+                        <input type="text" id="workflowName" class="workflow-name-input" placeholder="Enter workflow name">
+                        <button id="saveWorkflowButton" class="save-workflow-button">SAVE</button>
+                        <button id="toggleSavedWorkflows" class="toggle-saved-workflows">SAVED WORKFLOWS</button>
+                    </div>
                 </div>
 
                 <!-- Features section -->
@@ -957,35 +964,38 @@
                     </div>
                 </div>
 
-                <!-- T9 1 LIE (L4) feature -->
-                <div id="t9OneLieFeature" class="feature-section" style="display: none;">
+                <!-- T9 1 LIE (L4) feature (merged with B-IDENTITY) -->
+                <div id="t9OneLieFeature" class="feature-section t9-one-lie-merged" style="display: none;">
                     <h2 class="feature-title">1 LIE (L4)</h2>
-                    <div class="t9-one-lie-row" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                        <button class="t9-one-lie-btn" data-digit="2">2</button>
-                        <button class="t9-one-lie-btn" data-digit="3">3</button>
-                        <button class="t9-one-lie-btn" data-digit="4">4</button>
-                        <button class="t9-one-lie-btn" data-digit="5">5</button>
-                        <button class="t9-one-lie-btn" data-digit="6">6</button>
-                        <button class="t9-one-lie-btn" data-digit="7">7</button>
-                        <button class="t9-one-lie-btn" data-digit="8">8</button>
-                        <button class="t9-one-lie-btn" data-digit="9">9</button>
-                        <button class="t9-one-lie-btn blank-btn" data-digit="BLANK" style="background-color: #f44336; color: white; font-weight: bold;">B</button>
-                    </div>
-                    <div class="t9-one-lie-display-row" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 12px;">
-                        <div id="t9OneLieDisplay" style="display: flex; justify-content: center; align-items: center; min-height: 44px; min-width: 120px; padding: 0 10px; font-size: 24px; font-weight: bold; color: #1B5E20;">
-                            <span id="t9OneLieString">-</span>
+                    <div id="t9OneLiePhase1" class="t9-one-lie-phase">
+                        <div class="t9-one-lie-row">
+                            <button class="t9-one-lie-btn" data-digit="2">2</button>
+                            <button class="t9-one-lie-btn" data-digit="3">3</button>
+                            <button class="t9-one-lie-btn" data-digit="4">4</button>
+                            <button class="t9-one-lie-btn" data-digit="5">5</button>
+                            <button class="t9-one-lie-btn" data-digit="6">6</button>
+                            <button class="t9-one-lie-btn" data-digit="7">7</button>
+                            <button class="t9-one-lie-btn" data-digit="8">8</button>
+                            <button class="t9-one-lie-btn" data-digit="9">9</button>
+                            <button class="t9-one-lie-btn blank-btn" data-digit="BLANK">B</button>
                         </div>
-                        <button id="t9OneLieBackspaceButton" class="t9-one-lie-btn t9-backspace-btn" title="Remove last digit">⌫</button>
-                    </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; gap: 10px;">
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                        <div class="t9-one-lie-display-row">
+                            <div id="t9OneLieDisplay" class="t9-one-lie-display">
+                                <span id="t9OneLieString">-</span>
+                            </div>
+                            <button id="t9OneLieBackspaceButton" class="t9-one-lie-btn t9-backspace-btn" title="Remove last digit">⌫</button>
+                        </div>
+                        <div class="t9-one-lie-actions">
                             <button id="t9OneLieSubmitButton">SUBMIT</button>
                             <button id="t9OneLieResetButton" class="reset-button">RESET</button>
                             <button id="t9OneLieSkipButton" class="skip-button">SKIP</button>
                         </div>
-                        <div id="t9OneLiePossibleDigits" style="margin-top: 15px; padding: 10px; font-size: 14px; color: #666; text-align: center; min-height: 20px;">
-                            <span style="font-weight: bold;">Possible T9 digits for BLANK:</span> <span id="t9OneLiePossibleDigitsList">-</span>
-                        </div>
+                    </div>
+                    <div id="t9OneLiePhase2" class="t9-one-lie-phase t9-one-lie-phase2" style="display: none;">
+                        <p id="t9OneLiePhase2Title" class="t9-one-lie-phase2-title"></p>
+                        <div id="t9OneLieTruthDigits" class="t9-one-lie-truth-digits"></div>
+                        <p id="t9OneLieOverrideLabel" class="t9-one-lie-override-label" style="display: none;">Override lie position:</p>
+                        <div id="t9OneLieOverrideRow" class="t9-one-lie-override-row" style="display: none;"></div>
                     </div>
                 </div>
 
@@ -1044,19 +1054,6 @@
                     </div>
                 </div>
 
-                <!-- T9 B feature -->
-                <div id="t9BFeature" class="feature-section" style="display: none;">
-                    <h2 class="feature-title">B-IDENTITY</h2>
-                    <p style="text-align: center; margin: 20px 0; font-size: 16px; color: #666;">
-                        Select the T9 digit for the BLANK position from 1 LIE (L4)
-                    </p>
-                    <div class="t9-b-row" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                        <!-- Buttons will be dynamically generated -->
-                    </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; gap: 10px;">
-                        <button id="t9BSkipButton" class="skip-button">SKIP</button>
-                    </div>
-                </div>
 
                 <!-- AlphaNumeric feature -->
                 <div id="alphaNumericFeature" class="feature-section" style="display: none;">
@@ -1111,11 +1108,11 @@
             </div>
         </div>
 
-        <!-- Settings Modal -->
-        <div id="settingsModal" class="modal">
-            <div class="modal-content settings-modal-content">
-                <span class="close-button" id="settingsModalClose">&times;</span>
-                <h2 class="settings-modal-title">Settings</h2>
+        <!-- Settings Page -->
+        <div id="settingsPage" class="settings-page-content" style="display: none;">
+            <div class="settings-page-inner">
+                <button type="button" id="settingsBackButton" class="settings-back-btn" title="Back to Home">BACK</button>
+                <h2 class="settings-page-title">Settings</h2>
                 <div class="settings-sections">
                     <div class="settings-section">
                         <h3 class="settings-section-title">LENGTH</h3>
@@ -1794,13 +1791,6 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
-        <div id="t9BInfo" class="feature-info-modal">
-            <div class="feature-info-content">
-                <h3>B-IDENTITY</h3>
-                <p><strong>T9 B-IDENTITY</strong><br>This MUST follow 1 LIE (L4) with a BLANK. Select the correct T9 digit for the BLANK position from the possible options calculated in 1 LIE (L4). The wordlist will be filtered to only include words where the BLANK position matches the selected digit.</p>
-                <button class="close-info-button">&times;</button>
-            </div>
-        </div>
         <div id="alphaNumericInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>AlphaNumeric</h3>
@@ -1882,9 +1872,9 @@
     <script>
         // Prevent double-tap zoom, but do NOT interfere with Settings, info modals, or interactive controls
         document.addEventListener('touchend', function(e) {
-            const inSettingsModal = e.target.closest('#settingsModal') !== null;
+            const inSettingsPage = e.target.closest('#settingsPage') !== null;
             const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
-            if (inSettingsModal || inFeatureInfoModal) {
+            if (inSettingsPage || inFeatureInfoModal) {
                 return;
             }
             // Allow default behaviour for form controls (inputs, buttons, labels, selects, textareas)
@@ -1897,9 +1887,9 @@
         // Prevent double-tap zoom on specific elements
         document.querySelectorAll('button, .results-container').forEach(element => {
             element.addEventListener('touchend', function(e) {
-                const inSettingsModal = e.target.closest('#settingsModal') !== null;
+                const inSettingsPage = e.target.closest('#settingsPage') !== null;
                 const inFeatureInfoModal = e.target.closest('.feature-info-modal') !== null;
-                if (inSettingsModal || inFeatureInfoModal) {
+                if (inSettingsPage || inFeatureInfoModal) {
                     return;
                 }
                 e.preventDefault();
@@ -1924,7 +1914,7 @@
                 e.target.closest('.available-features') !== null ||
                 e.target.closest('.feature-section') !== null ||
                 e.target.closest('#advLexWordList') !== null ||
-                e.target.closest('#settingsModal') !== null ||
+                e.target.closest('#settingsPage') !== null ||
                 e.target.closest('.modal-content') !== null ||
                 e.target.closest('.feature-info-modal') !== null) {
                 return;
@@ -1989,32 +1979,34 @@
             });
         });
 
-        // Settings Modal Functions
+        // Settings Page Functions (full page instead of overlay)
         function showSettings() {
-            document.getElementById('settingsModal').style.display = 'block';
+            document.getElementById('homepage').style.display = 'none';
+            document.getElementById('workflowCreation').style.display = 'none';
+            document.getElementById('workflowExecution').style.display = 'none';
+            var page = document.getElementById('settingsPage');
+            if (page) page.style.display = 'block';
             if (typeof updateOmegaEfficiencySubtitle === 'function') updateOmegaEfficiencySubtitle();
             if (typeof updateAlphaEfficiencySubtitle === 'function') updateAlphaEfficiencySubtitle();
         }
 
         function hideSettings() {
-            document.getElementById('settingsModal').style.display = 'none';
+            document.getElementById('homepage').style.display = 'block';
+            document.getElementById('workflowCreation').style.display = 'none';
+            document.getElementById('workflowExecution').style.display = 'none';
+            var page = document.getElementById('settingsPage');
+            if (page) page.style.display = 'none';
         }
 
         // Close settings when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('settingsModal');
-            if (event.target === modal) {
-                hideSettings();
-            }
-        }
+        // In page mode we don't close Settings by clicking background
 
         // Settings button click handler
         document.getElementById('settingsButton').addEventListener('click', showSettings);
-        const settingsModalCloseEl = document.getElementById('settingsModalClose');
-        if (settingsModalCloseEl) {
-            settingsModalCloseEl.addEventListener('click', hideSettings);
-            // Ensure close works on touch devices even with global touch handlers
-            settingsModalCloseEl.addEventListener('touchstart', function(e) {
+        const settingsBackEl = document.getElementById('settingsBackButton');
+        if (settingsBackEl) {
+            settingsBackEl.addEventListener('click', hideSettings);
+            settingsBackEl.addEventListener('touchstart', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 hideSettings();

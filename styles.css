@@ -162,7 +162,7 @@ body {
 }
 
 /* Main container layout */
-#homepage, #workflowExecution {
+#homepage, #workflowExecution, #settingsPage {
     flex: 1 1 0;
     min-height: 0; /* Important for flex children to allow shrinking */
     background: #fff;
@@ -776,7 +776,7 @@ input:checked + .slider:before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: #fff;
     z-index: 1000;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -883,11 +883,11 @@ input:checked + .slider:before {
 
 /* Settings modal layout */
 .settings-modal-content {
-    max-width: 420px;
+    max-width: 600px;
 }
 .settings-modal-content .settings-modal-title {
-    margin: 0 0 12px 0;
-    font-size: 1.5em;
+    margin: 0 0 16px 0;
+    font-size: 1.6em;
     color: #333;
     padding-right: 30px;
 }
@@ -1347,7 +1347,7 @@ input:checked + .slider:before {
         bottom: 15px;
     }
 
-    #homepage, #workflowExecution {
+    #homepage, #workflowExecution, #settingsPage {
         flex: 1 1 0; /* Use flex instead of fixed height */
         min-height: 0;
     }
@@ -1760,32 +1760,49 @@ input[type="text"] {
     position: relative;
 }
 
-/* Settings modal: ensure content is scrollable on mobile/short viewports */
-#settingsModal {
-    overflow-y: auto;
+/* Settings page (full page, not modal) */
+#settingsPage {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
 }
 
-#settingsModal .settings-modal-content {
-    max-height: 90vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+.settings-page-inner {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* centre all Settings content horizontally */
 }
 
-@media (max-width: 768px) {
-    #settingsModal {
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch;
-        min-height: 100%;
-        display: block;
-    }
-    #settingsModal .settings-modal-content {
-        max-height: 85dvh;
-        overflow-y: scroll !important;
-        -webkit-overflow-scrolling: touch;
-    }
+.settings-back-btn {
+    display: inline-block;
+    margin-bottom: 16px;
+    padding: 10px 16px;
+    background: #1B5E20;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.settings-back-btn:hover {
+    background: #2e7d32;
+    color: white;
+}
+
+.settings-page-title {
+    margin: 0 0 16px 0;
+    font-size: 1.6em;
+    color: #333;
+}
+
+/* Ensure settings sections are centred within the page container */
+.settings-sections {
+    width: 100%;
 }
 
 .close-button {
@@ -2002,6 +2019,12 @@ input:checked + .slider:before {
     font-family: monospace;
     letter-spacing: 1px;
     text-align: center;
+    font-size: 1.25em;
+}
+
+.advlex-row input[type="radio"] {
+    transform: scale(1.8);
+    margin-right: 6px;
 }
 
 /* EYE TEST full-screen chart overlay */
@@ -2106,6 +2129,8 @@ input:checked + .slider:before {
     font-size: 16px;
     font-weight: 600;
     color: #333;
+    text-align: center;
+    text-transform: uppercase;
 }
 
 .custom-select {
@@ -2199,20 +2224,82 @@ input:checked + .slider:before {
     box-sizing: border-box;
 }
 
-/* Header with Create/Cancel buttons */
-.workflow-header {
+/* Workflow Builder: action bar (Home, BACK, SAVE icon, CANCEL) - above content, visible on mobile */
+.workflow-builder-actions {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    position: sticky;
-    top: 0;
+    align-items: flex-start;
+    padding: 10px 12px;
+    gap: 12px;
     background: #fff;
-    z-index: 100;
+    border-bottom: 1px solid #e0e0e0;
+    position: relative;
+    z-index: 200;
+    flex-wrap: wrap;
+}
+
+.workflow-builder-actions-left,
+.workflow-builder-actions-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.workflow-builder-actions-right {
+    align-items: flex-end;
+    margin-left: auto;
+}
+
+.workflow-builder-home-btn,
+.workflow-builder-back-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #1B5E20;
+    color: white;
+    min-height: 44px;
+}
+
+/* Workflow Builder: centred title and form at 75% width */
+.workflow-builder-form-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+}
+
+.workflow-builder-title {
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 1.4em;
+    margin: 0 0 16px 0;
     width: 100%;
 }
 
-/* Workflow name input section */
+.workflow-name-section.workflow-name-section-centred {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 75%;
+    max-width: 480px;
+    margin-bottom: 20px;
+}
+
+.workflow-name-section.workflow-name-section-centred .workflow-name-input,
+.workflow-name-section.workflow-name-section-centred .save-workflow-button,
+.workflow-name-section.workflow-name-section-centred .toggle-saved-workflows {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* Workflow name input section (default) */
 .workflow-name-section {
     display: flex;
     gap: 10px;
@@ -2258,16 +2345,13 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 768px) {
-    .workflow-name-section {
+    .workflow-name-section:not(.workflow-name-section-centred) {
         flex-direction: column;
     }
-    
-    .workflow-name-input,
-    .save-workflow-button,
-    .toggle-saved-workflows {
-        width: 100%;
+    .workflow-name-section.workflow-name-section-centred {
+        width: 75%;
     }
-    
+    .workflow-name-input,
     .save-workflow-button,
     .toggle-saved-workflows {
         text-align: center;
@@ -2299,7 +2383,10 @@ input:checked + .slider:before {
 /* Filter mode (PIN-NACLE, CHAIN REACTION, Alpha-Numeric): pack buttons top-left with consistent spacing */
 #availableFeatures:has(.t9-feature-button),
 #availableFeatures:has(.alphanumeric-feature-button),
-#availableFeatures:has([data-feature^="whatItsNot"]) {
+#availableFeatures:has([data-feature^="whatItsNot"]),
+/* BIRTHDAY group: NUMEROLOGY / CUPS pinned to top like PIN-NACLE / CHAIN REACTION */
+#availableFeatures:has([data-feature="numerology"]),
+#availableFeatures:has([data-feature="cups"]) {
     align-content: start !important;
     justify-content: start !important;
 }
@@ -2772,15 +2859,23 @@ input:checked + .slider:before {
     }
 }
 
-/* T9 1 LIE (4) Feature Styles */
+/* T9 1 LIE (L4) merged UI */
+.t9-one-lie-merged {
+    text-align: center;
+}
+.t9-one-lie-phase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
 .t9-one-lie-row {
     display: flex;
     justify-content: center;
     gap: 10px;
     flex-wrap: wrap;
-    margin: 20px 0;
+    margin: 12px 0;
 }
-
 .t9-one-lie-btn {
     width: 44px;
     height: 44px;
@@ -2800,34 +2895,88 @@ input:checked + .slider:before {
     align-items: center;
     justify-content: center;
 }
-
 .t9-one-lie-btn:hover {
     background: #e0e0e0;
     transform: scale(1.05);
 }
-
 .t9-one-lie-btn.active {
     background-color: #87CEEB !important;
     color: white !important;
     transform: scale(1.05);
 }
-
-.t9-one-lie-btn.t9-backspace-btn,
-.t9-one-truth-btn.t9-backspace-btn {
-    background-color: #9e9e9e;
-    color: white;
-    font-size: 20px;
+.t9-one-lie-display-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
-.t9-one-lie-btn.t9-backspace-btn:hover,
-.t9-one-truth-btn.t9-backspace-btn:hover {
-    background-color: #757575;
+.t9-one-lie-display {
+    min-height: 44px;
+    min-width: 120px;
+    padding: 0 10px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #1B5E20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-
+.t9-one-lie-b {
+    color: #f44336;
+    font-weight: bold;
+}
+.t9-one-lie-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.t9-one-lie-phase2-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+.t9-one-lie-truth-digits {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.t9-one-lie-truth-btn {
+    min-width: 44px;
+    min-height: 44px;
+}
+.t9-one-lie-override-label {
+    margin-top: 16px;
+    font-size: 14px;
+    color: #555;
+}
+.t9-one-lie-override-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+.t9-one-lie-override-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 8px;
+    background: #f0f0f0;
+    border: 1px solid #1B5E20;
+    color: #1B5E20;
+    font-weight: bold;
+    cursor: pointer;
+}
 @media (max-width: 600px) {
     .t9-one-lie-row {
         gap: 6px;
     }
-    .t9-one-lie-btn {
+    .t9-one-lie-btn,
+    .t9-one-lie-override-btn {
         width: 38px;
         height: 38px;
         min-width: 38px;
@@ -3447,12 +3596,30 @@ input:checked + .slider:before {
 /* BIRTHDAY shared results (NUMEROLOGY / CUPS) */
 .birthday-results {
     text-align: center;
-    margin: 8px 0 4px;
-    font-size: 14px;
+    margin: 12px auto 8px;
+    font-size: 18px; /* base size; date lines will override */
     color: #444;
-    padding: 6px 10px;
+    padding: 8px 12px;
     min-height: 1.5em;
     word-wrap: break-word;
+}
+
+.birthday-date-line {
+    font-size: 28px; /* about double previous 14px */
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.birthday-sign-line {
+    font-family: monospace;
+    font-size: 14px; /* smaller than date line and current 18px base */
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+.birthday-separator {
+    height: 8px;
 }
 
 /* NUMEROLOGY layout */
@@ -4159,6 +4326,37 @@ input:checked + .slider:before {
     background-color: #d32f2f !important;
 }
 
+/* CHAIN REACTION filters (builder + selected chips) */
+.feature-button[data-feature^="whatItsNot"] {
+    background-color: #2196F3 !important;
+    color: white !important;
+    border-color: #1976D2 !important;
+}
+.selected-feature-item[data-feature^="whatItsNot"] {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+}
+.selected-feature-item[data-feature^="whatItsNot"]:hover {
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%) !important;
+    box-shadow: 0 8px 24px rgba(33,150,243,0.28) !important;
+}
+
+/* BIRTHDAY filters (builder + selected chips) */
+.feature-button[data-feature="numerology"],
+.feature-button[data-feature="cups"] {
+    background-color: #f44336 !important;
+    color: white !important;
+    border-color: #d32f2f !important;
+}
+.selected-feature-item[data-feature="numerology"],
+.selected-feature-item[data-feature="cups"] {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+}
+.selected-feature-item[data-feature="numerology"]:hover,
+.selected-feature-item[data-feature="cups"]:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%) !important;
+    box-shadow: 0 8px 24px rgba(244,67,54,0.28) !important;
+}
+
 /* Alpha-Numeric Feature Styles (Blue) */
 .alphanumeric-feature-button {
     background-color: #2196F3 !important; /* Blue - matches T9 orange pattern */
@@ -4225,6 +4423,44 @@ input:checked + .slider:before {
 
 .back-button:hover {
     background: #2e7d32;
+}
+
+/* PERFORM: Home button fixed top-left so visible when header is hidden on mobile */
+.perform-home-button {
+    position: fixed !important;
+    top: max(10px, env(safe-area-inset-top) + 4px) !important;
+    left: max(10px, env(safe-area-inset-left) + 4px) !important;
+    z-index: 10000 !important;
+    padding: 10px 14px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    background: #1B5E20 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 22px !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.perform-home-button:hover {
+    background: #2e7d32 !important;
+    color: white !important;
+}
+.perform-home-button {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+    visibility: visible !important;
+}
+@media (max-width: 768px), (display-mode: standalone) {
+    .perform-home-button {
+        z-index: 10000 !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+    }
 }
 
 /* Ensure back button is clickable in mobile/PWA mode */
@@ -4471,7 +4707,7 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 600px) {
-    #homepage, #workflowExecution {
+    #homepage, #workflowExecution, #settingsPage {
         flex: 1 1 0 !important;
         min-height: 0 !important;
     }

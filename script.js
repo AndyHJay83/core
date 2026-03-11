@@ -38,6 +38,26 @@ let lastAtlasColoursCount = null;
 const BIRTHDAY_MONTH_NAMES = { 1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December' };
 let lastNumerologyDates = []; // [{ day, monthNum, monthName }, ...]
 
+// BIRTHDAY: star sign helper
+function getBirthdayStarSign(day, monthNum) {
+    // Using standard Western zodiac date ranges
+    const m = monthNum;
+    const d = day;
+    if ((m === 3 && d >= 21) || (m === 4 && d <= 19)) return 'ARIES';
+    if ((m === 4 && d >= 20) || (m === 5 && d <= 20)) return 'TAURUS';
+    if ((m === 5 && d >= 21) || (m === 6 && d <= 20)) return 'GEMINI';
+    if ((m === 6 && d >= 21) || (m === 7 && d <= 22)) return 'CANCER';
+    if ((m === 7 && d >= 23) || (m === 8 && d <= 22)) return 'LEO';
+    if ((m === 8 && d >= 23) || (m === 9 && d <= 22)) return 'VIRGO';
+    if ((m === 9 && d >= 23) || (m === 10 && d <= 22)) return 'LIBRA';
+    if ((m === 10 && d >= 23) || (m === 11 && d <= 21)) return 'SCORPIO';
+    if ((m === 11 && d >= 22) || (m === 12 && d <= 21)) return 'SAGITTARIUS';
+    if ((m === 12 && d >= 22) || (m === 1 && d <= 19)) return 'CAPRICORN';
+    if ((m === 1 && d >= 20) || (m === 2 && d <= 18)) return 'AQUARIUS';
+    if ((m === 2 && d >= 19) || (m === 3 && d <= 20)) return 'PISCES';
+    return '';
+}
+
 function numerologyDigitSum(n) {
     n = Math.abs(parseInt(n, 10)) || 0;
     while (n > 9) {
@@ -1026,6 +1046,21 @@ function setupButtonListeners() {
         }, { passive: false });
     }
     
+    // Workflow Builder: Home (top left)
+    const workflowBuilderHomeButton = document.getElementById('workflowBuilderHomeButton');
+    if (workflowBuilderHomeButton) {
+        workflowBuilderHomeButton.addEventListener('click', hideWorkflowCreation);
+        workflowBuilderHomeButton.addEventListener('touchstart', (e) => { e.preventDefault(); hideWorkflowCreation(); }, { passive: false });
+    }
+    // Workflow Builder: BACK (under Home when in group) – shown/hidden by showT9Features etc.
+    const workflowBuilderBackButton = document.getElementById('workflowBuilderBackButton');
+    if (workflowBuilderBackButton) {
+        workflowBuilderBackButton.addEventListener('click', function() {
+            if (typeof showNormalFeatures === 'function') showNormalFeatures();
+            workflowBuilderBackButton.style.display = 'none';
+        });
+        workflowBuilderBackButton.addEventListener('touchstart', (e) => { e.preventDefault(); workflowBuilderBackButton.click(); }, { passive: false });
+    }
     // Cancel Workflow button
     const cancelWorkflowButton = document.getElementById('cancelWorkflowButton');
     if (cancelWorkflowButton) {
@@ -1037,7 +1072,23 @@ function setupButtonListeners() {
             hideWorkflowCreation();
         }, { passive: false });
     }
-    
+
+    // Workflow builder HOME / BACK / SAVE icon buttons
+    const wbHome = document.getElementById('workflowBuilderHomeButton');
+    if (wbHome) {
+        wbHome.replaceWith(wbHome.cloneNode(true));
+        const newHome = document.getElementById('workflowBuilderHomeButton');
+        newHome.addEventListener('click', hideWorkflowCreation);
+        newHome.addEventListener('touchstart', (e) => { e.preventDefault(); hideWorkflowCreation(); }, { passive: false });
+    }
+    const wbBack = document.getElementById('workflowBuilderBackButton');
+    if (wbBack) {
+        wbBack.replaceWith(wbBack.cloneNode(true));
+        const newBack = document.getElementById('workflowBuilderBackButton');
+        newBack.style.display = 'none';
+        newBack.addEventListener('click', showNormalFeatures);
+        newBack.addEventListener('touchstart', (e) => { e.preventDefault(); showNormalFeatures(); }, { passive: false });
+    }
     // Save Workflow button
     const saveWorkflowButton = document.getElementById('saveWorkflowButton');
     if (saveWorkflowButton) {
@@ -2009,7 +2060,7 @@ async function executeWorkflow(steps) {
         workflowHasT9Feature = steps.some(step => step.feature.startsWith('t9'));
         console.log('Workflow has T9 feature:', workflowHasT9Feature);
         // T9 B-IDENTITY definites overlay: only after B-IDENTITY has been submitted
-        workflowHasT9B = steps.some(step => step.feature === 't9B');
+        workflowHasT9B = steps.some(step => step.feature === 't9B' || step.feature === 't9OneLie');
         t9BSubmitted = false;
         // SOLOGRAM: clear last Y/N and set flag if this workflow includes SOLOGRAM
         lastSologramYnString = null;
@@ -2038,47 +2089,33 @@ async function executeWorkflow(steps) {
             workflowExecution.style.flexDirection = 'column';
             workflowExecution.style.height = '100dvh';
         }
+        if (exportButton) exportButton.style.display = ''; /* Show export floppy only in PERFORM */
 
-        // Add home button if it doesn't exist
+        // Add home button if it doesn't exist (fixed top-left so visible on mobile where header is hidden)
         let homeButton = document.getElementById('homeButton');
         if (!homeButton) {
             homeButton = document.createElement('button');
             homeButton.id = 'homeButton';
-            homeButton.className = 'home-button';
+            homeButton.className = 'home-button perform-home-button';
             homeButton.innerHTML = '⌂';
             homeButton.title = 'Return to Home';
             
-            // Function to handle home button action
             const handleHomeAction = () => {
-                // Hide workflow execution
-                if (workflowExecution) {
-                    workflowExecution.style.display = 'none';
-                }
-                // Show homepage
-                if (homepage) {
-                    homepage.style.display = 'block';
-                }
-                // Remove reset button if it exists
+                if (workflowExecution) workflowExecution.style.display = 'none';
+                if (homepage) homepage.style.display = 'block';
+                if (exportButton) exportButton.style.display = 'none';
                 const resetButton = document.getElementById('resetWorkflowButton');
-                if (resetButton) {
-                    resetButton.remove();
-                }
-                // Remove home button
+                if (resetButton) resetButton.remove();
                 homeButton.remove();
             };
             
-            // Add both click and touch events
             homeButton.addEventListener('click', handleHomeAction);
             homeButton.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 handleHomeAction();
             }, { passive: false });
             
-            // Insert home button next to the header
-            const header = document.querySelector('.header');
-            if (header) {
-                header.insertBefore(homeButton, header.firstChild);
-            }
+            document.body.appendChild(homeButton);
         }
 
         // Add reset button if it doesn't exist
@@ -2184,7 +2221,7 @@ async function executeWorkflow(steps) {
             featureArea.className = 'feature-area';
             workflowExecution.appendChild(featureArea);
         }
-        
+
         // Set up the layout: results and feature area share space so Hydra label fits in 100% height
         resultsContainer.style.flex = '1 1 0';
         resultsContainer.style.minHeight = '0';
@@ -2199,7 +2236,8 @@ async function executeWorkflow(steps) {
         featureArea.style.padding = '20px';
         featureArea.style.backgroundColor = '#f5f5f5';
         
-        // Clear any existing content
+        // Clear any existing content in the feature area; BIRTHDAY results will sit under the active feature
+        const birthdayResultsEl = document.getElementById('birthdayResults');
         featureArea.innerHTML = '';
         resultsContainer.innerHTML = '';
         lastAtlasColoursCount = null;
@@ -2424,9 +2462,6 @@ async function executeWorkflow(steps) {
                 case 't9OneTruth':
                     featureElement = createT9OneTruthFeature();
                     break;
-                case 't9B':
-                    featureElement = createT9BFeature();
-                    break;
                 case 'alphaNumeric':
                     featureElement = createAlphaNumericFeature();
                     break;
@@ -2450,8 +2485,22 @@ async function executeWorkflow(steps) {
                 continue;
             }
             console.log('Created feature element for:', step.feature, featureElement);
+            // Clear feature area; show active feature first, then BIRTHDAY results container underneath for numerology/cups
+            let birthdayResultsElStep = document.getElementById('birthdayResults');
             featureArea.innerHTML = '';
             featureArea.appendChild(featureElement);
+            const isBirthdayStep = (step.feature === 'numerology' || step.feature === 'cups');
+            if (isBirthdayStep) {
+                if (!birthdayResultsElStep) {
+                    birthdayResultsElStep = document.createElement('div');
+                    birthdayResultsElStep.id = 'birthdayResults';
+                    birthdayResultsElStep.className = 'birthday-results';
+                    birthdayResultsElStep.setAttribute('aria-live', 'polite');
+                }
+                featureArea.appendChild(birthdayResultsElStep);
+            } else if (birthdayResultsElStep && birthdayResultsElStep.innerHTML.trim() !== '') {
+                featureArea.appendChild(birthdayResultsElStep);
+            }
             featureElement.style.display = 'block';
             console.log('Feature element display set to block');
             
@@ -2555,6 +2604,7 @@ function initializeExportButton() {
     }, { passive: false });
     
     document.body.appendChild(exportButton);
+    exportButton.style.display = 'none';
     updateExportButtonState([]);
 }
 
@@ -2907,8 +2957,7 @@ function createAdvLexFeature() {
     div.innerHTML = `
         <h2 class="feature-title">ADV-LEX</h2>
         <div class="position-info">
-            <div class="position-display">Position: <span class="position-number">-</span></div>
-            <div class="possible-letters">Possible letters: <span class="letters-list"></span></div>
+            <div class="position-display">Position <span class="position-number">-</span></div>
         </div>
         <div id="advLexWordList" class="advlex-list"></div>
         <div class="button-row">
@@ -3903,39 +3952,40 @@ function createT9GuessFeature() {
     return div;
 }
 
-// --- T9 1 LIE (4) Feature Logic ---
+// --- T9 1 LIE (L4) Feature Logic (merged with B-IDENTITY: phase 2 = truth selection or most-likely lie + override) ---
 function createT9OneLieFeature() {
     const div = document.createElement('div');
     div.id = 't9OneLieFeature';
-    div.className = 'feature-section';
+    div.className = 'feature-section t9-one-lie-merged';
     div.innerHTML = `
         <h2 class="feature-title">1 LIE (L4)</h2>
-        <div class="t9-one-lie-row" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-            <button class="t9-one-lie-btn" data-digit="2">2</button>
-            <button class="t9-one-lie-btn" data-digit="3">3</button>
-            <button class="t9-one-lie-btn" data-digit="4">4</button>
-            <button class="t9-one-lie-btn" data-digit="5">5</button>
-            <button class="t9-one-lie-btn" data-digit="6">6</button>
-            <button class="t9-one-lie-btn" data-digit="7">7</button>
-            <button class="t9-one-lie-btn" data-digit="8">8</button>
-            <button class="t9-one-lie-btn" data-digit="9">9</button>
-            <button class="t9-one-lie-btn blank-btn" data-digit="BLANK" style="background-color: #f44336; color: white; font-weight: bold;">B</button>
-        </div>
-        <div class="t9-one-lie-display-row" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 12px;">
-            <div id="t9OneLieDisplay" style="display: flex; justify-content: center; align-items: center; min-height: 44px; min-width: 120px; padding: 0 10px; font-size: 24px; font-weight: bold; color: #1B5E20;">
-                <span id="t9OneLieString">-</span>
+        <div id="t9OneLiePhase1" class="t9-one-lie-phase">
+            <div class="t9-one-lie-row">
+                <button class="t9-one-lie-btn" data-digit="2">2</button>
+                <button class="t9-one-lie-btn" data-digit="3">3</button>
+                <button class="t9-one-lie-btn" data-digit="4">4</button>
+                <button class="t9-one-lie-btn" data-digit="5">5</button>
+                <button class="t9-one-lie-btn" data-digit="6">6</button>
+                <button class="t9-one-lie-btn" data-digit="7">7</button>
+                <button class="t9-one-lie-btn" data-digit="8">8</button>
+                <button class="t9-one-lie-btn" data-digit="9">9</button>
+                <button class="t9-one-lie-btn blank-btn" data-digit="BLANK">B</button>
             </div>
-            <button id="t9OneLieBackspaceButton" class="t9-one-lie-btn t9-backspace-btn" title="Remove last digit">⌫</button>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; gap: 10px;">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <div class="t9-one-lie-display-row">
+                <div id="t9OneLieDisplay" class="t9-one-lie-display"><span id="t9OneLieString">-</span></div>
+                <button id="t9OneLieBackspaceButton" class="t9-one-lie-btn t9-backspace-btn" title="Remove last digit">⌫</button>
+            </div>
+            <div class="t9-one-lie-actions">
                 <button id="t9OneLieSubmitButton">SUBMIT</button>
                 <button id="t9OneLieResetButton" class="reset-button">RESET</button>
                 <button id="t9OneLieSkipButton" class="skip-button">SKIP</button>
             </div>
-            <div id="t9OneLiePossibleDigits" style="margin-top: 15px; padding: 10px; font-size: 14px; color: #666; text-align: center; min-height: 20px;">
-                <span style="font-weight: bold;">Possible T9 digits for BLANK:</span> <span id="t9OneLiePossibleDigitsList">-</span>
-            </div>
+        </div>
+        <div id="t9OneLiePhase2" class="t9-one-lie-phase t9-one-lie-phase2" style="display: none;">
+            <p id="t9OneLiePhase2Title" class="t9-one-lie-phase2-title"></p>
+            <div id="t9OneLieTruthDigits" class="t9-one-lie-truth-digits"></div>
+            <p id="t9OneLieOverrideLabel" class="t9-one-lie-override-label" style="display: none;">Override lie position:</p>
+            <div id="t9OneLieOverrideRow" class="t9-one-lie-override-row" style="display: none;"></div>
         </div>
     `;
     return div;
@@ -4074,31 +4124,7 @@ function createT9OneTruthFeature() {
     return div;
 }
 
-// --- T9 B Feature Logic ---
-function createT9BFeature() {
-    const div = document.createElement('div');
-    div.id = 't9BFeature';
-    div.className = 'feature-section';
-    
-    // Get possible digits from stored data
-    const possibleDigits = t9OneLiePossibleDigits.length > 0 ? t9OneLiePossibleDigits : [];
-    
-    div.innerHTML = `
-        <h2 class="feature-title">B-IDENTITY</h2>
-        <p style="text-align: center; margin: 20px 0; font-size: 16px; color: #666;">
-            Select the T9 digit for the BLANK position from 1 LIE (L4)
-        </p>
-        <div class="t9-b-row" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-            ${possibleDigits.map(digit => 
-                `<button class="t9-b-btn" data-digit="${digit}" style="padding: 15px 25px; font-size: 18px; font-weight: bold; background-color: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; min-width: 60px;">${digit}</button>`
-            ).join('')}
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; gap: 10px;">
-            <button id="t9BSkipButton" class="skip-button">SKIP</button>
-        </div>
-    `;
-    return div;
-}
+// (B-IDENTITY is now handled inside the merged 1 LIE (L4) feature.)
 
 // --- AlphaNumeric Feature Logic ---
 function createAlphaNumericFeature() {
@@ -4844,6 +4870,95 @@ function calculatePossibleT9DigitsForBlank(words, selectedDigits, lastActualLen)
     
     // Return digits ordered by count descending (most likely first)
     return Array.from(digitCounts.entries()).sort((a, b) => b[1] - a[1]).map(([digit]) => digit);
+}
+
+// Count words whose last 4 T9 digits match userFourDigits in exactly 3 positions (exactly one lie). userFourDigits: 4 strings (no BLANK).
+function countWordsWithExactlyOneLie(words, userFourDigits, lastActualLen) {
+    lastActualLen = lastActualLen || 0;
+    calculateT9Strings(words);
+    const minLen = 4 + lastActualLen;
+    let count = 0;
+    words.forEach(word => {
+        const t9String = t9StringsMap.get(word) || wordToT9(word);
+        if (t9String.length < minLen) return;
+        const lastFour = lastActualLen > 0 ? t9String.slice(-4 - lastActualLen, -lastActualLen) : t9String.slice(-4);
+        const lastFourDigits = lastFour.split('');
+        let mismatches = 0;
+        for (let i = 0; i < 4; i++) {
+            if (lastFourDigits[i] !== userFourDigits[i]) mismatches++;
+        }
+        if (mismatches === 1) count++;
+    });
+    return count;
+}
+
+// Get positions that are most likely the lie (positions where the most words have that position as the single mismatch). Returns { positions: number[], scores: number[] }.
+function getMostLikelyLiePositions(words, userFourDigits, lastActualLen) {
+    lastActualLen = lastActualLen || 0;
+    calculateT9Strings(words);
+    const minLen = 4 + lastActualLen;
+    const scores = [0, 0, 0, 0];
+    words.forEach(word => {
+        const t9String = t9StringsMap.get(word) || wordToT9(word);
+        if (t9String.length < minLen) return;
+        const lastFour = lastActualLen > 0 ? t9String.slice(-4 - lastActualLen, -lastActualLen) : t9String.slice(-4);
+        const lastFourDigits = lastFour.split('');
+        let mismatchCount = 0;
+        let mismatchIndex = -1;
+        for (let i = 0; i < 4; i++) {
+            if (lastFourDigits[i] !== userFourDigits[i]) {
+                mismatchCount++;
+                mismatchIndex = i;
+            }
+        }
+        if (mismatchCount === 1 && mismatchIndex >= 0) scores[mismatchIndex]++;
+    });
+    const maxScore = Math.max(...scores);
+    const positions = scores.map((s, i) => (s === maxScore ? i + 1 : null)).filter(p => p != null);
+    return { positions, scores };
+}
+
+// Get distinct digits at liePosition (1-4) among words that have exactly one lie at that position. userFourDigits: 4 strings.
+function getPossibleDigitsAtPosition(words, liePosition, userFourDigits, lastActualLen) {
+    lastActualLen = lastActualLen || 0;
+    const pos0 = liePosition - 1;
+    calculateT9Strings(words);
+    const minLen = 4 + lastActualLen;
+    const digits = new Set();
+    words.forEach(word => {
+        const t9String = t9StringsMap.get(word) || wordToT9(word);
+        if (t9String.length < minLen) return;
+        const lastFour = lastActualLen > 0 ? t9String.slice(-4 - lastActualLen, -lastActualLen) : t9String.slice(-4);
+        const lastFourDigits = lastFour.split('');
+        let mismatches = 0;
+        for (let i = 0; i < 4; i++) {
+            if (lastFourDigits[i] !== userFourDigits[i]) mismatches++;
+        }
+        if (mismatches === 1 && lastFourDigits[pos0] !== userFourDigits[pos0]) digits.add(lastFourDigits[pos0]);
+    });
+    return Array.from(digits).sort();
+}
+
+// Filter words where the lie is at liePosition (1-4) and the true digit at that position is truthDigit.
+function filterWordsByT9OneLieWithTruth(words, userFourDigits, liePosition, truthDigit, lastActualLen) {
+    lastActualLen = lastActualLen || 0;
+    const pos0 = liePosition - 1;
+    calculateT9Strings(words);
+    const minLen = 4 + lastActualLen;
+    return words.filter(word => {
+        const t9String = t9StringsMap.get(word) || wordToT9(word);
+        if (t9String.length < minLen) return false;
+        const lastFour = lastActualLen > 0 ? t9String.slice(-4 - lastActualLen, -lastActualLen) : t9String.slice(-4);
+        const lastFourDigits = lastFour.split('');
+        for (let i = 0; i < 4; i++) {
+            if (i === pos0) {
+                if (lastFourDigits[i] !== truthDigit) return false;
+            } else {
+                if (lastFourDigits[i] !== userFourDigits[i]) return false;
+            }
+        }
+        return true;
+    });
 }
 
 // Helper function to calculate possible T9 digits for BLANK position in 1 TRUTH (F4), ordered by likelihood (most frequent first)
@@ -6219,10 +6334,16 @@ function setupFeatureListeners(feature, callback, options) {
                 setMessage(`NUMEROLOGY stored ${dates.length} date(s).`, false);
                 const birthdayResultsEl = document.getElementById('birthdayResults');
                 if (birthdayResultsEl) {
-                    const summary = dates
-                        .map(d => `${d.day} ${d.monthName}`)
-                        .join(', ');
-                    birthdayResultsEl.textContent = summary || 'No dates found.';
+                    const html = dates.map(d => {
+                        const sign = getBirthdayStarSign(d.day, d.monthNum);
+                        const dateText = `${d.day} ${d.monthName}`;
+                        const signText = sign || '';
+                        return `
+<div class="birthday-date-line">${dateText}</div>
+<div class="birthday-sign-line">${signText}</div>
+<div class="birthday-separator">&nbsp;</div>`;
+                    }).join('').trim();
+                    birthdayResultsEl.innerHTML = html || 'No dates found.';
                 }
                 callback(currentFilteredWords);
                 const featureDiv = document.getElementById('numerologyFeature');
@@ -6272,12 +6393,23 @@ function setupFeatureListeners(feature, callback, options) {
                 } else if (mode === 'long') {
                     filtered = lastNumerologyDates.filter(d => (d.monthName || '').length >= 6);
                 }
+                const birthdayResultsEl = document.getElementById('birthdayResults');
                 const msg = filtered.length
                     ? filtered.map(d => `${d.day} ${d.monthName}`).join(', ')
                     : 'No dates match this CUPS filter.';
-                const birthdayResultsEl = document.getElementById('birthdayResults');
                 if (birthdayResultsEl) {
-                    birthdayResultsEl.textContent = msg;
+                    const html = filtered.length
+                        ? filtered.map(d => {
+                            const sign = getBirthdayStarSign(d.day, d.monthNum);
+                            const dateText = `${d.day} ${d.monthName}`;
+                            const signText = sign || '';
+                            return `
+<div class="birthday-date-line">${dateText}</div>
+<div class="birthday-sign-line">${signText}</div>
+<div class="birthday-separator">&nbsp;</div>`;
+                        }).join('').trim()
+                        : 'No dates match this CUPS filter.';
+                    birthdayResultsEl.innerHTML = html;
                 } else {
                     alert(msg);
                 }
@@ -8648,92 +8780,128 @@ function setupFeatureListeners(feature, callback, options) {
         }
         case 't9OneLie': {
             let selectedDigits = [];
-            // When 1 LIE follows LAST: use last 4 minus ACTUAL length (1 or 2). When it follows LAST TWO: use last 4 minus 2.
             let lastActualLen = 0;
             if (options.previousStepFeature === 't9Last' && t9LastActual) {
                 lastActualLen = t9LastActual.length;
             } else if (options.previousStepFeature === 't9LastTwo') {
-                lastActualLen = 2; // LAST TWO = last 2 digits, so 1 LIE uses the 4 digits before those
+                lastActualLen = 2;
             }
-            const t9OneLieButtons = document.querySelectorAll('.t9-one-lie-btn:not(.t9-backspace-btn)');
+            const phase1 = document.getElementById('t9OneLiePhase1');
+            const phase2 = document.getElementById('t9OneLiePhase2');
+            const phase2Title = document.getElementById('t9OneLiePhase2Title');
+            const truthDigitsContainer = document.getElementById('t9OneLieTruthDigits');
+            const overrideLabel = document.getElementById('t9OneLieOverrideLabel');
+            const overrideRow = document.getElementById('t9OneLieOverrideRow');
+            const t9OneLieButtons = document.querySelectorAll('#t9OneLieFeature .t9-one-lie-btn:not(.t9-backspace-btn)');
             const t9OneLieDisplay = document.getElementById('t9OneLieString');
-            const t9OneLiePossibleDigitsList = document.getElementById('t9OneLiePossibleDigitsList');
             const t9OneLieSubmitButton = document.getElementById('t9OneLieSubmitButton');
             const t9OneLieResetButton = document.getElementById('t9OneLieResetButton');
             const t9OneLieSkipButton = document.getElementById('t9OneLieSkipButton');
-            
-            // Function to update the possible digits display
-            const updatePossibleDigits = () => {
-                if (t9OneLiePossibleDigitsList) {
-                    const blankIndex = selectedDigits.indexOf('BLANK');
-                    if (blankIndex !== -1 && selectedDigits.length === 4) {
-                        const possibleDigits = calculatePossibleT9DigitsForBlank(currentFilteredWords, selectedDigits, lastActualLen);
-                        if (possibleDigits.length > 0) {
-                            t9OneLiePossibleDigitsList.textContent = possibleDigits.join(', ');
-                        } else {
-                            t9OneLiePossibleDigitsList.textContent = 'None found';
-                        }
-                    } else {
-                        t9OneLiePossibleDigitsList.textContent = '-';
-                    }
-                }
+
+            let phase2HasBlank = false;
+            let phase2BlankIndex = -1;
+            let phase2CurrentLiePosition = 1;
+            let phase2StoredDigits = [];
+
+            const completeOneLie = (filteredWords) => {
+                t9BSubmitted = true;
+                callback(filteredWords);
+                document.getElementById('t9OneLieFeature').classList.add('completed');
+                document.getElementById('t9OneLieFeature').dispatchEvent(new Event('completed'));
             };
-            
-            // Initialize display
-            if (t9OneLieDisplay) {
-                t9OneLieDisplay.textContent = '-';
-            }
-            if (t9OneLiePossibleDigitsList) {
-                t9OneLiePossibleDigitsList.textContent = '-';
-            }
-            
-            // Number button handlers
+
+            const renderTruthDigitButtons = (digits, onDigitClick) => {
+                truthDigitsContainer.innerHTML = '';
+                digits.forEach(d => {
+                    const btn = document.createElement('button');
+                    btn.className = 't9-b-btn t9-one-lie-truth-btn';
+                    btn.textContent = d;
+                    btn.dataset.digit = d;
+                    btn.onclick = () => onDigitClick(d);
+                    btn.addEventListener('touchstart', (e) => { e.preventDefault(); onDigitClick(d); }, { passive: false });
+                    truthDigitsContainer.appendChild(btn);
+                });
+            };
+
+            const showPhase2WithB = (blankIndex, digits) => {
+                phase2HasBlank = true;
+                phase2BlankIndex = blankIndex;
+                phase2Title.textContent = 'Lie at position ' + (blankIndex + 1) + '. Select the true digit:';
+                overrideLabel.style.display = 'none';
+                overrideRow.style.display = 'none';
+                overrideRow.innerHTML = '';
+                renderTruthDigitButtons(digits, (digit) => {
+                    const filtered = filterWordsByT9B(currentFilteredWords, digit);
+                    if (filtered.length === 0) {
+                        alert('No words match that choice. Please try another digit.');
+                        return;
+                    }
+                    completeOneLie(filtered);
+                });
+                if (phase1) phase1.style.display = 'none';
+                if (phase2) phase2.style.display = 'block';
+            };
+
+            const showPhase2NoB = (positions, storedDigits) => {
+                phase2HasBlank = false;
+                phase2StoredDigits = storedDigits;
+                phase2CurrentLiePosition = positions[0];
+                const titleText = positions.length > 1
+                    ? 'MOST LIKELY LIE: ' + positions.join(' or ')
+                    : 'MOST LIKELY LIE: ' + phase2CurrentLiePosition;
+                phase2Title.textContent = titleText;
+                overrideLabel.style.display = 'block';
+                overrideRow.style.display = 'flex';
+                overrideRow.innerHTML = '';
+                [1, 2, 3, 4].forEach(pos => {
+                    const btn = document.createElement('button');
+                    btn.className = 't9-one-lie-override-btn';
+                    btn.textContent = pos;
+                    btn.dataset.position = pos;
+                    btn.onclick = () => {
+                        phase2CurrentLiePosition = pos;
+                        const possible = getPossibleDigitsAtPosition(currentFilteredWords, pos, phase2StoredDigits, lastActualLen);
+                        renderTruthDigitButtons(possible, (digit) => {
+                            const filtered = filterWordsByT9OneLieWithTruth(currentFilteredWords, phase2StoredDigits, pos, digit, lastActualLen);
+                            if (filtered.length === 0) {
+                                alert('No words match that choice. Please try another digit.');
+                                return;
+                            }
+                            completeOneLie(filtered);
+                        });
+                    };
+                    btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.onclick(); }, { passive: false });
+                    overrideRow.appendChild(btn);
+                });
+                const possible = getPossibleDigitsAtPosition(currentFilteredWords, phase2CurrentLiePosition, phase2StoredDigits, lastActualLen);
+                renderTruthDigitButtons(possible, (digit) => {
+                    const filtered = filterWordsByT9OneLieWithTruth(currentFilteredWords, phase2StoredDigits, phase2CurrentLiePosition, digit, lastActualLen);
+                    if (filtered.length === 0) {
+                        alert('No words match that choice. Please try another digit.');
+                        return;
+                    }
+                    completeOneLie(filtered);
+                });
+                if (phase1) phase1.style.display = 'none';
+                if (phase2) phase2.style.display = 'block';
+            };
+
+            if (t9OneLieDisplay) t9OneLieDisplay.textContent = '-';
+
             t9OneLieButtons.forEach(btn => {
-                btn.onclick = () => {
-                    if (selectedDigits.length < 4) {
-                        const digit = btn.dataset.digit;
-                        selectedDigits.push(digit);
-                        if (t9OneLieDisplay) {
-                            // Build display with red "B" for BLANK
-                            const displayHTML = selectedDigits.map(d => {
-                                if (d === 'BLANK') {
-                                    return '<span style="color: #f44336; font-weight: bold;">B</span>';
-                                }
-                                return d;
-                            }).join('');
-                            t9OneLieDisplay.innerHTML = displayHTML;
-                        }
-                        btn.classList.add('active');
-                        
-                        // Update possible digits display
-                        updatePossibleDigits();
+                const addDigit = () => {
+                    if (selectedDigits.length >= 4) return;
+                    const digit = btn.dataset.digit;
+                    selectedDigits.push(digit);
+                    if (t9OneLieDisplay) {
+                        t9OneLieDisplay.innerHTML = selectedDigits.map(d => d === 'BLANK' ? '<span class="t9-one-lie-b">B</span>' : d).join('');
                     }
+                    btn.classList.add('active');
                 };
-                
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (selectedDigits.length < 4) {
-                        const digit = btn.dataset.digit;
-                        selectedDigits.push(digit);
-                        if (t9OneLieDisplay) {
-                            // Build display with red "B" for BLANK
-                            const displayHTML = selectedDigits.map(d => {
-                                if (d === 'BLANK') {
-                                    return '<span style="color: #f44336; font-weight: bold;">B</span>';
-                                }
-                                return d;
-                            }).join('');
-                            t9OneLieDisplay.innerHTML = displayHTML;
-                        }
-                        btn.classList.add('active');
-                        
-                        // Update possible digits display
-                        updatePossibleDigits();
-                    }
-                }, { passive: false });
+                btn.onclick = addDigit;
+                btn.addEventListener('touchstart', (e) => { e.preventDefault(); addDigit(); }, { passive: false });
             });
-            
-            // Backspace button (guard so touch + click don't both run and remove two digits)
+
             const t9OneLieBackspaceButton = document.getElementById('t9OneLieBackspaceButton');
             if (t9OneLieBackspaceButton) {
                 let lastBackspaceAt = 0;
@@ -8741,92 +8909,76 @@ function setupFeatureListeners(feature, callback, options) {
                     if (Date.now() - lastBackspaceAt < 400) return;
                     lastBackspaceAt = Date.now();
                     if (selectedDigits.length === 0) return;
-                    const popped = selectedDigits.pop();
+                    selectedDigits.pop();
                     if (t9OneLieDisplay) {
-                        if (selectedDigits.length === 0) {
-                            t9OneLieDisplay.textContent = '-';
-                        } else {
-                            t9OneLieDisplay.innerHTML = selectedDigits.map(d => d === 'BLANK' ? '<span style="color: #f44336; font-weight: bold;">B</span>' : d).join('');
-                        }
+                        t9OneLieDisplay.textContent = selectedDigits.length === 0 ? '-' : selectedDigits.map(d => d === 'BLANK' ? 'B' : d).join('');
+                        if (selectedDigits.length > 0) t9OneLieDisplay.innerHTML = selectedDigits.map(d => d === 'BLANK' ? '<span class="t9-one-lie-b">B</span>' : d).join('');
                     }
-                    updatePossibleDigits();
-                    const btnForPopped = document.querySelector(`.t9-one-lie-btn[data-digit="${popped}"]`);
-                    if (btnForPopped && !selectedDigits.includes(popped)) btnForPopped.classList.remove('active');
+                    t9OneLieButtons.forEach(b => { if (!selectedDigits.includes(b.dataset.digit)) b.classList.remove('active'); });
                 };
                 t9OneLieBackspaceButton.onclick = (e) => { e.preventDefault(); handleBackspace(); };
                 t9OneLieBackspaceButton.addEventListener('touchstart', (e) => { e.preventDefault(); handleBackspace(); }, { passive: false });
             }
-            
-            // Submit button
+
             if (t9OneLieSubmitButton) {
                 t9OneLieSubmitButton.onclick = () => {
                     if (selectedDigits.length !== 4) {
-                        alert('Please select exactly 4 digits (or use BLANK)');
+                        alert('Please select exactly 4 digits (or use BLANK).');
                         return;
                     }
-                    
-                    // Calculate T9 strings if not already done
                     calculateT9Strings(currentFilteredWords);
-                    
-                    // Store data for "B" feature if BLANK is used
                     t9OneLieLastActualLength = lastActualLen;
                     const blankIndex = selectedDigits.indexOf('BLANK');
+
                     if (blankIndex !== -1) {
+                        const matching = filterWordsByT9OneLie(currentFilteredWords, selectedDigits, lastActualLen);
+                        if (matching.length === 0) {
+                            alert('No words match this pattern with exactly one lie at the B position. Please check your input.');
+                            return;
+                        }
                         t9OneLieBlankIndex = blankIndex;
                         t9OneLieSelectedDigits = [...selectedDigits];
                         t9OneLiePossibleDigits = calculatePossibleT9DigitsForBlank(currentFilteredWords, selectedDigits, lastActualLen);
+                        showPhase2WithB(blankIndex, t9OneLiePossibleDigits.length > 0 ? t9OneLiePossibleDigits : Array.from(new Set(matching.map(w => {
+                            const t9 = t9StringsMap.get(w) || wordToT9(w);
+                            const lastFour = lastActualLen > 0 ? t9.slice(-4 - lastActualLen, -lastActualLen) : t9.slice(-4);
+                            return lastFour[blankIndex];
+                        }))));
                     } else {
-                        // Clear if no BLANK
+                        const userFour = selectedDigits;
+                        const count = countWordsWithExactlyOneLie(currentFilteredWords, userFour, lastActualLen);
+                        if (count === 0) {
+                            alert('No words match this pattern with exactly one lie. Please check your input.');
+                            return;
+                        }
                         t9OneLieBlankIndex = null;
                         t9OneLieSelectedDigits = [];
                         t9OneLiePossibleDigits = [];
+                        const { positions } = getMostLikelyLiePositions(currentFilteredWords, userFour, lastActualLen);
+                        showPhase2NoB(positions, userFour);
                     }
-                    
-                    const filteredWords = filterWordsByT9OneLie(currentFilteredWords, selectedDigits, lastActualLen);
-                    callback(filteredWords);
-                    document.getElementById('t9OneLieFeature').classList.add('completed');
-                    document.getElementById('t9OneLieFeature').dispatchEvent(new Event('completed'));
                 };
-                
-                t9OneLieSubmitButton.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    t9OneLieSubmitButton.onclick();
-                }, { passive: false });
+                t9OneLieSubmitButton.addEventListener('touchstart', (e) => { e.preventDefault(); t9OneLieSubmitButton.onclick(); }, { passive: false });
             }
-            
-            // Reset button
+
             if (t9OneLieResetButton) {
                 t9OneLieResetButton.onclick = () => {
                     selectedDigits = [];
-                    if (t9OneLieDisplay) {
-                        t9OneLieDisplay.textContent = '-';
-                    }
-                    if (t9OneLiePossibleDigitsList) {
-                        t9OneLiePossibleDigitsList.textContent = '-';
-                    }
-                    t9OneLieButtons.forEach(btn => {
-                        btn.classList.remove('active');
-                    });
+                    if (t9OneLieDisplay) t9OneLieDisplay.textContent = '-';
+                    t9OneLieButtons.forEach(btn => btn.classList.remove('active'));
+                    if (phase1) phase1.style.display = '';
+                    if (phase2) phase2.style.display = 'none';
                 };
-                
-                t9OneLieResetButton.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    t9OneLieResetButton.onclick();
-                }, { passive: false });
+                t9OneLieResetButton.addEventListener('touchstart', (e) => { e.preventDefault(); t9OneLieResetButton.onclick(); }, { passive: false });
             }
-            
-            // Skip button
+
             if (t9OneLieSkipButton) {
                 t9OneLieSkipButton.onclick = () => {
                     callback(currentFilteredWords);
                     document.getElementById('t9OneLieFeature').classList.add('completed');
                     document.getElementById('t9OneLieFeature').dispatchEvent(new Event('completed'));
                 };
-                
-                t9OneLieSkipButton.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    t9OneLieSkipButton.onclick();
-                }, { passive: false });
+                t9OneLieSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); t9OneLieSkipButton.onclick(); }, { passive: false });
             }
             break;
         }
@@ -9226,55 +9378,6 @@ function setupFeatureListeners(feature, callback, options) {
                 t9OneTruthSkipButton.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     t9OneTruthSkipButton.onclick();
-                }, { passive: false });
-            }
-            break;
-        }
-        case 't9B': {
-            // Validate that this follows 1 LIE (L4) with BLANK
-            if (t9OneLieBlankIndex === null || t9OneLiePossibleDigits.length === 0) {
-                alert('B feature must follow 1 LIE (L4) with a BLANK. Please use 1 LIE (L4) with BLANK first.');
-                callback(currentFilteredWords);
-                document.getElementById('t9BFeature').classList.add('completed');
-                document.getElementById('t9BFeature').dispatchEvent(new Event('completed'));
-                break;
-            }
-            
-            const t9BButtons = document.querySelectorAll('.t9-b-btn');
-            const t9BSkipButton = document.getElementById('t9BSkipButton');
-            
-            // Add click handlers for digit buttons
-            t9BButtons.forEach(btn => {
-                btn.onclick = () => {
-                    const digit = btn.dataset.digit;
-                    t9BSubmitted = true; // Show definites overlay after B-IDENTITY submitted
-                    // Calculate T9 strings if not already done
-                    calculateT9Strings(currentFilteredWords);
-                    
-                    const filteredWords = filterWordsByT9B(currentFilteredWords, digit);
-                    callback(filteredWords);
-                    document.getElementById('t9BFeature').classList.add('completed');
-                    document.getElementById('t9BFeature').dispatchEvent(new Event('completed'));
-                };
-                
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    btn.onclick();
-                }, { passive: false });
-            });
-            
-            // Skip button
-            if (t9BSkipButton) {
-                t9BSkipButton.onclick = () => {
-                    t9BSubmitted = true; // Show definites overlay after B-IDENTITY step completed
-                    callback(currentFilteredWords);
-                    document.getElementById('t9BFeature').classList.add('completed');
-                    document.getElementById('t9BFeature').dispatchEvent(new Event('completed'));
-                };
-                
-                t9BSkipButton.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    t9BSkipButton.onclick();
                 }, { passive: false });
             }
             break;
@@ -12024,37 +12127,11 @@ function showT9Features() {
             <button class="feature-button t9-feature-button" data-feature="t9OneTruth" draggable="true">1 TRUTH (F4)</button>
             <button class="info-button" data-feature="t9OneTruth"><i class="fas fa-info-circle"></i></button>
         </div>
-        <div class="feature-group">
-            <button class="feature-button t9-feature-button" data-feature="t9B" draggable="true">B-IDENTITY</button>
-            <button class="info-button" data-feature="t9B"><i class="fas fa-info-circle"></i></button>
-        </div>
     `;
     
-    // Show BACK button
-    const backButton = document.querySelector('.available-features .back-button');
-    if (!backButton) {
-        const h3 = document.querySelector('.available-features h3');
-        if (h3 && h3.parentElement) {
-            const backBtn = document.createElement('button');
-            backBtn.className = 'back-button';
-            backBtn.textContent = 'BACK';
-            backBtn.onclick = showNormalFeatures;
-            
-            // Add touch event handler for PWA/mobile
-            backBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                showNormalFeatures();
-            }, { passive: false });
-            
-            // Ensure button is clickable
-            backBtn.style.pointerEvents = 'auto';
-            backBtn.style.zIndex = '100';
-            
-            h3.parentElement.style.position = 'relative';
-            h3.parentElement.insertBefore(backBtn, h3);
-        }
-    }
+    // Show BACK under HOME (same as CHAIN REACTION and BIRTHDAY)
+    const headerBack = document.getElementById('workflowBuilderBackButton');
+    if (headerBack) headerBack.style.display = 'inline-block';
     
     // Reinitialize feature selection
     initializeFeatureSelection();
@@ -12078,6 +12155,8 @@ function showNormalFeatures() {
     if (backButton) {
         backButton.remove();
     }
+    const headerBack = document.getElementById('workflowBuilderBackButton');
+    if (headerBack) headerBack.style.display = 'none';
     
     // Reinitialize feature selection
     initializeFeatureSelection();
@@ -12113,25 +12192,8 @@ function showChainReactionFeatures() {
             <button class="info-button" data-feature="whatItsNotL"><i class="fas fa-info-circle"></i></button>
         </div>
     `;
-    const backButton = document.querySelector('.available-features .back-button');
-    if (!backButton) {
-        const h3 = document.querySelector('.available-features h3');
-        if (h3 && h3.parentElement) {
-            const backBtn = document.createElement('button');
-            backBtn.className = 'back-button';
-            backBtn.textContent = 'BACK';
-            backBtn.onclick = showNormalFeatures;
-            backBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                showNormalFeatures();
-            }, { passive: false });
-            backBtn.style.pointerEvents = 'auto';
-            backBtn.style.zIndex = '100';
-            h3.parentElement.style.position = 'relative';
-            h3.parentElement.insertBefore(backBtn, h3);
-        }
-    }
+    const headerBack = document.getElementById('workflowBuilderBackButton');
+    if (headerBack) headerBack.style.display = 'inline-block';
     initializeFeatureSelection();
     initializeInfoButtons();
 }
@@ -12153,25 +12215,8 @@ function showBirthdayFeatures() {
             <button class="info-button" data-feature="cups"><i class="fas fa-info-circle"></i></button>
         </div>
     `;
-    const backButton = document.querySelector('.available-features .back-button');
-    if (!backButton) {
-        const h3 = document.querySelector('.available-features h3');
-        if (h3 && h3.parentElement) {
-            const backBtn = document.createElement('button');
-            backBtn.className = 'back-button';
-            backBtn.textContent = 'BACK';
-            backBtn.onclick = showNormalFeatures;
-            backBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                showNormalFeatures();
-            }, { passive: false });
-            backBtn.style.pointerEvents = 'auto';
-            backBtn.style.zIndex = '100';
-            h3.parentElement.style.position = 'relative';
-            h3.parentElement.insertBefore(backBtn, h3);
-        }
-    }
+    const headerBack = document.getElementById('workflowBuilderBackButton');
+    if (headerBack) headerBack.style.display = 'inline-block';
     initializeFeatureSelection();
     initializeInfoButtons();
 }
@@ -12245,6 +12290,8 @@ function initializeModeButtons() {
         t9Button.addEventListener('touchstart', (e) => {
             e.preventDefault();
             showT9Features();
+            const headerBack = document.getElementById('workflowBuilderBackButton');
+            if (headerBack) headerBack.style.display = 'inline-block';
         }, { passive: false });
     }
     const alphanumericButton = document.getElementById('alphanumericModeButton');
@@ -12257,18 +12304,30 @@ function initializeModeButtons() {
     }
     const chainReactionButton = document.getElementById('chainReactionModeButton');
     if (chainReactionButton) {
-        chainReactionButton.addEventListener('click', showChainReactionFeatures);
+        chainReactionButton.addEventListener('click', () => {
+            showChainReactionFeatures();
+            const headerBack = document.getElementById('workflowBuilderBackButton');
+            if (headerBack) headerBack.style.display = 'inline-block';
+        });
         chainReactionButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             showChainReactionFeatures();
+            const headerBack = document.getElementById('workflowBuilderBackButton');
+            if (headerBack) headerBack.style.display = 'inline-block';
         }, { passive: false });
     }
     const birthdayButton = document.getElementById('birthdayModeButton');
     if (birthdayButton) {
-        birthdayButton.addEventListener('click', showBirthdayFeatures);
+        birthdayButton.addEventListener('click', () => {
+            showBirthdayFeatures();
+            const headerBack = document.getElementById('workflowBuilderBackButton');
+            if (headerBack) headerBack.style.display = 'inline-block';
+        });
         birthdayButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             showBirthdayFeatures();
+            const headerBack = document.getElementById('workflowBuilderBackButton');
+            if (headerBack) headerBack.style.display = 'inline-block';
         }, { passive: false });
     }
 }
@@ -12633,22 +12692,19 @@ function showWorkflowCreation() {
     document.getElementById('homepage').style.display = 'none';
     document.getElementById('workflowExecution').style.display = 'none';
     document.getElementById('workflowCreation').style.display = 'block';
-    
-    // Hide saved workflows initially
-    const savedWorkflows = document.getElementById('savedWorkflows');
-    if (savedWorkflows) {
-        savedWorkflows.style.display = 'none';
-    }
-    
-    // Initialize info buttons
+    if (exportButton) exportButton.style.display = 'none'; /* Export floppy only in PERFORM */
+    var backBtn = document.getElementById('workflowBuilderBackButton');
+    if (backBtn) backBtn.style.display = 'none';
+    var savedWorkflows = document.getElementById('savedWorkflows');
+    if (savedWorkflows) savedWorkflows.style.display = 'none';
     initializeInfoButtons();
 }
 
-// Hide workflow creation page
 function hideWorkflowCreation() {
     document.getElementById('homepage').style.display = 'block';
     document.getElementById('workflowCreation').style.display = 'none';
     document.getElementById('workflowExecution').style.display = 'none';
+    if (exportButton) exportButton.style.display = 'none';
 }
 
 // Hide native select elements to prevent overlap with custom dropdowns (aggressive)
