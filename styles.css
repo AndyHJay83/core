@@ -2116,6 +2116,14 @@ input:checked + .slider:before {
     border-bottom: 1px solid #eee;
 }
 
+/* EYE TEST fixed groups layout in Settings */
+.eye-test-group-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
 .word-group-item:last-child {
     border-bottom: none;
 }
@@ -2968,6 +2976,23 @@ input:checked + .slider:before {
     justify-content: center;
     align-items: center;
     gap: 10px;
+}
+.t9-one-lie-preview {
+    margin: 12px 0;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+    line-height: 1.2;
+}
+.t9-one-lie-preview .t9-one-lie-title {
+    color: #000;
+}
+.t9-one-lie-preview .t9-one-lie-pos {
+    color: #f44336;
+}
+.t9-one-lie-preview .t9-one-lie-opts {
+    color: #1976d2;
 }
 .t9-one-lie-display {
     min-height: 44px;

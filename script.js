@@ -2112,6 +2112,11 @@ async function executeWorkflow(steps) {
                 if (homepage) homepage.style.display = 'block';
                 if (exportButton) exportButton.style.display = 'none';
                 document.body.classList.remove('perform-view');
+                const preview = document.getElementById('t9OneLiePreview');
+                if (preview) {
+                    preview.style.display = 'none';
+                    preview.innerHTML = '';
+                }
                 const resetButton = document.getElementById('resetWorkflowButton');
                 if (resetButton) resetButton.remove();
                 homeButton.remove();
@@ -2139,6 +2144,11 @@ async function executeWorkflow(steps) {
             const handleResetAction = () => {
                 if (currentWorkflow) {
                     executeWorkflow(currentWorkflow.steps);
+                }
+                const preview = document.getElementById('t9OneLiePreview');
+                if (preview) {
+                    preview.style.display = 'none';
+                    preview.innerHTML = '';
                 }
             };
             
@@ -2228,6 +2238,20 @@ async function executeWorkflow(steps) {
             featureArea.id = 'featureArea';
             featureArea.className = 'feature-area';
             workflowExecution.appendChild(featureArea);
+        }
+
+        // Ensure 1 LIE preview line exists between wordlist (results) and bottom feature section
+        let t9OneLiePreview = document.getElementById('t9OneLiePreview');
+        if (!t9OneLiePreview) {
+            t9OneLiePreview = document.createElement('p');
+            t9OneLiePreview.id = 't9OneLiePreview';
+            t9OneLiePreview.className = 't9-one-lie-preview';
+            t9OneLiePreview.style.display = 'none';
+            if (featureArea && workflowExecution.contains(featureArea)) {
+                workflowExecution.insertBefore(t9OneLiePreview, featureArea);
+            } else {
+                workflowExecution.appendChild(t9OneLiePreview);
+            }
         }
 
         // Set up the layout: results and feature area share space so Hydra label fits in 100% height
@@ -8797,6 +8821,16 @@ function setupFeatureListeners(feature, callback, options) {
             }
             const phase1 = document.getElementById('t9OneLiePhase1');
             const phase2 = document.getElementById('t9OneLiePhase2');
+            const previewLine = document.getElementById('t9OneLiePreview');
+            if (previewLine) {
+                const workflowExecution = document.getElementById('workflowExecution');
+                const resultsContainer = document.getElementById('results');
+                const featureAreaEl = document.getElementById('featureArea');
+                if (workflowExecution && resultsContainer && previewLine.parentNode !== workflowExecution) {
+                    previewLine.parentNode.removeChild(previewLine);
+                    workflowExecution.insertBefore(previewLine, featureAreaEl || null);
+                }
+            }
             const phase2Title = document.getElementById('t9OneLiePhase2Title');
             const truthDigitsContainer = document.getElementById('t9OneLieTruthDigits');
             const overrideLabel = document.getElementById('t9OneLieOverrideLabel');
@@ -8812,7 +8846,102 @@ function setupFeatureListeners(feature, callback, options) {
             let phase2CurrentLiePosition = 1;
             let phase2StoredDigits = [];
 
+            const hidePreview = () => {
+                if (!previewLine) return;
+                previewLine.style.display = 'none';
+                previewLine.innerHTML = '';
+            };
+
+            const updatePreview = () => {
+                if (!previewLine) return;
+                if (selectedDigits.length !== 4) {
+                    hidePreview();
+                    return;
+                }
+
+                // Ensure T9 strings are ready
+                calculateT9Strings(currentFilteredWords);
+
+                const blankIndex = selectedDigits.indexOf('BLANK');
+
+                if (blankIndex !== -1) {
+                    // B present: preview B-IDENTITY-style info (position + options)
+                    const matching = filterWordsByT9OneLie(currentFilteredWords, selectedDigits, lastActualLen);
+                    if (!matching || matching.length === 0) {
+                        hidePreview();
+                        return;
+                    }
+
+                    const possible = calculatePossibleT9DigitsForBlank(currentFilteredWords, selectedDigits, lastActualLen);
+                    let options = possible && possible.length > 0 ? possible : Array.from(new Set(matching.map(w => {
+                        const t9 = t9StringsMap.get(w) || wordToT9(w);
+                        const lastFour = lastActualLen > 0 ? t9.slice(-4 - lastActualLen, -lastActualLen) : t9.slice(-4);
+                        return lastFour[blankIndex];
+                    })));
+
+                    options = Array.from(new Set(options)).filter(Boolean);
+                    if (!options.length) {
+                        hidePreview();
+                        return;
+                    }
+
+                    const pos = blankIndex + 1;
+                    const optionsText = options.join(', ');
+                    previewLine.innerHTML = `
+                        <div>
+                            <span class="t9-one-lie-title">LIE POSITION:</span>
+                            <span class="t9-one-lie-pos">${pos}</span>
+                        </div>
+                        <div>
+                            <span class="t9-one-lie-title">POSSIBLE:</span>
+                            <span class="t9-one-lie-opts">${optionsText}</span>
+                        </div>
+                    `;
+                    previewLine.style.display = 'block';
+                } else {
+                    // No B: preview Most Likely Lie position + options
+                    const userFour = selectedDigits;
+                    const count = countWordsWithExactlyOneLie(currentFilteredWords, userFour, lastActualLen);
+                    if (count === 0) {
+                        hidePreview();
+                        return;
+                    }
+
+                    const { positions } = getMostLikelyLiePositions(currentFilteredWords, userFour, lastActualLen);
+                    if (!positions || positions.length === 0) {
+                        hidePreview();
+                        return;
+                    }
+
+                    const liePos = positions[0];
+                    const possibleDigits = getPossibleDigitsAtPosition(currentFilteredWords, liePos, userFour, lastActualLen);
+                    const options = Array.from(new Set(possibleDigits || [])).filter(Boolean);
+                    if (!options.length) {
+                        hidePreview();
+                        return;
+                    }
+
+                    const optionsText = options.join(', ');
+                    previewLine.innerHTML = `
+                        <div>
+                            <span class="t9-one-lie-title">MOST LIKELY LIE:</span>
+                            <span class="t9-one-lie-pos">${liePos}</span>
+                        </div>
+                        <div>
+                            <span class="t9-one-lie-title">POSSIBLE:</span>
+                            <span class="t9-one-lie-opts">${optionsText}</span>
+                        </div>
+                    `;
+                    previewLine.style.display = 'block';
+                }
+            };
+
             const completeOneLie = (filteredWords) => {
+                const preview = document.getElementById('t9OneLiePreview');
+                if (preview) {
+                    preview.style.display = 'none';
+                    preview.innerHTML = '';
+                }
                 t9BSubmitted = true;
                 callback(filteredWords);
                 document.getElementById('t9OneLieFeature').classList.add('completed');
@@ -8907,6 +9036,7 @@ function setupFeatureListeners(feature, callback, options) {
                         t9OneLieDisplay.innerHTML = selectedDigits.map(d => d === 'BLANK' ? '<span class="t9-one-lie-b">B</span>' : d).join('');
                     }
                     btn.classList.add('active');
+                    updatePreview();
                 };
                 btn.onclick = addDigit;
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); addDigit(); }, { passive: false });
@@ -8925,6 +9055,11 @@ function setupFeatureListeners(feature, callback, options) {
                         if (selectedDigits.length > 0) t9OneLieDisplay.innerHTML = selectedDigits.map(d => d === 'BLANK' ? '<span class="t9-one-lie-b">B</span>' : d).join('');
                     }
                     t9OneLieButtons.forEach(b => { if (!selectedDigits.includes(b.dataset.digit)) b.classList.remove('active'); });
+                    if (selectedDigits.length < 4) {
+                        hidePreview();
+                    } else {
+                        updatePreview();
+                    }
                 };
                 t9OneLieBackspaceButton.onclick = (e) => { e.preventDefault(); handleBackspace(); };
                 t9OneLieBackspaceButton.addEventListener('touchstart', (e) => { e.preventDefault(); handleBackspace(); }, { passive: false });
@@ -8978,6 +9113,7 @@ function setupFeatureListeners(feature, callback, options) {
                     t9OneLieButtons.forEach(btn => btn.classList.remove('active'));
                     if (phase1) phase1.style.display = '';
                     if (phase2) phase2.style.display = 'none';
+                    hidePreview();
                 };
                 t9OneLieResetButton.addEventListener('touchstart', (e) => { e.preventDefault(); t9OneLieResetButton.onclick(); }, { passive: false });
             }
@@ -8987,6 +9123,7 @@ function setupFeatureListeners(feature, callback, options) {
                     callback(currentFilteredWords);
                     document.getElementById('t9OneLieFeature').classList.add('completed');
                     document.getElementById('t9OneLieFeature').dispatchEvent(new Event('completed'));
+                    hidePreview();
                 };
                 t9OneLieSkipButton.addEventListener('touchstart', (e) => { e.preventDefault(); t9OneLieSkipButton.onclick(); }, { passive: false });
             }
