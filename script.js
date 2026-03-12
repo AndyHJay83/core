@@ -197,6 +197,10 @@ const DEFAULT_SETTINGS = {
     eyeTestFirstLetter: 'E',
     calculusMode: 'abstract',  // 'abstract' (digits 0–9) or 'curvesStraight' (C/S)
     advLexIgnorePosition1: false,  // ADV-LEX: when ON, do not suggest Position 1; use next best position
+    // MUTE / MUTE DUO: letter mode: 'az' = A–Z fixed sequence, 'mostFrequent' = dynamic most-frequent letter,
+    // 'custom' = user-defined string then Most Frequent after it is exhausted
+    muteLetterMode: 'az',
+    muteCustomSequence: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
 };
 
 const DEFAULT_LETTER_LYING_STRING = 'NTRLCSAIEUO';
@@ -637,6 +641,22 @@ const workflowName = document.getElementById('workflowName');
 const selectedFeaturesList = document.getElementById('selectedFeaturesList');
 const workflowSelect = document.getElementById('workflowSelect');
 const performButton = document.getElementById('performButton');
+
+// MUTE feature state
+let muteSequence = [];
+let muteLetterIndex = 0;
+let muteUsedLetters = new Set();
+let muteDynamicSequence = [];
+let muteLetterSequence = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+let muteMostFrequentEnabled = true;
+
+// MUTE DUO feature state (two independent words, shared letter stream)
+let muteDuoSequence1 = []; // Binary choices for Word 1
+let muteDuoSequence2 = []; // Binary choices for Word 2
+let muteDuoLetterIndex = 0; // Shared current letter index (like SpectatorFilterPage)
+let muteDuoLetterSequence = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+let muteDuoUsedLetters = new Set();
+let muteDuoDynamicSequence = [];
 
 // Initialize the app when the DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
@@ -2461,6 +2481,12 @@ async function executeWorkflow(steps) {
                 case 'pianoPiano':
                     featureElement = createPianoPianoFeature();
                     break;
+                case 'mute':
+                    featureElement = createMuteFeature();
+                    break;
+                case 'muteDuo':
+                    featureElement = createMuteDuoFeature();
+                    break;
                 case 't9Length':
                     featureElement = createT9LengthFeature();
                     break;
@@ -3868,6 +3894,112 @@ function createPianoPianoFeature() {
         </div>
     `;
     return div;
+}
+
+// --- MUTE (Binary) Feature Logic ---
+function createMuteFeature() {
+    const div = document.createElement('div');
+    div.id = 'muteFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">MUTE (Binary)</h2>
+        <div class="mute-letter-display mute-letter-display-large">
+            <span id="muteCurrentLetter" class="mute-letter-char">-</span>
+        </div>
+        <div class="mute-buttons mute-buttons-centered">
+            <button id="muteLeftButton" class="yes-btn">L</button>
+            <button id="muteRightButton" class="no-btn">R</button>
+        </div>
+    `;
+    return div;
+}
+
+function displayMuteResults(leftWords, rightWords) {
+    const resultsContainer = document.getElementById('results');
+    if (!resultsContainer) return;
+
+    const engine = window.muteBinaryEngine || {};
+    const leftClass = engine.getWordCountClass ? engine.getWordCountClass(leftWords.length) : '';
+    const rightClass = engine.getWordCountClass ? engine.getWordCountClass(rightWords.length) : '';
+
+    resultsContainer.innerHTML = `
+        <div class="mute-results-2col">
+            <div class="mute-column ${leftClass}">
+                <h3>LEFT (${leftWords.length})</h3>
+                <ul class="word-list">
+                    ${leftWords.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+            <div class="mute-column ${rightClass}">
+                <h3>RIGHT (${rightWords.length})</h3>
+                <ul class="word-list">
+                    ${rightWords.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+// --- MUTE DUO (Binary, two independent words) Feature Logic ---
+function createMuteDuoFeature() {
+    const div = document.createElement('div');
+    div.id = 'muteDuoFeature';
+    div.className = 'feature-section';
+    div.innerHTML = `
+        <h2 class="feature-title">MUTE DUO (Binary)</h2>
+        <div class="mute-letter-display mute-letter-display-large">
+            <span id="muteDuoCurrentLetter" class="mute-letter-char">-</span>
+        </div>
+        <div class="mute-duo-controls mute-duo-centered">
+            <div class="mute-duo-buttons-grid">
+                <button id="muteDuoButtonUp" class="yes-btn mute-duo-btn mute-duo-btn-up">1 &amp; 4</button>
+                <button id="muteDuoButtonRight" class="yes-btn mute-duo-btn mute-duo-btn-right">2 &amp; 4</button>
+                <button id="muteDuoButtonDown" class="no-btn mute-duo-btn mute-duo-btn-down">2 &amp; 3</button>
+                <button id="muteDuoButtonLeft" class="no-btn mute-duo-btn mute-duo-btn-left">1 &amp; 3</button>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+function displayMuteDuoResults(word1Left, word1Right, word2Left, word2Right) {
+    const resultsContainer = document.getElementById('results');
+    if (!resultsContainer) return;
+
+    const engine = window.muteBinaryEngine || {};
+    const class1Top = engine.getWordCountClass ? engine.getWordCountClass(word1Left.length) : '';
+    const class1Bottom = engine.getWordCountClass ? engine.getWordCountClass(word1Right.length) : '';
+    const class2Top = engine.getWordCountClass ? engine.getWordCountClass(word2Left.length) : '';
+    const class2Bottom = engine.getWordCountClass ? engine.getWordCountClass(word2Right.length) : '';
+
+    resultsContainer.innerHTML = `
+        <div class="mute-results-2col mute-duo-grid">
+            <div class="mute-column ${class1Top}">
+                <h3>SPEC 1 – LEFT (${word1Left.length})</h3>
+                <ul class="word-list">
+                    ${word1Left.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+            <div class="mute-column ${class1Bottom}">
+                <h3>SPEC 1 – RIGHT (${word1Right.length})</h3>
+                <ul class="word-list">
+                    ${word1Right.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+            <div class="mute-column ${class2Top}">
+                <h3>SPEC 2 – LEFT (${word2Left.length})</h3>
+                <ul class="word-list">
+                    ${word2Left.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+            <div class="mute-column ${class2Bottom}">
+                <h3>SPEC 2 – RIGHT (${word2Right.length})</h3>
+                <ul class="word-list">
+                    ${word2Right.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
 }
 
 // --- T9 LENGTH Feature Logic ---
@@ -7532,6 +7664,256 @@ function setupFeatureListeners(feature, callback, options) {
             }
             break;
         }
+        case 'mute': {
+            const engine = window.muteBinaryEngine || {};
+            const letterEl = document.getElementById('muteCurrentLetter');
+            const leftBtn = document.getElementById('muteLeftButton');
+            const rightBtn = document.getElementById('muteRightButton');
+
+            // Reset MUTE state
+            muteSequence = [];
+            muteLetterIndex = 0;
+            muteUsedLetters = new Set();
+            muteDynamicSequence = [];
+
+            const modeSetting = (appSettings && appSettings.muteLetterMode) || 'az';
+            const customSeq = (appSettings && appSettings.muteCustomSequence) || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+            const getMuteLetterParams = () => {
+                if (modeSetting === 'az') {
+                    return { effectiveMode: 'az', seq: muteLetterSequence, dyn: [] };
+                }
+                if (modeSetting === 'custom') {
+                    // While within the custom string length, use fixed custom letters.
+                    // After it's exhausted (muteLetterIndex >= customSeq.length), fall back to Most Frequent.
+                    const upperCustom = String(customSeq || '').toUpperCase();
+                    if (muteLetterIndex < upperCustom.length) {
+                        return { effectiveMode: 'customFixed', seq: upperCustom, dyn: [] };
+                    }
+                    return { effectiveMode: 'mostFrequent', seq: '', dyn: muteDynamicSequence };
+                }
+                // modeSetting === 'mostFrequent'
+                return { effectiveMode: 'mostFrequent', seq: '', dyn: muteDynamicSequence };
+            };
+
+            // Ensure a dynamic letter exists for most-frequent modes *before* first filter
+            const initialParams = getMuteLetterParams();
+            if (initialParams.effectiveMode === 'mostFrequent') {
+                const nextLetter = engine.selectNextDynamicLetter
+                    ? engine.selectNextDynamicLetter(currentFilteredWords, muteUsedLetters)
+                    : null;
+                if (nextLetter) {
+                    muteUsedLetters.add(nextLetter);
+                    if (!muteDynamicSequence.includes(nextLetter)) {
+                        muteDynamicSequence.push(nextLetter);
+                    }
+                }
+            }
+            const initial = engine.filterWords
+                ? engine.filterWords(currentFilteredWords, muteSequence, muteLetterIndex, initialParams.seq, initialParams.dyn)
+                : { leftWords: currentFilteredWords, rightWords: currentFilteredWords, currentLetter: '' };
+
+            displayMuteResults(initial.leftWords, initial.rightWords);
+            if (letterEl) letterEl.textContent = initial.currentLetter || '-';
+            if (initialParams.effectiveMode === 'mostFrequent' && initial.currentLetter) {
+                muteUsedLetters.add(initial.currentLetter);
+                if (!muteDynamicSequence.includes(initial.currentLetter)) {
+                    muteDynamicSequence.push(initial.currentLetter);
+                }
+            }
+
+            const makeChoice = (choice) => {
+                if (!engine.filterWords) return;
+                muteSequence.push(choice);
+                // Letter index should advance one step per choice; use current sequence length
+                muteLetterIndex = muteSequence.length;
+
+                const params = getMuteLetterParams();
+                if (params.effectiveMode === 'mostFrequent') {
+                    const nextLetter = engine.selectNextDynamicLetter
+                        ? engine.selectNextDynamicLetter(currentFilteredWords, muteUsedLetters)
+                        : null;
+                    if (nextLetter) {
+                        muteUsedLetters.add(nextLetter);
+                        if (!muteDynamicSequence.includes(nextLetter)) {
+                            muteDynamicSequence.push(nextLetter);
+                        }
+                    }
+                }
+                const res = engine.filterWords(
+                    currentFilteredWords,
+                    muteSequence,
+                    muteLetterIndex,
+                    params.seq,
+                    params.dyn
+                );
+
+                displayMuteResults(res.leftWords, res.rightWords);
+                if (letterEl) letterEl.textContent = res.currentLetter || '-';
+                if (params.effectiveMode === 'mostFrequent' && res.currentLetter) {
+                    muteUsedLetters.add(res.currentLetter);
+                    if (!muteDynamicSequence.includes(res.currentLetter)) {
+                        muteDynamicSequence.push(res.currentLetter);
+                    }
+                }
+
+                // For now, keep both interpretations in play: union of left/right
+                const combined = Array.from(new Set([...res.leftWords, ...res.rightWords]));
+                currentFilteredWords = combined;
+                updateWordCount(currentFilteredWords.length);
+            };
+
+            if (leftBtn) {
+                leftBtn.onclick = () => makeChoice('L');
+            }
+            if (rightBtn) {
+                rightBtn.onclick = () => makeChoice('R');
+            }
+
+            // Do not call callback yet; next feature will see narrowed currentFilteredWords
+            break;
+        }
+        case 'muteDuo': {
+            const engine = window.muteBinaryEngine || {};
+
+            const letterEl = document.getElementById('muteDuoCurrentLetter');
+            const btnUp = document.getElementById('muteDuoButtonUp');
+            const btnRight = document.getElementById('muteDuoButtonRight');
+            const btnDown = document.getElementById('muteDuoButtonDown');
+            const btnLeft = document.getElementById('muteDuoButtonLeft');
+
+            // Two independent candidate sets (Word 1, Word 2), both starting from currentFilteredWords
+            let candidates1 = currentFilteredWords.slice();
+            let candidates2 = currentFilteredWords.slice();
+
+            // Reset DUO state
+            muteDuoSequence1 = [];
+            muteDuoSequence2 = [];
+            muteDuoLetterIndex = 0;
+            muteDuoUsedLetters = new Set();
+            muteDuoDynamicSequence = [];
+
+            const duoModeSetting = (appSettings && appSettings.muteLetterMode) || 'az';
+            const duoCustomSeq = (appSettings && appSettings.muteCustomSequence) || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+            const getDuoLetterParams = () => {
+                if (duoModeSetting === 'az') {
+                    return { effectiveMode: 'az', seq: muteDuoLetterSequence, dyn: [] };
+                }
+                if (duoModeSetting === 'custom') {
+                    const upperCustom = String(duoCustomSeq || '').toUpperCase();
+                    if (muteDuoLetterIndex < upperCustom.length) {
+                        return { effectiveMode: 'customFixed', seq: upperCustom, dyn: [] };
+                    }
+                    return { effectiveMode: 'mostFrequent', seq: '', dyn: muteDuoDynamicSequence };
+                }
+                // duoModeSetting === 'mostFrequent'
+                return { effectiveMode: 'mostFrequent', seq: '', dyn: muteDuoDynamicSequence };
+            };
+
+            const updateAll = () => {
+                if (!engine.filterWords) {
+                    displayMuteDuoResults(candidates1, [], candidates2, []);
+                    if (letterEl) letterEl.textContent = '-';
+                    return;
+                }
+
+                const params = getDuoLetterParams();
+                if (params.effectiveMode === 'mostFrequent') {
+                    const unionWords = Array.from(new Set([...candidates1, ...candidates2]));
+                    const nextLetter = engine.selectNextDynamicLetter
+                        ? engine.selectNextDynamicLetter(unionWords, muteDuoUsedLetters)
+                        : null;
+                    if (nextLetter) {
+                        muteDuoUsedLetters.add(nextLetter);
+                        if (!muteDuoDynamicSequence.includes(nextLetter)) {
+                            muteDuoDynamicSequence.push(nextLetter);
+                        }
+                    }
+                }
+
+                const res1 = engine.filterWords(
+                    candidates1,
+                    muteDuoSequence1,
+                    muteDuoLetterIndex,
+                    params.seq,
+                    params.dyn
+                );
+                const res2 = engine.filterWords(
+                    candidates2,
+                    muteDuoSequence2,
+                    muteDuoLetterIndex,
+                    params.seq,
+                    params.dyn
+                );
+
+                // Keep left/right separate for display
+                const word1Left = res1.leftWords;
+                const word1Right = res1.rightWords;
+                const word2Left = res2.leftWords;
+                const word2Right = res2.rightWords;
+
+                // Update candidate sets as union of interpretations for each word
+                candidates1 = Array.from(new Set([...word1Left, ...word1Right]));
+                candidates2 = Array.from(new Set([...word2Left, ...word2Right]));
+
+                displayMuteDuoResults(word1Left, word1Right, word2Left, word2Right);
+
+                if (letterEl) {
+                    // Use the same shared letter for display; prefer non-empty letter from either result
+                    const letter = res1.currentLetter || res2.currentLetter || '-';
+                    letterEl.textContent = letter;
+                    if (params.effectiveMode === 'mostFrequent' && letter && letter !== '-') {
+                        muteDuoUsedLetters.add(letter);
+                        if (!muteDuoDynamicSequence.includes(letter)) {
+                            muteDuoDynamicSequence.push(letter);
+                        }
+                    }
+                }
+
+                // For downstream features, keep union of both candidate sets (across both interpretations and both words)
+                const union = Array.from(new Set([...word1Left, ...word1Right, ...word2Left, ...word2Right]));
+                currentFilteredWords = union;
+                updateWordCount(currentFilteredWords.length);
+            };
+
+            // Map a single button press to (choice for word1, choice for word2)
+            const applyCombo = (choice1, choice2) => {
+                if (!engine.filterWords) return;
+
+                muteDuoSequence1.push(choice1);
+                muteDuoSequence2.push(choice2);
+
+                // Shared letter stream: increment index once per combo press
+                muteDuoLetterIndex = muteDuoSequence1.length;
+
+                updateAll();
+            };
+
+            // Initial display
+            updateAll();
+
+            // Button wiring – mirror 2 PERSON PERFORM style combos:
+            // Up:    "1 & 4"  → (L, R)
+            // Right: "2 & 4"  → (R, R)
+            // Down:  "2 & 3"  → (R, L)
+            // Left:  "1 & 3"  → (L, L)
+            if (btnUp) {
+                btnUp.onclick = () => applyCombo('L', 'R');
+            }
+            if (btnRight) {
+                btnRight.onclick = () => applyCombo('R', 'R');
+            }
+            if (btnDown) {
+                btnDown.onclick = () => applyCombo('R', 'L');
+            }
+            if (btnLeft) {
+                btnLeft.onclick = () => applyCombo('L', 'L');
+            }
+
+            // As with MUTE, do not call callback; workflow continues with narrowed currentFilteredWords
+            break;
+        }
 
         case 'leastFrequent': {
             const leastFrequentYesBtn = document.getElementById('leastFrequentYesBtn');
@@ -8811,7 +9193,7 @@ function setupFeatureListeners(feature, callback, options) {
             }
             break;
         }
-        case 't9OneLie': {
+                case 't9OneLie': {
             let selectedDigits = [];
             let lastActualLen = 0;
             if (options.previousStepFeature === 't9Last' && t9LastActual) {
@@ -12597,6 +12979,34 @@ function initializeModeButtons() {
             if (headerBack) headerBack.style.display = 'inline-block';
         });
     }
+
+    const binaryButton = document.getElementById('binaryModeButton');
+    if (binaryButton) {
+        const showBinaryFeatures = () => {
+            const availableFeatures = document.getElementById('availableFeatures');
+            if (!availableFeatures) return;
+            const normalFeatures = availableFeatures.innerHTML;
+            if (!availableFeatures.dataset.normalFeatures) {
+                availableFeatures.dataset.normalFeatures = normalFeatures;
+            }
+            availableFeatures.innerHTML = `
+                <div class="feature-group">
+                    <button class="feature-button binary-feature-button" data-feature="mute" draggable="true">MUTE</button>
+                    <button class="info-button" data-feature="mute"><i class="fas fa-info-circle"></i></button>
+                </div>
+                <div class="feature-group">
+                    <button class="feature-button binary-feature-button" data-feature="muteDuo" draggable="true">MUTE DUO</button>
+                    <button class="info-button" data-feature="muteDuo"><i class="fas fa-info-circle"></i></button>
+                </div>
+            `;
+            const headerBack = document.getElementById('workflowBuilderBackButton');
+            if (headerBack) headerBack.style.display = 'inline-block';
+            initializeFeatureSelection();
+            initializeInfoButtons();
+        };
+        binaryButton.addEventListener('click', showBinaryFeatures);
+        addModeButtonTouchHandlers(binaryButton, showBinaryFeatures);
+    }
 }
 
 // Re-initialize feature selection when new content is added
@@ -13635,6 +14045,56 @@ function initSettingsUI() {
                 saveAppSettings();
             }
         });
+    }
+
+    const muteLetterModeSelect = document.getElementById('muteLetterModeSelect');
+    const muteCustomSequenceFields = document.getElementById('muteCustomSequenceFields');
+    const muteCustomSequenceInput = document.getElementById('muteCustomSequenceInput');
+    if (muteLetterModeSelect) {
+        if (appSettings && appSettings.muteLetterMode) {
+            muteLetterModeSelect.value = appSettings.muteLetterMode;
+        }
+        const syncMuteCustomUI = () => {
+            const mode = muteLetterModeSelect.value;
+            if (muteCustomSequenceFields) {
+                muteCustomSequenceFields.style.display = mode === 'custom' ? '' : 'none';
+            }
+            if (mode === 'custom' && muteCustomSequenceInput && appSettings && appSettings.muteCustomSequence) {
+                muteCustomSequenceInput.value = appSettings.muteCustomSequence;
+            }
+        };
+        syncMuteCustomUI();
+        muteLetterModeSelect.addEventListener('change', () => {
+            let mode = 'az';
+            if (muteLetterModeSelect.value === 'mostFrequent') mode = 'mostFrequent';
+            if (muteLetterModeSelect.value === 'custom') mode = 'custom';
+            appSettings.muteLetterMode = mode;
+            saveAppSettings();
+            syncMuteCustomUI();
+        });
+        if (muteCustomSequenceInput) {
+            if (appSettings && appSettings.muteCustomSequence) {
+                muteCustomSequenceInput.value = appSettings.muteCustomSequence;
+            }
+            muteCustomSequenceInput.addEventListener('input', () => {
+                let val = (muteCustomSequenceInput.value || '').toUpperCase().replace(/[^A-Z]/g, '');
+                // Optional: dedupe to avoid repeated letters
+                let seen = new Set();
+                let deduped = '';
+                for (const ch of val) {
+                    if (!seen.has(ch)) {
+                        seen.add(ch);
+                        deduped += ch;
+                    }
+                }
+                if (deduped.length === 0) {
+                    deduped = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                }
+                muteCustomSequenceInput.value = deduped;
+                appSettings.muteCustomSequence = deduped;
+                saveAppSettings();
+            });
+        }
     }
 
     const zeroCurvesApproxToggle = document.getElementById('zeroCurvesApproxToggle');

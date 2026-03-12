@@ -119,6 +119,11 @@
                                 <button class="feature-button birthday-mode-button" id="birthdayModeButton" draggable="false">BIRTHDAY</button>
                                 <button class="info-button" data-feature="birthdayMode"><i class="fas fa-info-circle"></i></button>
                             </div>
+                            <!-- BINARY: group button (features shown via JS when clicked) -->
+                            <div class="feature-group">
+                                <button class="feature-button binary-mode-button" id="binaryModeButton" draggable="false">BINARY</button>
+                                <button class="info-button" data-feature="binaryMode"><i class="fas fa-info-circle"></i></button>
+                            </div>
                             <div class="feature-group" data-builder-hidden="true">
                                 <button class="feature-button alphanumeric-mode-button" id="alphanumericModeButton" draggable="false">Alpha-Numeric</button>
                                 <button class="info-button" data-feature="alphanumericMode"><i class="fas fa-info-circle"></i></button>
@@ -1115,6 +1120,21 @@
                 <h2 class="settings-page-title">Settings</h2>
                 <div class="settings-sections">
                     <div class="settings-section">
+                        <h3 class="settings-section-title">BINARY (MUTE / MUTE DUO)</h3>
+                        <p class="settings-section-subtitle">Letter selection mode</p>
+                        <label for="muteLetterModeSelect">Mode:</label>
+                        <select id="muteLetterModeSelect">
+                            <option value="az">A–Z (fixed sequence)</option>
+                            <option value="custom">Custom, then Most Frequent</option>
+                            <option value="mostFrequent">Most Frequent (dynamic)</option>
+                        </select>
+                        <div id="muteCustomSequenceFields" class="mute-custom-sequence-fields" style="margin-top: 8px; display: none;">
+                            <label for="muteCustomSequenceInput">Custom letter string (A–Z only, no spaces):</label>
+                            <input type="text" id="muteCustomSequenceInput" placeholder="e.g. ETAOINSHRDLU" maxlength="26" autocomplete="off" style="width: 100%; text-transform: uppercase;">
+                            <p class="settings-field-help">MUTE/MUTE DUO will step through this string first, then switch to Most Frequent letters automatically.</p>
+                        </div>
+                    </div>
+                    <div class="settings-section">
                         <h3 class="settings-section-title">LENGTH</h3>
                         <p class="settings-section-subtitle">1 Buffer</p>
                         <label class="toggle-switch">
@@ -1882,6 +1902,25 @@
                 <button class="close-info-button">&times;</button>
             </div>
         </div>
+        <div id="binaryModeInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>BINARY</h3>
+                <p><strong>Binary word-filter tools.</strong><br>Opens the BINARY tools (MUTE and MUTE DUO). These filters split the word list using YES/NO style answers to letters of the alphabet, showing two possible interpretations in parallel. Use the BINARY button to access the individual tools.</p>
+                <button class="close-info-button">&times;</button>
+            </div>
+        </div>
+        <div id="muteInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>MUTE</h3>
+                <p><strong>Single-spectator binary filter.</strong><br>At each step you see a letter; the spectator answers LEFT or RIGHT. The app keeps both logical interpretations in play (LEFT = “letter is in” vs RIGHT = “letter is out”, and vice-versa) and updates the LEFT/RIGHT word lists and counts after each answer.</p>
+            </div>
+        </div>
+        <div id="muteDuoInfo" class="feature-info-modal">
+            <div class="feature-info-content">
+                <h3>MUTE DUO</h3>
+                <p><strong>Two-spectator version of MUTE.</strong><br>Use the D-pad style buttons (1&amp;4, 2&amp;4, 2&amp;3, 1&amp;3) so a single press applies a paired YES/NO decision to both spectators at once. The four SPEC boxes show the two interpretations for each spectator side by side, updating after every answer.</p>
+            </div>
+        </div>
         <div id="t9ModeInfo" class="feature-info-modal">
             <div class="feature-info-content">
                 <h3>T9</h3>
@@ -1905,7 +1944,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=14"></script>
+    <script src="muteBinaryFilter.js?v=1"></script>
+    <script src="script.js?v=15"></script>
     <div id="eyeTestChartOverlay" class="eye-test-chart-overlay" style="display:none;">
         <canvas id="eyeTestChartCanvas" width="600" height="820"></canvas>
         <div class="eye-test-chart-hint">Triple tap anywhere to close</div>

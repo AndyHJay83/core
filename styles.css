@@ -231,6 +231,63 @@ body {
     font-weight: bold;
 }
 
+/* MUTE DUO: four-quadrant layout */
+.mute-duo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 10px;
+    height: 100%;
+    position: relative;
+}
+
+.mute-duo-grid .mute-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.mute-duo-grid .mute-column h3 {
+    margin-bottom: 8px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.mute-duo-grid .word-list {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden; /* avoid horizontal scrolling; wrap if needed */
+}
+
+/* Extra vertical spacing around divider between SPEC 1 (top) and SPEC 2 (bottom) */
+.mute-duo-grid .mute-column:nth-child(1),
+.mute-duo-grid .mute-column:nth-child(2) {
+    padding-bottom: 6px;
+}
+
+.mute-duo-grid .mute-column:nth-child(3),
+.mute-duo-grid .mute-column:nth-child(4) {
+    padding-top: 6px;
+}
+
+/* Horizontal divider between SPEC 1 (top) and SPEC 2 (bottom) */
+.mute-duo-grid::before {
+    content: '';
+    position: absolute;
+    left: 10%;
+    width: 80%;
+    top: 50%;
+    transform: translateY(-0.5px);
+    border-top: 1px solid #ccc;
+    pointer-events: none;
+}
+
+/* Slightly smaller font inside MUTE DUO word blocks so longer words fit */
+.mute-duo-grid .word-list li {
+    font-size: 0.9em;
+}
+
 /* SOLOGRAM overlay at bottom of results */
 .sologram-overlay {
     margin-top: 16px;
@@ -2453,7 +2510,9 @@ input:checked + .slider:before {
 #availableFeatures:has([data-feature^="whatItsNot"]),
 /* BIRTHDAY group: NUMEROLOGY / CUPS pinned to top like PIN-NACLE / CHAIN REACTION */
 #availableFeatures:has([data-feature="numerology"]),
-#availableFeatures:has([data-feature="cups"]) {
+#availableFeatures:has([data-feature="cups"]),
+/* BINARY group: MUTE / MUTE DUO pinned to top */
+#availableFeatures:has(.binary-feature-button) {
     align-content: start !important;
     justify-content: start !important;
 }
@@ -2644,13 +2703,15 @@ input:checked + .slider:before {
     /* Ensure mode buttons match the width of regular feature buttons */
     .feature-group:has(.t9-mode-button),
     .feature-group:has(.alphanumeric-mode-button),
-    .feature-group:has(.chain-reaction-mode-button) {
+    .feature-group:has(.chain-reaction-mode-button),
+    .feature-group:has(.binary-mode-button) {
         width: 100% !important;
     }
     
     .t9-mode-button,
     .alphanumeric-mode-button,
-    .chain-reaction-mode-button {
+    .chain-reaction-mode-button,
+    .binary-mode-button {
         flex: 1 1 auto !important;
         max-width: 100% !important;
     }
@@ -2962,6 +3023,27 @@ input:checked + .slider:before {
     align-items: center;
     justify-content: center;
 }
+
+/* MUTE (Binary) results layout */
+.mute-results-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.mute-column h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    text-align: center;
+}
+.mute-count-green {
+    background-color: #e8f5e9;
+}
+.mute-count-orange {
+    background-color: #fff3e0;
+}
+.mute-count-red {
+    background-color: #ffebee;
+}
 .t9-one-lie-btn:hover {
     background: #e0e0e0;
     transform: scale(1.05);
@@ -3005,6 +3087,77 @@ input:checked + .slider:before {
     align-items: center;
     justify-content: center;
 }
+
+/* MUTE / MUTE DUO letter + controls */
+.mute-letter-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mute-letter-display-large {
+    margin: 12px 0 16px;
+}
+
+.mute-letter-char {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.mute-buttons-centered {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.mute-duo-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mute-duo-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    grid-template-rows: repeat(3, auto);
+    justify-items: center;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    gap: 4px;
+}
+
+.mute-duo-btn {
+    min-width: 112px;
+    max-width: 112px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.mute-duo-btn-up {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.mute-duo-btn-right {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.mute-duo-btn-down {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.mute-duo-btn-left {
+    grid-column: 1;
+    grid-row: 2;
+}
+
 .t9-one-lie-b {
     color: #f44336;
     font-weight: bold;
@@ -4453,6 +4606,29 @@ input:checked + .slider:before {
     box-shadow: 0 8px 24px rgba(244,67,54,0.28) !important;
 }
 
+/* BINARY filters (builder + selected chips) - pink */
+.binary-feature-button {
+    background-color: #e91e63 !important;
+    color: white !important;
+    border-color: #c2185b !important;
+}
+.binary-feature-button:hover {
+    background-color: #d81b60 !important;
+}
+.binary-mode-button {
+    background-color: #e91e63 !important;
+    color: white !important;
+    border-color: #c2185b !important;
+    font-weight: bold;
+    width: 100% !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    box-sizing: border-box !important;
+    flex: 1 1 auto !important;
+    max-width: 100% !important;
+}
+
 /* Alpha-Numeric Feature Styles (Blue) */
 .alphanumeric-feature-button {
     background-color: #2196F3 !important; /* Blue - matches T9 orange pattern */
@@ -4779,7 +4955,9 @@ input:checked + .slider:before {
     
     /* Match normal filter padding and align to top for T9 or Alpha-Numeric features */
     #availableFeatures:has(.t9-feature-button),
-    #availableFeatures:has(.alphanumeric-feature-button) {
+    #availableFeatures:has(.alphanumeric-feature-button),
+    /* And for BINARY's MUTE / MUTE DUO */
+    #availableFeatures:has(.binary-feature-button) {
         gap: 8px !important;
         padding: 10px !important;
         align-content: start !important;
