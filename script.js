@@ -32,7 +32,7 @@ let lastSologramYnString = null;
 let workflowHasSologram = false;
 
 // Version constant - increment .1 for each push update, major version when specified
-const APP_VERSION = '12.0';
+const APP_VERSION = '12.1';
 
 // Store T9 1 LIE (L4) data for "B" feature
 let t9OneLieBlankIndex = null;  // Position of BLANK (0-3)
