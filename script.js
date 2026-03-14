@@ -11302,6 +11302,9 @@ let voiceState = {
     voiceWords: [],
     recognition: null,
 };
+let voiceInvalidDotTimeout = null;
+const VOICE_INVALID_DOT_DURATION_MS = 2000;
+const VOICE_MIC_RESTART_DELAY_MS = 1000;
 
 function getVoiceTrigger(name) {
     const key = 'voiceTrigger' + name.charAt(0).toUpperCase() + name.slice(1);
@@ -11425,6 +11428,29 @@ function voiceNoticeSetWordList(words) {
     if (box) box.scrollTop = box.scrollHeight;
 }
 
+function voiceShowInvalidFeedback() {
+    const dot = document.getElementById('voiceInvalidDot');
+    if (!dot) return;
+    if (voiceInvalidDotTimeout) {
+        clearTimeout(voiceInvalidDotTimeout);
+        voiceInvalidDotTimeout = null;
+    }
+    dot.classList.add('voice-invalid-dot-visible');
+    dot.setAttribute('aria-hidden', 'false');
+    voiceInvalidDotTimeout = setTimeout(() => {
+        voiceHideInvalidFeedback();
+        voiceInvalidDotTimeout = null;
+    }, VOICE_INVALID_DOT_DURATION_MS);
+}
+
+function voiceHideInvalidFeedback() {
+    const dot = document.getElementById('voiceInvalidDot');
+    if (dot) {
+        dot.classList.remove('voice-invalid-dot-visible');
+        dot.setAttribute('aria-hidden', 'true');
+    }
+}
+
 function voiceCheckTrigger(phrase) {
     const t = phrase.trim().toLowerCase();
     const words = t.split(/\s+/).filter(Boolean);
@@ -11452,6 +11478,8 @@ function voiceApplyTrigger(payload) {
             voiceState.voiceWords = filterWordsByLength(voiceState.voiceWords, len);
             voiceNoticeAppendLine(String(len), false);
             voiceState.step = 'repeat';
+        } else {
+            voiceShowInvalidFeedback();
         }
     } else if (trigger === 'repeat') {
         const rep = parseRepeatFromWords(words);
@@ -11460,6 +11488,8 @@ function voiceApplyTrigger(payload) {
             voiceState.voiceWords = filterWordsByT9Repeat(voiceState.voiceWords, rep);
             voiceNoticeAppendLine(rep ? 'YES' : 'NO', false);
             voiceState.step = 'oneLie';
+        } else {
+            voiceShowInvalidFeedback();
         }
     } else if (trigger === 'oneLie') {
         const four = parseFourDigitsFromWords(words);
@@ -11474,6 +11504,8 @@ function voiceApplyTrigger(payload) {
                 voiceNoticeAppendLine(position + ' (' + options.join(', ') + ')', true);
             }
             voiceState.step = 'oneLieConfirm';
+        } else {
+            voiceShowInvalidFeedback();
         }
     } else if (trigger === 'confirm' && voiceState.step === 'oneLieConfirm') {
         const digit = parseDigitFromWords(words);
@@ -11488,6 +11520,8 @@ function voiceApplyTrigger(payload) {
             voiceNoticeReplaceLastBlueLine(voiceState.voiceConfirmedLie.position + ' (' + digit + ')');
             voiceState.step = 'done';
             voiceNoticeSetWordList(voiceState.voiceWords);
+        } else {
+            voiceShowInvalidFeedback();
         }
     } else if (trigger === 'override' && voiceState.step === 'oneLieConfirm') {
         const digit = parseDigitFromWords(words);
@@ -11502,6 +11536,8 @@ function voiceApplyTrigger(payload) {
             voiceNoticeReplaceLastBlueLine(voiceState.voiceConfirmedLie.position + ' (' + digit + ')');
             voiceState.step = 'done';
             voiceNoticeSetWordList(voiceState.voiceWords);
+        } else {
+            voiceShowInvalidFeedback();
         }
     }
 }
@@ -11531,7 +11567,11 @@ function voiceStartRecognition() {
     };
     voiceState.recognition.onend = () => {
         if (voiceState.step && voiceState.step !== 'done' && document.getElementById('voiceScreen').style.display !== 'none') {
-            voiceState.recognition.start();
+            setTimeout(() => {
+                if (voiceState.recognition && voiceState.step && voiceState.step !== 'done') {
+                    voiceState.recognition.start();
+                }
+            }, VOICE_MIC_RESTART_DELAY_MS);
         }
     };
     voiceState.recognition.start();
@@ -11547,6 +11587,12 @@ async function startVoice() {
 
     const content = document.getElementById('voiceNoticeContent');
     if (content) content.innerHTML = '';
+
+    if (voiceInvalidDotTimeout) {
+        clearTimeout(voiceInvalidDotTimeout);
+        voiceInvalidDotTimeout = null;
+    }
+    voiceHideInvalidFeedback();
 
     t9StringsMap.clear();
     t9StringsCalculated = false;
@@ -11569,6 +11615,11 @@ async function startVoice() {
 }
 
 function exitVoice() {
+    if (voiceInvalidDotTimeout) {
+        clearTimeout(voiceInvalidDotTimeout);
+        voiceInvalidDotTimeout = null;
+    }
+    voiceHideInvalidFeedback();
     if (voiceState.recognition) {
         try { voiceState.recognition.stop(); } catch (_) {}
         voiceState.recognition = null;

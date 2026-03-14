@@ -4869,6 +4869,26 @@ input:checked + .slider:before {
     color: #b0b0b0;
 }
 
+/* Red dot: invalid input feedback (center of VOICE screen) */
+.voice-invalid-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #e53935;
+    box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.4);
+    pointer-events: none;
+    z-index: 9002;
+    display: none;
+}
+
+.voice-invalid-dot.voice-invalid-dot-visible {
+    display: block;
+}
+
 .voice-back-button {
     position: absolute;
     top: 12px;
