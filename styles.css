@@ -2547,18 +2547,18 @@ input:checked + .slider:before {
     justify-content: space-between;
     padding: 12px 16px;
     margin: 0 0 8px 0;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-    border: none;
+    background: white;
+    border: 2px solid var(--border-subtle);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(33, 147, 176, 0.18);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     min-height: 48px;
     width: 100%;
     box-sizing: border-box;
     overflow: hidden;
     position: relative;
-    color: white;
+    color: #111;
     font-weight: 500;
 }
 
@@ -2569,7 +2569,7 @@ input:checked + .slider:before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    background: #f5f5f5;
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: -1;
@@ -2577,13 +2577,14 @@ input:checked + .slider:before {
 
 .selected-feature-item:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(38, 166, 154, 0.4);
-    background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    background: #f8f8f8;
+    border-color: var(--accent);
 }
 
 .selected-feature-item:active {
     transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(33, 147, 176, 0.18);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .selected-feature-item span {
@@ -2593,7 +2594,7 @@ input:checked + .slider:before {
     font-size: 14px;
     line-height: 1.4;
     text-align: left;
-    color: white;
+    color: inherit;
     font-weight: 600;
     letter-spacing: 0.5px;
     flex: 1;
@@ -2603,6 +2604,12 @@ input:checked + .slider:before {
 /* T9 Selected Feature Styling (Orange) */
 .selected-feature-item.t9-selected-feature {
     background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+    color: white !important;
+    border-color: transparent !important;
+}
+
+.selected-feature-item.t9-selected-feature span {
+    color: white !important;
 }
 
 .selected-feature-item.t9-selected-feature::before {
@@ -4011,18 +4018,35 @@ input:checked + .slider:before {
     background-color: #1976D2 !important;
 }
 
-/* Alpha-Numeric Selected Feature Styling (Blue) */
+/* Alpha-Numeric Selected Feature Styling (White - normal filter) */
 .selected-feature-item.alphanumeric-selected-feature {
+    background: white !important;
+    color: #111 !important;
+    border-color: var(--border-subtle) !important;
+}
+
+.selected-feature-item.alphanumeric-selected-feature span {
+    color: inherit !important;
+}
+
+/* CHAIN REACTION Selected Feature Styling (Blue) */
+.selected-feature-item.chain-reaction-selected-feature {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+    border-color: #1976D2 !important;
+    color: white !important;
+}
+
+.selected-feature-item.chain-reaction-selected-feature::before {
     background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
 }
 
-.selected-feature-item.alphanumeric-selected-feature::before {
-    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
-}
-
-.selected-feature-item.alphanumeric-selected-feature:hover {
+.selected-feature-item.chain-reaction-selected-feature:hover {
     background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%) !important;
     box-shadow: 0 8px 24px rgba(33, 150, 243, 0.28) !important;
+}
+
+.selected-feature-item.chain-reaction-selected-feature span {
+    color: white !important;
 }
 
 .back-button {
@@ -4786,6 +4810,99 @@ input:checked + .slider:before {
 .home-settings-button {
     background: linear-gradient(135deg, #a0a0a0 0%, #c0c0c0 100%) !important;
     color: #000 !important;
+}
+
+.home-voice-button {
+    background: linear-gradient(135deg, #dda0dd 0%, #ee82ee 100%) !important;
+    color: #000 !important;
+}
+
+/* VOICE screen: full black, notice box bottom-left */
+.voice-screen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9000;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+.voice-notice-box {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    max-height: 50vh;
+    min-width: 120px;
+    padding: 12px 16px;
+    font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #b0b0b0;
+    text-align: left;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.voice-notice-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-top: auto;
+}
+
+.voice-notice-content .voice-line {
+    margin: 2px 0;
+    word-break: break-word;
+}
+
+.voice-notice-content .voice-line.voice-line-blue {
+    color: #87ceeb;
+}
+
+.voice-notice-content .voice-line.voice-line-grey {
+    color: #b0b0b0;
+}
+
+.voice-back-button {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 9001;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.voice-back-button:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+/* Settings: VOICE trigger words */
+.voice-trigger-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.voice-trigger-fields label {
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.voice-trigger-fields input {
+    max-width: 280px;
+    padding: 6px 10px;
 }
 
 /* Workflow page - New layout */

@@ -130,6 +130,12 @@ const DEFAULT_SETTINGS = {
     skipWorkflowDeleteConfirm: false,
     alphaDirectionsCount: 0,  // 0 = enter until SUBMIT; N = auto-submit after N directions
     alphaSwapPov: false,       // OFF: Left=toward A, Right=toward Z; ON: swap
+    // VOICE workflow trigger words (configurable in Settings)
+    voiceTriggerLength: 'complicated',
+    voiceTriggerRepeat: 'fantastic',
+    voiceTriggerOneLie: 'difficult',
+    voiceTriggerConfirm: 'amazing',
+    voiceTriggerOverride: 'challenging',
 };
 
 const DEFAULT_LETTER_LYING_STRING = 'NTRLCSAIEUO';
@@ -859,6 +865,8 @@ function setupButtonListeners() {
                 document.getElementById('homepage').style.display = 'none';
                 document.getElementById('workflowCreation').style.display = 'none';
                 document.getElementById('settingsPage').style.display = 'none';
+                const voiceScreenEl = document.getElementById('voiceScreen');
+                if (voiceScreenEl) voiceScreenEl.style.display = 'none';
                 const workflowExecution = document.getElementById('workflowExecution');
                 workflowExecution.style.display = 'block';
                 await executeWorkflow(workflow.steps);
@@ -870,6 +878,25 @@ function setupButtonListeners() {
         newPerformButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             newPerformButton.click();
+        }, { passive: false });
+    }
+
+    const voiceButton = document.getElementById('voiceButton');
+    if (voiceButton) {
+        voiceButton.addEventListener('click', () => {
+            startVoice();
+        });
+        voiceButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            voiceButton.click();
+        }, { passive: false });
+    }
+    const voiceBackButton = document.getElementById('voiceBackButton');
+    if (voiceBackButton) {
+        voiceBackButton.addEventListener('click', exitVoice);
+        voiceBackButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            exitVoice();
         }, { passive: false });
     }
 }
@@ -10115,6 +10142,10 @@ function editWorkflow(workflow) {
         if (step.feature === 'alphaNumeric' || step.feature === 'lettersAbove') {
             featureItem.classList.add('alphanumeric-selected-feature');
         }
+        // Add CHAIN REACTION class if it's a CHAIN REACTION feature
+        if (step.feature.startsWith('whatItsNot')) {
+            featureItem.classList.add('chain-reaction-selected-feature');
+        }
         featureItem.setAttribute('data-feature', step.feature);
         featureItem.draggable = true;
         
@@ -10298,6 +10329,10 @@ function addFeatureToSelected(featureType) {
     // Add Alpha-Numeric class if it's an Alpha-Numeric feature
     if (featureType === 'alphaNumeric' || featureType === 'lettersAbove') {
         selectedFeature.classList.add('alphanumeric-selected-feature');
+    }
+    // Add CHAIN REACTION class if it's a CHAIN REACTION feature
+    if (featureType.startsWith('whatItsNot')) {
+        selectedFeature.classList.add('chain-reaction-selected-feature');
     }
     selectedFeature.dataset.feature = featureType;
     
@@ -10533,6 +10568,10 @@ function addFeatureToSelected(featureType) {
     // Add Alpha-Numeric class if it's an Alpha-Numeric feature
     if (featureType === 'alphaNumeric' || featureType === 'lettersAbove') {
         selectedFeature.classList.add('alphanumeric-selected-feature');
+    }
+    // Add CHAIN REACTION class if it's a CHAIN REACTION feature
+    if (featureType.startsWith('whatItsNot')) {
+        selectedFeature.classList.add('chain-reaction-selected-feature');
     }
     selectedFeature.dataset.feature = featureType;
     
@@ -11195,6 +11234,8 @@ function hideWorkflowCreation() {
     document.getElementById('workflowCreation').style.display = 'none';
     document.getElementById('workflowExecution').style.display = 'none';
     document.getElementById('settingsPage').style.display = 'none';
+    const voiceScreenEl = document.getElementById('voiceScreen');
+    if (voiceScreenEl) voiceScreenEl.style.display = 'none';
 }
 
 // Hide native select elements to prevent overlap with custom dropdowns (aggressive)
@@ -11244,6 +11285,297 @@ document.head.appendChild(workflowDropdownCSS);
 // Add filtering function
 function filterWordsByLength(words, length) {
     return words.filter(word => word.length === length);
+}
+
+// --- VOICE workflow: LENGTH → REPEAT → 1 LIE (L4) with trigger words ---
+let voiceState = {
+    step: null,           // 'length' | 'repeat' | 'oneLie' | 'oneLieConfirm' | 'done'
+    transcript: '',
+    voiceLength: null,
+    voiceRepeat: null,
+    voiceOneLieDigits: null,
+    voiceOneLieHasBlank: false,
+    voiceOneLieBlankIndex: null,
+    voiceOneLiePossibleDigits: [],
+    voiceMostLikelyLie: null,  // { position: 1-4, options: [] }
+    voiceConfirmedLie: null,   // { position, digit } after confirm/override
+    voiceWords: [],
+    recognition: null,
+};
+
+function getVoiceTrigger(name) {
+    const key = 'voiceTrigger' + name.charAt(0).toUpperCase() + name.slice(1);
+    const v = (appSettings && appSettings[key]) || DEFAULT_SETTINGS[key];
+    return (v || '').trim().toLowerCase();
+}
+
+function getLastNWords(transcript, n) {
+    const tokens = transcript.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length <= n) return tokens;
+    return tokens.slice(-n);
+}
+
+function parseLengthFromWords(words) {
+    for (let i = words.length - 1; i >= 0; i--) {
+        const w = words[i].replace(/[^0-9]/g, '');
+        if (w.length >= 1) {
+            const num = parseInt(w, 10);
+            if (num >= 1 && num <= 26) return num;
+        }
+    }
+    return null;
+}
+
+function parseRepeatFromWords(words) {
+    const text = words.join(' ').toLowerCase();
+    if (/\b(yes|yep|yeah|there are|repeated|repeat)\b/.test(text)) return true;
+    if (/\b(no|nope|none|no repeated|no repeat)\b/.test(text)) return false;
+    return null;
+}
+
+function parseFourDigitsFromWords(words) {
+    const text = words.join(' ').replace(/\s/g, '');
+    const match = text.match(/[2-9]{4}/);
+    return match ? match[0] : null;
+}
+
+function parseDigitFromWords(words) {
+    const text = words.join(' ');
+    const match = text.match(/\b([2-9])\b/);
+    return match ? match[1] : null;
+}
+
+function computeMostLikelyLieNoB(words, selectedDigits) {
+    if (!words.length || !selectedDigits || selectedDigits.length !== 4) return null;
+    calculateT9Strings(words);
+    const digitCountByPosition = [new Map(), new Map(), new Map(), new Map()];
+    words.forEach(word => {
+        const t9 = t9StringsMap.get(word) || wordToT9(word);
+        if (t9.length < 4) return;
+        const last4 = t9.slice(-4).split('');
+        for (let i = 0; i < 4; i++) {
+            if (last4[i] !== selectedDigits[i]) {
+                const d = last4[i];
+                digitCountByPosition[i].set(d, (digitCountByPosition[i].get(d) || 0) + 1);
+            }
+        }
+    });
+    let bestPos = 0;
+    let bestTotal = 0;
+    for (let i = 0; i < 4; i++) {
+        let total = 0;
+        digitCountByPosition[i].forEach(c => { total += c; });
+        if (total > bestTotal) {
+            bestTotal = total;
+            bestPos = i;
+        }
+    }
+    const options = Array.from(digitCountByPosition[bestPos].keys()).sort();
+    return { position: bestPos + 1, options };
+}
+
+function voiceNoticeAppendLine(text, isBlue) {
+    const content = document.getElementById('voiceNoticeContent');
+    if (!content) return;
+    const line = document.createElement('div');
+    line.className = 'voice-line ' + (isBlue ? 'voice-line-blue' : 'voice-line-grey');
+    line.textContent = text;
+    content.appendChild(line);
+    const box = document.getElementById('voiceNoticeBox');
+    if (box) box.scrollTop = box.scrollHeight;
+}
+
+function voiceNoticeReplaceLastBlueLine(text) {
+    const content = document.getElementById('voiceNoticeContent');
+    if (!content) return;
+    const blue = content.querySelector('.voice-line-blue');
+    if (blue) {
+        blue.textContent = text;
+        blue.classList.remove('voice-line-blue');
+        blue.classList.add('voice-line-grey');
+    }
+}
+
+function voiceNoticeSetWordList(words) {
+    const content = document.getElementById('voiceNoticeContent');
+    if (!content) return;
+    const spacer = document.createElement('div');
+    spacer.className = 'voice-line voice-line-grey';
+    spacer.textContent = ' ';
+    spacer.style.marginTop = '8px';
+    content.appendChild(spacer);
+    calculateT9Strings(words);
+    words.forEach(word => {
+        const t9 = t9StringsMap.get(word) || wordToT9(word);
+        const first4 = t9.length >= 4 ? t9.slice(0, 4) : t9;
+        const wordLine = document.createElement('div');
+        wordLine.className = 'voice-line voice-line-grey';
+        wordLine.textContent = word;
+        content.appendChild(wordLine);
+        const digitLine = document.createElement('div');
+        digitLine.className = 'voice-line voice-line-grey';
+        digitLine.textContent = first4;
+        content.appendChild(digitLine);
+        const empty = document.createElement('div');
+        empty.className = 'voice-line voice-line-grey';
+        empty.textContent = ' ';
+        content.appendChild(empty);
+    });
+    const box = document.getElementById('voiceNoticeBox');
+    if (box) box.scrollTop = box.scrollHeight;
+}
+
+function voiceCheckTrigger(phrase) {
+    const t = phrase.trim().toLowerCase();
+    const words = t.split(/\s+/).filter(Boolean);
+    if (!words.length) return null;
+    const lastWord = words[words.length - 1];
+    const lenTrig = getVoiceTrigger('length');
+    const repTrig = getVoiceTrigger('repeat');
+    const lieTrig = getVoiceTrigger('oneLie');
+    const confTrig = getVoiceTrigger('confirm');
+    const overTrig = getVoiceTrigger('override');
+    if (lenTrig && lastWord === lenTrig) return { trigger: 'length', words: getLastNWords(words.slice(0, -1).join(' '), 20) };
+    if (repTrig && lastWord === repTrig) return { trigger: 'repeat', words: getLastNWords(words.slice(0, -1).join(' '), 20) };
+    if (lieTrig && lastWord === lieTrig) return { trigger: 'oneLie', words: getLastNWords(words.slice(0, -1).join(' '), 20) };
+    if (confTrig && lastWord === confTrig) return { trigger: 'confirm', words: getLastNWords(words.slice(0, -1).join(' '), 20) };
+    if (overTrig && lastWord === overTrig) return { trigger: 'override', words: getLastNWords(words.slice(0, -1).join(' '), 20) };
+    return null;
+}
+
+function voiceApplyTrigger(payload) {
+    const { trigger, words } = payload;
+    if (trigger === 'length') {
+        const len = parseLengthFromWords(words);
+        if (len != null) {
+            voiceState.voiceLength = len;
+            voiceState.voiceWords = filterWordsByLength(voiceState.voiceWords, len);
+            voiceNoticeAppendLine(String(len), false);
+            voiceState.step = 'repeat';
+        }
+    } else if (trigger === 'repeat') {
+        const rep = parseRepeatFromWords(words);
+        if (rep !== null) {
+            voiceState.voiceRepeat = rep;
+            voiceState.voiceWords = filterWordsByT9Repeat(voiceState.voiceWords, rep);
+            voiceNoticeAppendLine(rep ? 'YES' : 'NO', false);
+            voiceState.step = 'oneLie';
+        }
+    } else if (trigger === 'oneLie') {
+        const four = parseFourDigitsFromWords(words);
+        if (four) {
+            voiceState.voiceOneLieDigits = four.split('');
+            voiceState.voiceOneLieHasBlank = false;
+            voiceState.voiceWords = filterWordsByT9OneLie(voiceState.voiceWords, voiceState.voiceOneLieDigits, 0);
+            voiceNoticeAppendLine(four, false);
+            voiceState.voiceMostLikelyLie = computeMostLikelyLieNoB(voiceState.voiceWords, voiceState.voiceOneLieDigits);
+            if (voiceState.voiceMostLikelyLie) {
+                const { position, options } = voiceState.voiceMostLikelyLie;
+                voiceNoticeAppendLine(position + ' (' + options.join(', ') + ')', true);
+            }
+            voiceState.step = 'oneLieConfirm';
+        }
+    } else if (trigger === 'confirm' && voiceState.step === 'oneLieConfirm') {
+        const digit = parseDigitFromWords(words);
+        if (digit != null && voiceState.voiceMostLikelyLie && voiceState.voiceMostLikelyLie.options.includes(digit)) {
+            voiceState.voiceConfirmedLie = { position: voiceState.voiceMostLikelyLie.position, digit };
+            voiceState.voiceOneLieBlankIndex = voiceState.voiceMostLikelyLie.position - 1;
+            const sel = voiceState.voiceOneLieDigits.slice();
+            sel[voiceState.voiceOneLieBlankIndex] = 'BLANK';
+            t9OneLieBlankIndex = voiceState.voiceOneLieBlankIndex;
+            t9OneLieSelectedDigits = sel;
+            voiceState.voiceWords = filterWordsByT9B(voiceState.voiceWords, digit);
+            voiceNoticeReplaceLastBlueLine(voiceState.voiceConfirmedLie.position + ' (' + digit + ')');
+            voiceState.step = 'done';
+            voiceNoticeSetWordList(voiceState.voiceWords);
+        }
+    } else if (trigger === 'override' && voiceState.step === 'oneLieConfirm') {
+        const digit = parseDigitFromWords(words);
+        if (digit != null && voiceState.voiceMostLikelyLie) {
+            voiceState.voiceConfirmedLie = { position: voiceState.voiceMostLikelyLie.position, digit };
+            voiceState.voiceOneLieBlankIndex = voiceState.voiceMostLikelyLie.position - 1;
+            const sel = voiceState.voiceOneLieDigits.slice();
+            sel[voiceState.voiceOneLieBlankIndex] = 'BLANK';
+            t9OneLieBlankIndex = voiceState.voiceOneLieBlankIndex;
+            t9OneLieSelectedDigits = sel;
+            voiceState.voiceWords = filterWordsByT9B(voiceState.voiceWords, digit);
+            voiceNoticeReplaceLastBlueLine(voiceState.voiceConfirmedLie.position + ' (' + digit + ')');
+            voiceState.step = 'done';
+            voiceNoticeSetWordList(voiceState.voiceWords);
+        }
+    }
+}
+
+function voiceStartRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.warn('Speech recognition not supported');
+        return;
+    }
+    voiceState.recognition = new SpeechRecognition();
+    voiceState.recognition.continuous = true;
+    voiceState.recognition.interimResults = true;
+    voiceState.recognition.lang = 'en-US';
+    voiceState.recognition.onresult = (e) => {
+        let segment = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+            segment += e.results[i][0].transcript;
+        }
+        voiceState.transcript = (voiceState.transcript + ' ' + segment).trim();
+        const hit = voiceCheckTrigger(voiceState.transcript);
+        if (hit) {
+            voiceApplyTrigger(hit);
+            voiceState.transcript = '';
+            if (voiceState.recognition) voiceState.recognition.stop();
+        }
+    };
+    voiceState.recognition.onend = () => {
+        if (voiceState.step && voiceState.step !== 'done' && document.getElementById('voiceScreen').style.display !== 'none') {
+            voiceState.recognition.start();
+        }
+    };
+    voiceState.recognition.start();
+}
+
+async function startVoice() {
+    document.getElementById('homepage').style.display = 'none';
+    document.getElementById('workflowCreation').style.display = 'none';
+    document.getElementById('settingsPage').style.display = 'none';
+    document.getElementById('workflowExecution').style.display = 'none';
+    const voiceScreenEl = document.getElementById('voiceScreen');
+    if (voiceScreenEl) voiceScreenEl.style.display = 'flex';
+
+    const content = document.getElementById('voiceNoticeContent');
+    if (content) content.innerHTML = '';
+
+    t9StringsMap.clear();
+    t9StringsCalculated = false;
+    voiceState.step = 'length';
+    voiceState.transcript = '';
+    voiceState.voiceLength = null;
+    voiceState.voiceRepeat = null;
+    voiceState.voiceOneLieDigits = null;
+    voiceState.voiceOneLieHasBlank = false;
+    voiceState.voiceOneLieBlankIndex = null;
+    voiceState.voiceOneLiePossibleDigits = [];
+    voiceState.voiceMostLikelyLie = null;
+    voiceState.voiceConfirmedLie = null;
+    voiceState.voiceWords = [];
+
+    await loadWordList();
+    voiceState.voiceWords = [...wordList];
+
+    voiceStartRecognition();
+}
+
+function exitVoice() {
+    if (voiceState.recognition) {
+        try { voiceState.recognition.stop(); } catch (_) {}
+        voiceState.recognition = null;
+    }
+    const voiceScreenEl = document.getElementById('voiceScreen');
+    if (voiceScreenEl) voiceScreenEl.style.display = 'none';
+    document.getElementById('homepage').style.display = 'block';
 }
 
 function initSettingsUI() {
@@ -11491,6 +11823,41 @@ function initSettingsUI() {
         });
     }
     updateAlphaEfficiencySubtitle();
+
+    const voiceTriggerLengthInput = document.getElementById('voiceTriggerLengthInput');
+    const voiceTriggerRepeatInput = document.getElementById('voiceTriggerRepeatInput');
+    const voiceTriggerOneLieInput = document.getElementById('voiceTriggerOneLieInput');
+    const voiceTriggerConfirmInput = document.getElementById('voiceTriggerConfirmInput');
+    const voiceTriggerOverrideInput = document.getElementById('voiceTriggerOverrideInput');
+    const voiceTriggersResetBtn = document.getElementById('voiceTriggersResetBtn');
+    function syncVoiceTriggerInputs() {
+        if (voiceTriggerLengthInput) voiceTriggerLengthInput.value = (appSettings && appSettings.voiceTriggerLength) || DEFAULT_SETTINGS.voiceTriggerLength;
+        if (voiceTriggerRepeatInput) voiceTriggerRepeatInput.value = (appSettings && appSettings.voiceTriggerRepeat) || DEFAULT_SETTINGS.voiceTriggerRepeat;
+        if (voiceTriggerOneLieInput) voiceTriggerOneLieInput.value = (appSettings && appSettings.voiceTriggerOneLie) || DEFAULT_SETTINGS.voiceTriggerOneLie;
+        if (voiceTriggerConfirmInput) voiceTriggerConfirmInput.value = (appSettings && appSettings.voiceTriggerConfirm) || DEFAULT_SETTINGS.voiceTriggerConfirm;
+        if (voiceTriggerOverrideInput) voiceTriggerOverrideInput.value = (appSettings && appSettings.voiceTriggerOverride) || DEFAULT_SETTINGS.voiceTriggerOverride;
+    }
+    syncVoiceTriggerInputs();
+    function saveVoiceTrigger(key, value) {
+        if (appSettings) appSettings[key] = value;
+        saveAppSettings();
+    }
+    if (voiceTriggerLengthInput) voiceTriggerLengthInput.addEventListener('input', () => saveVoiceTrigger('voiceTriggerLength', voiceTriggerLengthInput.value.trim()));
+    if (voiceTriggerRepeatInput) voiceTriggerRepeatInput.addEventListener('input', () => saveVoiceTrigger('voiceTriggerRepeat', voiceTriggerRepeatInput.value.trim()));
+    if (voiceTriggerOneLieInput) voiceTriggerOneLieInput.addEventListener('input', () => saveVoiceTrigger('voiceTriggerOneLie', voiceTriggerOneLieInput.value.trim()));
+    if (voiceTriggerConfirmInput) voiceTriggerConfirmInput.addEventListener('input', () => saveVoiceTrigger('voiceTriggerConfirm', voiceTriggerConfirmInput.value.trim()));
+    if (voiceTriggerOverrideInput) voiceTriggerOverrideInput.addEventListener('input', () => saveVoiceTrigger('voiceTriggerOverride', voiceTriggerOverrideInput.value.trim()));
+    if (voiceTriggersResetBtn) {
+        voiceTriggersResetBtn.addEventListener('click', () => {
+            appSettings.voiceTriggerLength = DEFAULT_SETTINGS.voiceTriggerLength;
+            appSettings.voiceTriggerRepeat = DEFAULT_SETTINGS.voiceTriggerRepeat;
+            appSettings.voiceTriggerConfirm = DEFAULT_SETTINGS.voiceTriggerConfirm;
+            appSettings.voiceTriggerOverride = DEFAULT_SETTINGS.voiceTriggerOverride;
+            appSettings.voiceTriggerOneLie = DEFAULT_SETTINGS.voiceTriggerOneLie;
+            saveAppSettings();
+            syncVoiceTriggerInputs();
+        });
+    }
 
     const atlasSourceSelect = document.getElementById('atlasLetterSourceSelect');
     const atlasCustomFields = document.getElementById('atlasCustomFields');
@@ -12340,6 +12707,10 @@ function addFeatureToSelected(featureType) {
     // Add Alpha-Numeric class if it's an Alpha-Numeric feature
     if (featureType === 'alphaNumeric' || featureType === 'lettersAbove') {
         selectedFeature.classList.add('alphanumeric-selected-feature');
+    }
+    // Add CHAIN REACTION class if it's a CHAIN REACTION feature
+    if (featureType.startsWith('whatItsNot')) {
+        selectedFeature.classList.add('chain-reaction-selected-feature');
     }
     selectedFeature.dataset.feature = featureType;
     

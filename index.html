@@ -17,7 +17,7 @@
     <meta http-equiv="Expires" content="0">
     <title>The Core</title>
     <link rel="manifest" href="manifest.json?v=2">
-    <link rel="stylesheet" href="styles.css?v=18">
+    <link rel="stylesheet" href="styles.css?v=19">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 </head>
@@ -71,9 +71,18 @@
             </div>
             <div class="homepage-buttons-section">
                 <button id="performButton" class="home-perform-button">PERFORM</button>
+                <button id="voiceButton" class="home-voice-button">VOICE</button>
                 <button id="createWorkflowButton" class="home-workflows-button">WORKFLOWS</button>
                 <button id="settingsButton" class="home-settings-button">SETTINGS</button>
             </div>
+        </div>
+
+        <!-- VOICE screen: black, notice box bottom-left -->
+        <div id="voiceScreen" class="voice-screen" style="display: none;">
+            <div id="voiceNoticeBox" class="voice-notice-box">
+                <div id="voiceNoticeContent" class="voice-notice-content"></div>
+            </div>
+            <button id="voiceBackButton" class="voice-back-button" aria-label="Exit VOICE">← Home</button>
         </div>
 
         <!-- Workflow Creation Page -->
@@ -1346,6 +1355,23 @@
                         </div>
                         <button type="button" id="loveLettersResetDefaultBtn" class="small-button">Reset to Default</button>
                     </div>
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">VOICE</h3>
+                        <p class="settings-section-subtitle">Trigger words for the VOICE workflow (LENGTH → REPEAT → 1 LIE L4). Say the word to end each step; the last 20 words before it are used to derive the answer.</p>
+                        <div class="voice-trigger-fields">
+                            <label for="voiceTriggerLengthInput">LENGTH:</label>
+                            <input type="text" id="voiceTriggerLengthInput" placeholder="e.g. complicated" maxlength="40" autocomplete="off">
+                            <label for="voiceTriggerRepeatInput">REPEAT:</label>
+                            <input type="text" id="voiceTriggerRepeatInput" placeholder="e.g. fantastic" maxlength="40" autocomplete="off">
+                            <label for="voiceTriggerOneLieInput">1 LIE (L4) digits:</label>
+                            <input type="text" id="voiceTriggerOneLieInput" placeholder="e.g. difficult" maxlength="40" autocomplete="off">
+                            <label for="voiceTriggerConfirmInput">Confirm most likely lie:</label>
+                            <input type="text" id="voiceTriggerConfirmInput" placeholder="e.g. amazing" maxlength="40" autocomplete="off">
+                            <label for="voiceTriggerOverrideInput">Override most likely lie:</label>
+                            <input type="text" id="voiceTriggerOverrideInput" placeholder="e.g. challenging" maxlength="40" autocomplete="off">
+                        </div>
+                        <button type="button" id="voiceTriggersResetBtn" class="small-button">Reset to Default</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1916,6 +1942,8 @@
             document.getElementById('homepage').style.display = 'none';
             document.getElementById('workflowCreation').style.display = 'none';
             document.getElementById('workflowExecution').style.display = 'none';
+            const voiceScreen = document.getElementById('voiceScreen');
+            if (voiceScreen) voiceScreen.style.display = 'none';
             document.getElementById('settingsPage').style.display = 'block';
             if (typeof updateOmegaEfficiencySubtitle === 'function') updateOmegaEfficiencySubtitle();
             if (typeof updateAlphaEfficiencySubtitle === 'function') updateAlphaEfficiencySubtitle();
