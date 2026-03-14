@@ -106,6 +106,13 @@
       "analyzeFunction": "return [{ param: 'Requires word input', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     },
     {
+      "id": "advLex",
+      "name": "ADV-LEX",
+      "displayName": "ADV-LEX",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Uses Lexicon position + letters. Builds one helper word per letter from 19127 list; you choose which word matches your puzzle, then filters by that letter at that position.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "consonant",
       "name": "Cons. Together",
       "displayName": "Cons. Together",
@@ -246,6 +253,27 @@
       "analyzeFunction": "const curvedLetters = new Set(['B','C','D','G','J','O','P','Q','R','S','U']); const results = []; for (let pos = 1; pos <= 8; pos++) { const filtered = wordlist.filter(w => { const upperWord = w.toUpperCase(); if (upperWord.length <= pos - 1) return false; for (let i = 0; i < pos - 1; i++) { if (curvedLetters.has(upperWord[i])) return false; } return curvedLetters.has(upperWord[pos - 1]); }); results.push({ param: 'Position ' + pos, wordsLeft: filtered.length, percentFiltered: 100 * (1 - filtered.length / totalWords) }); } return results;"
     },
     {
+      "id": "numerology",
+      "name": "NUMEROLOGY",
+      "displayName": "NUMEROLOGY",
+      "requiresParam": true,
+      "analyzeFunction": "return [{ param: 'Numerology + difference (dates only)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "cups",
+      "name": "CUPS",
+      "displayName": "CUPS",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Filter NUMEROLOGY dates (SHORT/LONG)', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "eyeTest",
+      "name": "EYE TEST",
+      "displayName": "EYE TEST",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Dynamic PIN-style letter groups (2-7 letters) chosen for high information gain on current wordlist. Enter a 6-digit code of counts.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "pin",
       "name": "PIN",
       "displayName": "PIN",
@@ -351,6 +379,27 @@
       "analyzeFunction": "const results = []; const t9Map = new Map(); const t9Mapping = {'A':'2','B':'2','C':'2','D':'3','E':'3','F':'3','G':'4','H':'4','I':'4','J':'5','K':'5','L':'5','M':'6','N':'6','O':'6','P':'7','Q':'7','R':'7','S':'7','T':'8','U':'8','V':'8','W':'9','X':'9','Y':'9','Z':'9'}; wordlist.forEach(w => { const t9 = w.toUpperCase().split('').map(c => t9Mapping[c] || '').join(''); t9Map.set(w, t9); }); const yes = wordlist.filter(w => { const t9 = t9Map.get(w); return t9.length >= 2 && parseInt(t9[1]) > parseInt(t9[0]); }); const no = wordlist.filter(w => { const t9 = t9Map.get(w); return t9.length >= 2 && parseInt(t9[1]) < parseInt(t9[0]); }); const same = wordlist.filter(w => { const t9 = t9Map.get(w); return t9.length >= 2 && parseInt(t9[1]) === parseInt(t9[0]); }); return [{ param: 'Yes', wordsLeft: yes.length, percentFiltered: 100 * (1 - yes.length / totalWords) }, { param: 'No', wordsLeft: no.length, percentFiltered: 100 * (1 - no.length / totalWords) }, { param: 'Same', wordsLeft: same.length, percentFiltered: 100 * (1 - same.length / totalWords) }];"
     },
     {
+      "id": "t9NumberStart",
+      "name": "NUMBER START",
+      "displayName": "NUMBER START",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'First T9 digit: Low (2-4), Mid (4-6), High (6-9). Like Dictionary (Alpha) for digits.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "t9Singing",
+      "name": "SINGING",
+      "displayName": "SINGING",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Directional T9 filter (UP/DOWN). Exact length = directions + 1.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
+      "id": "t9NumberStart",
+      "name": "NUMBER START",
+      "displayName": "NUMBER START",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'First T9 digit: Low (2-4), Mid (4-6), High (6-9). Use before SINGING.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
+    },
+    {
       "id": "t9OneTruth",
       "name": "1 TRUTH (F4)",
       "displayName": "1 TRUTH (F4)",
@@ -398,6 +447,13 @@
       "displayName": "S/M/L (Length)",
       "requiresParam": false,
       "analyzeFunction": "const small = wordlist.filter(w => w.length >= 1 && w.length <= 6); const medium = wordlist.filter(w => w.length >= 5 && w.length <= 9); const long = wordlist.filter(w => w.length >= 7); return [{ param: 'Small (1-6)', wordsLeft: small.length, percentFiltered: 100 * (1 - small.length / totalWords) }, { param: 'Medium (5-9)', wordsLeft: medium.length, percentFiltered: 100 * (1 - medium.length / totalWords) }, { param: 'Long (7+)', wordsLeft: long.length, percentFiltered: 100 * (1 - long.length / totalWords) }];"
+    },
+    {
+      "id": "calculus",
+      "name": "CALCULUS",
+      "displayName": "CALCULUS",
+      "requiresParam": false,
+      "analyzeFunction": "return [{ param: 'Digit sequence (0-9). Word length = sequence length; each position matches digit letter set. Forbidden pairs as OMEGA.', wordsLeft: wordlist.length, percentFiltered: 0 }];"
     }
   ]
 }
